@@ -1,0 +1,43 @@
+# Dependencies and build output
+node_modules/
+.next/
+
+# Local runtime data -- may contain real Wellhub Revenue business content
+# (interaction logs), never uploaded anywhere (Architecture.md Section 17.1)
+logs/
+scripts/phase0-result.json
+
+# The ~2GB Revenue Knowledge Center export. This moves to Google Cloud
+# Storage, not GitHub -- see docs/gcp-deployment-guide.md.
+Content Repository/
+
+# Secrets and credentials -- never committed, regardless of provider.
+# The GCP pilot is designed to need none of these at all (service-identity
+# auth via IAM, no manually distributed keys), but this stays in place as a
+# backstop against accidents and against any future fallback path.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*-key.json
+*service-account*.json
+gcp-*.json
+credentials.json
+
+# Claude Code local session/config -- personal to this machine (absolute
+# paths under this developer's user profile), never portable to another
+# contributor's machine and never meant to be shared.
+.claude/
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# Not source/docs/config -- a business asset better suited to Drive than
+# GitHub. Excluded by default pending an explicit decision (see the
+# migration review package); add it back deliberately if the answer is yes.
+/Hubi_Executive_Intro.pptx
+

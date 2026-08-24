@@ -1,0 +1,35 @@
+{
+  "name": "hubi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Wellhub Revenue's AI Copilot -- local prototype.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "scripts": {
+    "ingest": "node --experimental-strip-types scripts/test-ingestion.ts \"Content Repository\"",
+    "ask": "node --experimental-strip-types scripts/ask.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "validate-phase0": "node scripts/validate-phase0.mjs",
+    "validate-phase0:windows": "pwsh -File scripts/validate-phase0.ps1",
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "start:cloud": "next start --hostname 0.0.0.0 --port ${PORT:-8080}"
+  },
+  "dependencies": {
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "@google/genai": "^2.18.0",
+    "@google-cloud/storage": "^8.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "typescript": "^5.9.3"
+  }
+}

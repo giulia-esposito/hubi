@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.claude
+logs
+Content Repository
+*.pptx
+docs
+*.md
+.env
+.env.*
+tests
+scripts/phase0-result.json
+npm-debug.log*
