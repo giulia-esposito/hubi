@@ -128,6 +128,20 @@ Copy `.env.example` to `.env.local` for local overrides (gitignored). On Cloud R
 
 ---
 
+## 5a. Validate one isolated Gemini/Vertex AI call before going further
+
+Before wiring anything else, confirm basic auth/project/model access works at all:
+
+```bash
+gcloud auth application-default login   # if running this from a laptop, not Cloud Run
+export GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID
+npm run validate-gemini
+```
+
+`scripts/validate-gemini.mjs` makes one standalone call, deliberately outside `lib/runtime/reasoningEngine.gemini.ts`, so a failure here points at auth/project/SDK setup rather than anything in Hubi's own adapter. This is also the script that will surface the `vertexai`-vs-`enterprise` constructor-option question flagged in §8 — if it fails with an "unknown option" style error, that's the fix to make, and it belongs in exactly one place (`reasoningEngine.gemini.ts`'s `getClient()`), not scattered through the app.
+
+Do not proceed to §6 until this passes.
+
 ## 6. Build and deploy
 
 Simplest path — build and deploy from source in one command (uses Cloud Build):

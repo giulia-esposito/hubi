@@ -13,6 +13,7 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "validate-phase0": "node scripts/validate-phase0.mjs",
     "validate-phase0:windows": "pwsh -File scripts/validate-phase0.ps1",
+    "validate-gemini": "node scripts/validate-gemini.mjs",
     "dev": "next dev --hostname 127.0.0.1",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
