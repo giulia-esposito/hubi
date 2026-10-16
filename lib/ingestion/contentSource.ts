@@ -2,6 +2,7 @@ import { mkdtempSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { SUPPORTED_EXTENSIONS, isSupportedFile } from "./supportedFormats.ts";
 
 /**
  * Resolves where the Content Repository (the ~2GB local export of the
@@ -19,8 +20,8 @@ import path from "node:path";
  * required to run Hubi locally -- this is a deliberate constraint (a
  * developer should never be forced onto GCS just to run the app).
  *
- * Cloud Run / GCS mode (HUBI_CONTENT_SOURCE=gcs): downloads every object
- * under gs://HUBI_GCS_BUCKET/HUBI_GCS_PREFIX into an ephemeral temp
+ * Cloud Run / GCS mode (HUBI_CONTENT_SOURCE=gcs): downloads every supported
+ * (.docx/.pptx) object under gs://HUBI_GCS_BUCKET/HUBI_GCS_PREFIX into an ephemeral temp
  * directory on first use, using Application Default Credentials -- on
  * Cloud Run, that's the service's attached identity; no key file involved.
  * Cached for the lifetime of the process (module-level singleton, same
@@ -59,9 +60,70 @@ async function downloadFromGcs(): Promise<string> {
   // resolvable when running locally with the default "local" mode.
   const { Storage } = await import("@google-cloud/storage");
   const storage = new Storage();
-  const bucket = storage.bucket(bucketName);
+  const bucket = storage.bucket(bucketName) as unknown as GcsBucketLike;
 
   const destDir = mkdtempSync(path.join(os.tmpdir(), "hubi-content-repository-"));
+  await downloadSupportedObjects(bucket, bucketName, prefix, destDir);
+  return destDir;
+}
+
+/** Supported Office files at or above this size are downloaded but flagged. */
+export const LARGE_FILE_WARN_BYTES = 50 * 1024 * 1024;
+/**
+ * Supported Office files above this size are skipped (and reported), not
+ * downloaded: each one is buffered whole in memory and, on Cloud Run, /tmp is
+ * memory-backed. Sized above the largest known real document (~191 MiB slide
+ * library) so no current content is dropped.
+ */
+export const MAX_FILE_BYTES = 256 * 1024 * 1024;
+
+export type ObjectAction = "skip-placeholder" | "skip-unsupported" | "skip-oversized" | "download";
+
+/**
+ * Decides what to do with one listed object from its name and metadata size
+ * alone. Used by the downloader and by scripts/dry-run-content-source.ts so
+ * the dry run can never drift from the real behavior.
+ */
+export function planObject(name: string, prefix: string, size: number): { relative: string; action: ObjectAction } {
+  const relative = prefix ? name.slice(prefix.length).replace(/^\/+/, "") : name;
+  if (!relative || relative.endsWith("/")) return { relative, action: "skip-placeholder" };
+  if (!isSupportedFile(relative)) return { relative, action: "skip-unsupported" };
+  if (size > MAX_FILE_BYTES) return { relative, action: "skip-oversized" };
+  return { relative, action: "download" };
+}
+
+/** The subset of a GCS bucket/file that the downloader needs (eases testing). */
+export interface GcsFileLike {
+  name: string;
+  metadata?: { size?: string | number };
+  download(): Promise<[Buffer]>;
+}
+export interface GcsBucketLike {
+  getFiles(options: { prefix: string }): Promise<[GcsFileLike[], ...unknown[]]>;
+}
+
+export interface DownloadSummary {
+  downloaded: number;
+  downloadedBytes: number;
+  skippedUnsupported: number;
+  skippedUnsupportedBytes: number;
+  skippedUnsupportedByExtension: Record<string, number>;
+  skippedOversized: string[];
+}
+
+/**
+ * Downloads only ingestible files (see supportedFormats.ts) from the bucket
+ * into destDir, preserving the nested path relative to the prefix.
+ * Unsupported objects are filtered on their name BEFORE download() so media
+ * is never pulled into memory.
+ */
+export async function downloadSupportedObjects(
+  bucket: GcsBucketLike,
+  bucketName: string,
+  prefix: string,
+  destDir: string,
+  log: (message: string) => void = console.log
+): Promise<DownloadSummary> {
   const [files] = await bucket.getFiles({ prefix });
 
   if (files.length === 0) {
@@ -70,15 +132,60 @@ async function downloadFromGcs(): Promise<string> {
     );
   }
 
+  const summary: DownloadSummary = {
+    downloaded: 0,
+    downloadedBytes: 0,
+    skippedUnsupported: 0,
+    skippedUnsupportedBytes: 0,
+    skippedUnsupportedByExtension: {},
+    skippedOversized: [],
+  };
+
   for (const file of files) {
-    const relative = prefix ? file.name.slice(prefix.length).replace(/^\/+/, "") : file.name;
-    if (!relative || relative.endsWith("/")) continue; // skip "directory placeholder" objects
+    const size = Number(file.metadata?.size ?? 0);
+    const { relative, action } = planObject(file.name, prefix, size);
+    if (action === "skip-placeholder") continue;
+
+    if (action === "skip-unsupported") {
+      const ext = path.extname(relative).toLowerCase() || "(none)";
+      summary.skippedUnsupported++;
+      summary.skippedUnsupportedBytes += size;
+      summary.skippedUnsupportedByExtension[ext] = (summary.skippedUnsupportedByExtension[ext] ?? 0) + 1;
+      continue;
+    }
+
+    if (action === "skip-oversized") {
+      summary.skippedOversized.push(relative);
+      log(`[contentSource] Skipping ${relative}: ${formatMiB(size)} exceeds the ${formatMiB(MAX_FILE_BYTES)} per-file limit.`);
+      continue;
+    }
+    if (size >= LARGE_FILE_WARN_BYTES) {
+      log(`[contentSource] Warning: ${relative} is large (${formatMiB(size)}).`);
+    }
 
     const destPath = path.join(destDir, relative);
     await mkdir(path.dirname(destPath), { recursive: true });
     const [contents] = await file.download();
     await writeFile(destPath, contents);
+    summary.downloaded++;
+    summary.downloadedBytes += size;
   }
 
-  return destDir;
+  if (summary.downloaded === 0) {
+    throw new Error(
+      `Objects exist under gs://${bucketName}/${prefix} but none are supported (${[...SUPPORTED_EXTENSIONS].join(", ")}) or within the size limit -- check the Content Repository sync.`
+    );
+  }
+
+  log(
+    `[contentSource] Downloaded ${summary.downloaded} files (${formatMiB(summary.downloadedBytes)}); ` +
+      `skipped ${summary.skippedUnsupported} unsupported (${formatMiB(summary.skippedUnsupportedBytes)}, ` +
+      `by extension: ${JSON.stringify(summary.skippedUnsupportedByExtension)}); ` +
+      `skipped ${summary.skippedOversized.length} oversized.`
+  );
+  return summary;
+}
+
+function formatMiB(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
 }

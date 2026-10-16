@@ -4,6 +4,7 @@ import { parseDocxRaw } from "./docx.ts";
 import { parsePptxRaw } from "./pptx.ts";
 import { normalizeDocx, normalizePptx, type NormalizedDocument } from "./normalize.ts";
 import { chunkDocument, type Chunk } from "./chunk.ts";
+import { SUPPORTED_EXTENSIONS } from "./supportedFormats.ts";
 
 export interface IngestionReportEntry {
   file: string;
@@ -21,11 +22,9 @@ export interface IngestionResult {
   report: IngestionReportEntry[];
 }
 
-// DOCX and PPTX are wired up. PDF/TXT/MD parsers plug into this same
-// dispatch table later — adding one means adding one entry here, not
-// restructuring ingestion. Non-text assets (video, images, the redundant
-// top-level .zip) are recognized and skipped, never loaded into memory.
-const SUPPORTED_EXTENSIONS = new Set([".docx", ".pptx"]);
+// Supported extensions live in ./supportedFormats.ts (shared with the GCS
+// content loader). Non-text assets (video, images, the redundant top-level
+// .zip) are recognized and skipped here, never parsed.
 
 function walk(dir: string): string[] {
   const out: string[] = [];
