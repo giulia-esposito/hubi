@@ -527,6 +527,27 @@ _To be completed by Product._
 
 ## Severity
 
+High.
+
+The response remains traceable to approved content, but it can materially broaden the strength, scope, population, region or causality of a claim. Because the output may be used in customer-facing sales communication, this can produce misleading statements that appear grounded and therefore are harder for users to detect.
+
 ## Priority
 
+High.
+
 ## Product decision
+
+Do not block moderated Revenue rep testing, but treat this as a release-blocking issue for wider rollout.
+
+**For moderated testing:** generated customer-facing claims and figures are treated as draft language and checked against source material before external use. Log every instance of scope loss, causal strengthening, unsupported ROI/value language, or missing region/population qualifiers.
+
+**Before wider rollout, add regression coverage for:**
+- preservation of product/offer scope
+- preservation of region
+- preservation of population/sample qualifiers
+- preservation of comparison vs. causality
+- omission of unsupported ROI/value language
+
+**Then test one general generation rule:** claims must be restated at the same strength and scope supported by the source, or omitted.
+
+**Boundary:** do not use prompt changes to compensate for retrieval of the wrong source type. Retrieval/applicability improvements (for example, a product-scoped D2E script surfacing for a generic pitch) remain part of Retrieval V2.
