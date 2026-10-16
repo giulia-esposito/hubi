@@ -5,7 +5,7 @@ import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../lib/runtime/promptBuilder.ts
 import { formatCitation } from "../lib/runtime/citationBuilder.ts";
 import { getReasoningEngine, resolveReasoningProvider } from "../lib/runtime/reasoningEngine.ts";
 import { createSession, addTurn, accumulatedUserQuery, type Session } from "../lib/runtime/sessionState.ts";
-import { createTagAwareStreamer, extractTurnKind } from "../lib/runtime/turnKind.ts";
+import { createTagAwareStreamer, extractResponseTags } from "../lib/runtime/turnKind.ts";
 
 const CONTENT_REPO = "Content Repository";
 const TOP_K = 5;
@@ -51,9 +51,9 @@ async function handleQuestion(question: string, index: RetrievalIndex, session: 
     return;
   }
 
-  const { text: finalText, turnKind } = extractTurnKind(response.text);
+  const { text: finalText, turnKind, planningMode } = extractResponseTags(response.text);
   addTurn(session, "assistant", finalText);
-  console.log(`\n[turnKind: ${turnKind}]`);
+  console.log(`\n[planningMode: ${planningMode}] [turnKind: ${turnKind}]`);
 
   console.log(`\n[Citations]`);
   results.forEach((r, i) => console.log(`  [${i + 1}] ${formatCitation(r.chunk)}`));

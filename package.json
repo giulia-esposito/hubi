@@ -10,6 +10,7 @@
   "scripts": {
     "ingest": "node --experimental-strip-types scripts/test-ingestion.ts \"Content Repository\"",
     "ask": "node --experimental-strip-types scripts/ask.ts",
+    "eval:task-planning": "node --experimental-strip-types scripts/eval-task-planning.ts",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "validate-phase0": "node scripts/validate-phase0.mjs",
     "validate-phase0:windows": "pwsh -File scripts/validate-phase0.ps1",

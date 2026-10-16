@@ -19,6 +19,9 @@ export interface InteractionRecord {
   response: string;
   sources: SourceRef[];
   turnKind: string;
+  // Task Planning V0: what kind of work was requested (model self-report).
+  // Optional so records written before Task Planning V0 remain valid.
+  planningMode?: string;
   latencyMs: number;
   ok: boolean;
 }

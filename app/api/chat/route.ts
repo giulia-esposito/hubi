@@ -4,7 +4,7 @@ import { addTurn, accumulatedUserQuery } from "../../../lib/runtime/sessionState
 import { search } from "../../../lib/retrieval/index.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../../lib/runtime/promptBuilder.ts";
 import { getReasoningEngine } from "../../../lib/runtime/reasoningEngine.ts";
-import { createTagAwareStreamer, extractTurnKind } from "../../../lib/runtime/turnKind.ts";
+import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtime/turnKind.ts";
 import { logInteraction, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
 
 // Route Handler must run in the Node.js runtime, not Edge. The Claude Code
@@ -74,11 +74,13 @@ export async function POST(req: Request): Promise<Response> {
           response: NO_KNOWLEDGE_MESSAGE,
           sources,
           turnKind: "no-grounded-answer",
+          // No model call happened, so no planning mode was determined.
+          planningMode: "unknown",
           latencyMs: durationMs,
           ok: true,
         });
 
-        send({ type: "done", ok: true, durationMs, interactionId, turnKind: "no-grounded-answer" });
+        send({ type: "done", ok: true, durationMs, interactionId, turnKind: "no-grounded-answer", planningMode: "unknown" });
         controller.close();
         return;
       }
@@ -100,10 +102,10 @@ export async function POST(req: Request): Promise<Response> {
         return;
       }
 
-      // Authoritative turnKind/text comes from the full final response, not
-      // the live streamer -- the streamer only exists to keep the tag off
-      // the screen during streaming.
-      const { text: finalText, turnKind } = extractTurnKind(response.text);
+      // Authoritative turnKind/planningMode/text come from the full final
+      // response, not the live streamer -- the streamer only exists to keep
+      // the tags off the screen during streaming.
+      const { text: finalText, turnKind, planningMode } = extractResponseTags(response.text);
       addTurn(session, "assistant", finalText);
 
       const interactionId = crypto.randomUUID();
@@ -116,11 +118,12 @@ export async function POST(req: Request): Promise<Response> {
         response: finalText,
         sources,
         turnKind,
+        planningMode,
         latencyMs: durationMs,
         ok: true,
       });
 
-      send({ type: "done", ok: true, durationMs, interactionId, turnKind });
+      send({ type: "done", ok: true, durationMs, interactionId, turnKind, planningMode });
       controller.close();
     },
   });
