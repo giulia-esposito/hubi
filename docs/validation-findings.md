@@ -424,12 +424,109 @@ _To be completed by Product._
 
 ## Severity
 
-_To be completed by Product._
+Medium.
 
 ## Priority
 
-_To be completed by Product._
+High.
 
 ## Product decision
 
+Accepted limitation of Task Planning V0. To be addressed in Retrieval V2 / Task-Planning-informed retrieval, without prompt hacks and without weakening grounding.
+
+---
+
+## Finding #005 — Scope generalization: qualified or scoped source claims are restated more broadly in constructed artifacts
+
+**Source:** real-corpus validation of Task Planning V0 (Gemini 2.5 Flash via Vertex AI, `HUBI_REASONING_PROVIDER=gemini`, Content Repository of 20 documents / 2,103 chunks), 2026-10-17, prompt as committed in `b4ac2e5`. Reproducibility numbers below were measured in a separate 5-run pass the same day.
+
+**Summary:** in Business Assistance output, Hubi used two claims that do exist in approved material, but stated them with less scope than the source gives them. Neither is an invented fact; both are *scope or qualifier loss*. They are recorded together because they share a mechanism (a scoped claim becomes a general one when it is placed inside a persuasive artifact), but they differ in cause, so each is documented separately.
+
+### Case A — D2E-specific ROI claim presented as a general Wellhub benefit
+
+**Exact user query:** `Write me an elevator pitch.` (single turn, fresh session)
+
+**Exact retrieved source:** rank 5 of 5, score 9.84. Chunk id `PMM _ Slide Library _ US _ DO NOT EDIT::s347`, document `PMM _ Slide Library _ US _ DO NOT EDIT`, heading `Slide 348: D2E & D2E Light`, no Content ID, no citation URL (`citationUrl: null`). The other four results were the RKO 2026 "What is Wellhub" Elevator Pitch Submission chunks (three) and the Simplified Pricing Narrative session recording (one).
+
+**Exact source wording** (speaker notes of a slide titled "D2E & D2E Light / Elevator Pitch"; the part the claim comes from):
+
+> "Companies that let us do this experience the highest engagement rates—employees use their wellness resources more, and that boosts your ROI."
+
+"This" refers to the sentence before it: *"when we have the ability to connect directly with your eligibles, we see the best results."* The slide is a pitch for the Direct-to-Employee (D2E) communications product, delivered to a client already discussing D2E ("Whether you're leaning towards our full Direct-to-Employee Communications or the more laid-back Direct-to-Employee Light…").
+
+**Hubi wording** (first observed sample):
+
+> "We achieve this by effectively communicating with your eligible employees, ensuring they use their wellness resources, which we know leads to the highest engagement rates and a strong boost to your ROI. The best part? It's a low investment, with options starting from just $2. So, if you're looking to maximize your investment in employee wellbeing and drive real, measurable results, Wellhub is your partner."
+
+**What scope or qualifier was lost:**
+- The claim is conditional on the client allowing direct communication with eligible employees (D2E). In Hubi's pitch it reads as a property of Wellhub in general. In the first sample the phrase "communicating with your eligible employees" survives, but the "companies that let us" condition and the D2E product framing do not.
+- "Highest engagement rates" and "boosts your ROI" are a speaker-note sales claim with no figure, metric or study behind it in this chunk. Hubi adds "which we know" and, in the first sample, "real, measurable results" ("measurable" does not appear in any retrieved chunk).
+- The slide is an elevator pitch for a *different product conversation* (D2E), retrieved for a generic "elevator pitch" request because its heading is "Elevator Pitch".
+- (Not a loss of scope, recorded for completeness: "$2" does appear in the retrieved material as "Starting at $2".)
+
+**Reproducible?** Yes, intermittently. Across 5 runs of the exact query, an ROI claim appeared in 3 of 5 (runs 3, 4, 5). In none of the 3 did the sentence carry the direct-communication / D2E condition. Examples: "delivering exceptional value and ROI for your business"; "ensuring you maximize your ROI by truly activating your workforce's wellbeing"; "We help you maximize your ROI by fostering a truly engaged workforce…". Retrieval for this query is deterministic (the same five chunks every time); the variation is in whether the model uses the D2E chunk.
+
+**Classification:** primarily **applicability** (a product-specific D2E script is eligible, and is surfaced for a generic Wellhub pitch, with nothing marking its scope); secondarily **grounding** (a conditional claim restated unconditionally, and "measurable" added) and **prompt behavior** (the prompt requires claims to be grounded but never tells the model to preserve a source claim's condition).
+
+### Case B — payroll-integration claim for financial services, wording broader than the slide
+
+**Exact user queries** (one session, two turns):
+1. `How can I present Wellhub to a prospect? Write a 1-min elevator pitch.`
+2. `A company from the financial industry, enterprise size.` (retrieval query for turn 2 is the accumulated text of both user messages)
+
+**Exact retrieved sources** (turn 2, ranks 4 and 5, scores 16.33 and 15.25; both from `PMM _ Slide Library _ US _ DO NOT EDIT`, no Content ID, no citation URL):
+
+- `…::s324`, heading `Slide 325: Payroll`: three panels, "Companies without payroll enabled / Companies with payroll enabled", **1.7x Global: Financial Services**, 1.6x Global: Health, 1.3x Global: Consultancy.
+- `…::s323`, heading `Slide 324: Payroll`: "Companies without payroll enabled / Companies with payroll enabled", **2.5x … US: Financial Services**.
+
+**Exact source wording and qualifiers** (both chunks):
+
+> "Sources: Wellhub comparative analysis of average employee subscription rates with and without payroll integration, 2023. Based on accounts with 500+ employees."
+> Speaker notes (s324): "Note to execs: Global Industry Data … Client size = 500+ Active clients … Removed no business type … Indirect & Enterprise No FM"
+> Speaker notes (s323): "Note to execs: US Country Data + Industries with high payroll adoption … Client size = 500+ Active clients …"
+
+Qualifiers that define the claim: the metric is *subscription rate*; it is a *comparison* of companies with vs without payroll enabled (not a measured effect of enabling it); two different populations (Global Financial Services 1.7x, US Financial Services 2.5x); 2023 data; accounts with 500+ employees; the data filters exclude some clients (CVS, Footlocker, FedEx) and non-financial-management accounts; speaker notes are addressed "to execs", i.e. internal framing.
+
+**Hubi wording** (first observed sample, turn 2):
+
+> "For financial services companies, our solutions, including features like payroll integration, have proven to significantly boost employee participation and the overall value of their wellbeing investment."
+
+**What scope or qualifier was lost:**
+- The numbers (1.7x global, 2.5x US) and the global/US distinction are gone; "significantly" replaces them.
+- "Subscription rate" became "employee participation", and "the overall value of their wellbeing investment" has no source in either chunk.
+- A with/without comparison across companies became "proven to … boost", a causal and conclusive claim.
+- The 2023 date and the 500+ employee basis are not stated (the user did say "enterprise size", so the 500+ basis is plausibly applicable, but it is not presented as a qualification).
+- The retrieved material *does* support a finance-specific payroll claim, so this is not an invented claim; it is an under-qualified and strengthened one.
+
+**Reproducible?** Yes, with variable fidelity. Across 5 runs of the two-turn session, a payroll claim appeared in 4 of 5. Observed wordings:
+
+| Run | Payroll wording (turn 2) | Assessment |
+|---|---|---|
+| 1 | "…integrating Wellhub with payroll significantly boosts adoption – companies with payroll enabled see subscription rates 1.7x higher globally, and up to 2.5x higher in the US, compared to those without." | Figures and global/US split kept; "boosts" is still causal. |
+| 2 | no payroll claim | – |
+| 3 | "For financial services companies with 500+ employees, we've seen that enabling payroll integration can boost employee subscription rates by 1.7x globally, maximizing participation and your return on investment in employee wellbeing." | Figure, "globally" and 500+ kept; "return on investment" has no source here. |
+| 4 | "For enterprise-level companies like yours in financial services, we've seen a significant impact through features like payroll integration." | No figure, no qualifier; "significant impact" unsupported in strength. |
+| 5 | "For enterprise financial services companies like yours, we've seen that integrating our platform with payroll can boost employee subscription rates by up to 2.5 times." | The US figure presented without "US", for a prospect of unspecified region. |
+
+Retrieval for turn 2 is deterministic. No claim about productivity, retention or healthcare costs derived from the finance framing was observed in this pass; the one ROI-type statement is run 3's "return on investment".
+
+**Classification:** primarily **grounding** (claim fidelity: magnitude, comparison vs causation, metric and population qualifiers lost or strengthened); secondarily **applicability** (US and Global figures are both retrieved, and which one fits the prospect depends on a region the user never gave; the clarification rule only asks when the missing context changes which facts apply, and the model did not treat region as such) and **prompt behavior** (nothing in the prompt requires keeping a source claim's qualifiers when it is placed in persuasive copy).
+
+### Cross-case observations
+- Both cases come from the same document, the PMM slide library, which has no Content ID and no citation URL, so neither claim can be traced through the registry or cited with a link. This overlaps with Finding #003 (slide content) and with the Retrieval V2 governance work (`docs/context-applicability-architecture.md`).
+- Both are Business Assistance artifacts, where the prompt deliberately allows persuasive framing. The boundary "facts must be grounded" is currently enforced at the level of *whether a claim exists in the sources*, not *whether it is restated at the strength and scope the source gives it*.
+- This evidence is from one provider and model (Gemini 2.5 Flash) and small samples (5 runs). Behavior on Claude Code was not measured for these two cases.
+
+## Expected behavior
+
+_To be completed after review of the evidence._
+
+## Product assessment
+
 _To be completed by Product._
+
+## Severity
+
+## Priority
+
+## Product decision
