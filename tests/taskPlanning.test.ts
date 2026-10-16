@@ -175,3 +175,133 @@ describe("HUBI_SYSTEM_PROMPT contract", () => {
     }
   });
 });
+
+describe("extractResponseTags: tolerance for live model drift", () => {
+  test("a leading mode keyword without MODE: is accepted and stripped (seen live on Gemini)", () => {
+    const r = extractResponseTags(`[[HUBI:BUSINESS_ASSISTANCE]]\n${BODY}\n[[HUBI:GROUNDED_ANSWER]]`);
+    assert.equal(r.planningMode, "business-assistance");
+    assert.equal(r.turnKind, "grounded-answer");
+    assert.equal(r.text, BODY);
+  });
+
+  test("a turn-kind tag on line 1 is stripped; it supplies the turn kind only when no trailing tag exists", () => {
+    const onlyLeading = extractResponseTags(`[[HUBI:NO_GROUNDED_ANSWER]]\n${BODY}`);
+    assert.equal(onlyLeading.planningMode, "unknown");
+    assert.equal(onlyLeading.turnKind, "no-grounded-answer");
+    assert.equal(onlyLeading.text, BODY);
+
+    const both = extractResponseTags(`[[HUBI:NO_GROUNDED_ANSWER]]\n${BODY}\n[[HUBI:GROUNDED_ANSWER]]`);
+    assert.equal(both.turnKind, "grounded-answer");
+    assert.equal(both.text, BODY);
+  });
+
+  test("an unrecognized leading tag is stripped and both fields stay unknown", () => {
+    const r = extractResponseTags(`[[HUBI:SOMETHING_ELSE]]\n${BODY}`);
+    assert.equal(r.planningMode, "unknown");
+    assert.equal(r.turnKind, "unknown");
+    assert.equal(r.text, BODY);
+  });
+});
+
+describe("createTagAwareStreamer: drift and whitespace", () => {
+  const body = "Wellhub can transform wellbeing for your team and keep the whole company engaged every day.";
+
+  function collect(raw: string, splitAt: number): string {
+    const out: string[] = [];
+    const streamer = createTagAwareStreamer((t) => out.push(t));
+    streamer.push(raw.slice(0, splitAt));
+    streamer.push(raw.slice(splitAt));
+    streamer.finish();
+    return out.join("");
+  }
+
+  test("never loses a space where the held-back remainder begins (regression: 'cantransform')", () => {
+    // Pad so that, for some length, the holdback boundary lands exactly on a space.
+    for (let pad = 0; pad < 70; pad++) {
+      const text = `${"a".repeat(pad + 1)} ${body}`;
+      const raw = `[[HUBI:MODE:BUSINESS_ASSISTANCE]]\n${text}\n[[HUBI:GROUNDED_ANSWER]]`;
+      assert.equal(collect(raw, raw.length), text, `pad ${pad}`);
+      assert.equal(collect(raw, 20), text, `pad ${pad}, split`);
+    }
+  });
+
+  test("never leaks a leading tag that is missing MODE: or is a turn-kind tag", () => {
+    for (const first of ["[[HUBI:BUSINESS_ASSISTANCE]]", "[[HUBI:NO_GROUNDED_ANSWER]]", "[[HUBI:MODE:KNOWLEDGE_SYNTHESIS]]"]) {
+      const raw = `${first}\n${body}\n[[HUBI:GROUNDED_ANSWER]]`;
+      for (let split = 1; split < raw.length; split++) {
+        const visible = collect(raw, split);
+        assert.ok(!visible.includes("[[HUBI"), `${first} split ${split} leaked`);
+        assert.equal(visible, body, `${first} split ${split}`);
+      }
+    }
+  });
+});
+
+describe("HUBI_SYSTEM_PROMPT: tag format reinforcement", () => {
+  test("states that MODE: is mandatory on line 1 and shows the correct response shape", () => {
+    assert.match(HUBI_SYSTEM_PROMPT, /MODE: is mandatory/);
+    assert.match(HUBI_SYSTEM_PROMPT, /never contains a turn-kind tag/);
+    assert.match(HUBI_SYSTEM_PROMPT, /\[\[HUBI:MODE:BUSINESS_ASSISTANCE\]\]\n<the response>\n\[\[HUBI:GROUNDED_ANSWER\]\]/);
+  });
+});
+
+describe("control-tag contract on clarifying and refusing turns", () => {
+  test("a clarifying turn carries both tags and parses to its mode plus clarifying-question", () => {
+    const question = "Which region does this client operate in?";
+    for (const mode of ["KNOWLEDGE_RETRIEVAL", "KNOWLEDGE_SYNTHESIS", "BUSINESS_ASSISTANCE"]) {
+      const r = extractResponseTags(`[[HUBI:MODE:${mode}]]\n${question}\n[[HUBI:CLARIFYING_QUESTION]]`);
+      assert.equal(r.turnKind, "clarifying-question");
+      assert.notEqual(r.planningMode, "unknown", mode);
+      assert.equal(r.text, question);
+    }
+  });
+
+  test("a clarifying turn streams without leaking either tag", () => {
+    const question = "Which region does this client operate in, and which segment?";
+    const raw = `[[HUBI:MODE:BUSINESS_ASSISTANCE]]\n${question}\n[[HUBI:CLARIFYING_QUESTION]]`;
+    for (let split = 1; split < raw.length; split++) {
+      const out: string[] = [];
+      const streamer = createTagAwareStreamer((t) => out.push(t));
+      streamer.push(raw.slice(0, split));
+      streamer.push(raw.slice(split));
+      streamer.finish();
+      assert.equal(out.join(""), question, `split ${split}`);
+    }
+  });
+
+  test("a clarifying turn that skips the line-1 tag is detectable: mode stays unknown, kind is still read", () => {
+    const r = extractResponseTags("Which region?\n[[HUBI:CLARIFYING_QUESTION]]");
+    assert.equal(r.planningMode, "unknown");
+    assert.equal(r.turnKind, "clarifying-question");
+  });
+
+  test("the prompt requires both tags on clarifying turns and calls a missing tag malformed", () => {
+    assert.match(HUBI_SYSTEM_PROMPT, /even when your whole response is a clarifying question/);
+    assert.match(HUBI_SYSTEM_PROMPT, /without the line-1 tag or without the final tag is malformed/);
+  });
+});
+
+describe("existence and availability questions", () => {
+  test("the prompt classifies existence/availability checks as KNOWLEDGE_RETRIEVAL in general terms", () => {
+    assert.match(HUBI_SYSTEM_PROMPT, /exists or where it can be found/);
+    for (const example of ["Do we have X?", "Is there guidance for X?", "Where can I find X?"]) {
+      assert.ok(HUBI_SYSTEM_PROMPT.includes(example), example);
+    }
+    assert.match(HUBI_SYSTEM_PROMPT, /so it is KNOWLEDGE_RETRIEVAL even when your answer briefly summarizes/);
+  });
+});
+
+describe("Business Assistance completion and benefit-claim rules", () => {
+  test("write the finished artifact when facts are available; ask only when applicability changes", () => {
+    assert.match(HUBI_SYSTEM_PROMPT, /write it\. Do not ask the user for a business problem, value proposition, proof point/);
+    assert.match(HUBI_SYSTEM_PROMPT, /do not hand back a fill-in-the-blank template/);
+    assert.match(HUBI_SYSTEM_PROMPT, /Ask only when the missing context would change which facts apply/);
+  });
+
+  test("benefit and outcome claims are facts; tailoring changes tone, not claims; gaps get no example figures", () => {
+    assert.match(HUBI_SYSTEM_PROMPT, /Claims about what Wellhub delivers or causes/);
+    assert.match(HUBI_SYSTEM_PROMPT, /Do not imply them through framing either/);
+    assert.match(HUBI_SYSTEM_PROMPT, /adapt tone, vocabulary, examples of situations and emphasis only/);
+    assert.match(HUBI_SYSTEM_PROMPT, /do not suggest example figures, outcomes or benefits to fill it/);
+  });
+});

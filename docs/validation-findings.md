@@ -397,3 +397,39 @@ Re-ran this investigation's core checks independently (before discovering the an
 ## Priority
 
 ## Product decision
+
+---
+
+## Finding #004 — Lexical retrieval gap: a generic artifact request retrieves craft references but not the grounding facts
+
+**Source:** Task Planning V0 live validation (Gemini, `scripts/eval-task-planning.ts`, scenario `amb-write-me`), 2026-10-17.
+
+**Question:** "Write me an elevator pitch." (no company, audience or topic named)
+
+**What happens:** BM25 matches only the query tokens `write`, `me`, `elevator`, `pitch`. In the eval fixtures that retrieves the pitch scorecard (craft reference) but **not** the positioning chunk that holds the facts (value proposition, engagement message), because that chunk contains none of those tokens. The model therefore sees a description of what a good pitch contains and no Wellhub facts to put in it. It reacts correctly for the evidence it was given: it asks for the missing inputs or returns a bracketed skeleton. Some runs still offered invented example figures to fill the gaps ("e.g., X% increase in retention"), which is a separate prompt-compliance issue.
+
+**Evidence that this is retrieval, not prompt behavior:** with the positioning chunk placed in the prompt directly (bypassing BM25), the unchanged system prompt wrote a finished pitch with no placeholders in 5 of 5 runs. With the real corpus the same request retrieves the RKO pitch submission and scorecard, which contain the facts, and Hubi writes a finished pitch. The gap appears whenever the facts live in a chunk that does not lexically resemble the request.
+
+**Why it matters for Business Assistance:** the artifact name in the request ("pitch", "talk track", "email") matches *craft* documents, while the facts the artifact needs are described in *product/positioning* documents that never use that word. Task Planning V0 classifies the request after retrieval, so it cannot widen retrieval for it. This is the concrete case for Task-Planning-informed retrieval described in `docs/task-planning-architecture.md` Section 3 (a conditional second, targeted pass for the facts the artifact needs).
+
+**Scope decision recorded:** not addressed in Task Planning V0. The eval scenario `amb-write-me` keeps its retrieval as-is and now asserts only that, with facts missing, Hubi asks or writes a skeleton without inventing figures or benefits. Candidate fixes (Retrieval V2 / Task-Planning-informed retrieval): a second retrieval pass for grounding facts when the mode is Business Assistance and only craft references came back; retrieval over document type or topic metadata; query expansion from the conversation's subject.
+
+## Expected behavior
+
+For an artifact request with sufficient facts in the approved knowledge, Hubi writes the finished artifact. When retrieval returns only craft references, Hubi says which facts are missing, writes at most a skeleton, and invents no figures, benefits or examples.
+
+## Product assessment
+
+_To be completed by Product._
+
+## Severity
+
+_To be completed by Product._
+
+## Priority
+
+_To be completed by Product._
+
+## Product decision
+
+_To be completed by Product._

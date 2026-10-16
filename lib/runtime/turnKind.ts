@@ -1,4 +1,4 @@
-import { PLANNING_MODE_KEYWORDS, PLANNING_MODE_TAG_PREFIX, type PlanningMode } from "./planningMode.ts";
+import { PLANNING_MODE_KEYWORDS, type PlanningMode } from "./planningMode.ts";
 
 export type TurnKind = "grounded-answer" | "clarifying-question" | "no-grounded-answer" | "unknown";
 
@@ -17,8 +17,13 @@ const TAG_PATTERN = /\n?\[\[HUBI:([A-Z_]*)\]\]\s*$/;
 
 // The planning-mode tag is LEADING (line 1), not trailing: the model commits
 // to the job-to-be-done before writing, so the classification steers the
-// answer instead of merely describing it afterwards.
-const MODE_TAG_PATTERN = /^\s*\[\[HUBI:MODE:([A-Z_]*)\]\]\s*/;
+// answer instead of merely describing it afterwards. The canonical form is
+// [[HUBI:MODE:<KEYWORD>]], but live Gemini runs sometimes drop "MODE:"
+// ([[HUBI:BUSINESS_ASSISTANCE]]) or put a turn-kind tag on line 1. Any
+// leading [[HUBI:...]] tag is therefore stripped from the visible text, and
+// interpreted by keyword: the "MODE:" prefix is optional.
+const LEADING_TAG_PATTERN = /^\s*\[\[HUBI:(?:MODE:)?([A-Z_]*)\]\]\s*/;
+const LEADING_TAG_PREFIX = "[[HUBI:";
 
 export interface ResponseTags {
   text: string;
@@ -33,23 +38,30 @@ export interface ResponseTags {
  * intentional accepted prototype debt (see Prototype_Plan.md). A missing or
  * malformed tag never breaks the response: the full text is preserved either
  * way and the corresponding field is "unknown".
+ *
+ * If the leading tag is a turn-kind keyword instead of a mode keyword (a
+ * model mix-up), it is still stripped; it supplies the turn kind only when no
+ * trailing tag does, and the planning mode stays "unknown".
  */
 export function extractResponseTags(rawText: string): ResponseTags {
   let text = rawText;
   let planningMode: PlanningMode = "unknown";
+  let leadingTurnKind: TurnKind = "unknown";
 
-  const modeMatch = text.match(MODE_TAG_PATTERN);
-  if (modeMatch) {
-    planningMode = PLANNING_MODE_KEYWORDS[modeMatch[1]] ?? "unknown";
-    text = text.slice(modeMatch[0].length);
+  const leading = text.match(LEADING_TAG_PATTERN);
+  if (leading) {
+    planningMode = PLANNING_MODE_KEYWORDS[leading[1]] ?? "unknown";
+    leadingTurnKind = KNOWN_KEYWORDS[leading[1]] ?? "unknown";
+    text = text.slice(leading[0].length);
   }
 
   let turnKind: TurnKind = "unknown";
-  const tagMatch = text.match(TAG_PATTERN);
-  if (tagMatch) {
-    turnKind = KNOWN_KEYWORDS[tagMatch[1]] ?? "unknown";
-    text = text.slice(0, tagMatch.index);
+  const trailing = text.match(TAG_PATTERN);
+  if (trailing) {
+    turnKind = KNOWN_KEYWORDS[trailing[1]] ?? "unknown";
+    text = text.slice(0, trailing.index);
   }
+  if (turnKind === "unknown") turnKind = leadingTurnKind;
 
   return { text: text.trim(), turnKind, planningMode };
 }
@@ -64,16 +76,16 @@ export function extractTurnKind(rawText: string): { text: string; turnKind: Turn
 // ~30 chars) with generous margin for a typo'd keyword.
 const HOLDBACK_CHARS = 60;
 
-// A leading mode tag is abandoned (treated as ordinary text) if no closing
-// "]]" shows up within this many characters.
-const MAX_MODE_TAG_CHARS = 80;
+// A leading tag is abandoned (treated as ordinary text) if no closing "]]"
+// shows up within this many characters.
+const MAX_LEADING_TAG_CHARS = 80;
 
 /**
  * Wraps a live onDelta callback so neither tag is ever forwarded to the
  * browser, even mid-stream.
  *
  * Head phase: the start of the stream is held until it is clear whether it
- * is a leading mode tag; the tag is dropped and everything after it flows
+ * is a leading tag; the tag is dropped and everything after it flows
  * through. Body phase: the last HOLDBACK_CHARS of text are held back
  * (imperceptible lag, not a per-character tag-prefix parser) and only
  * flushed once finish() confirms they weren't a trailing tag.
@@ -101,35 +113,30 @@ export function createTagAwareStreamer(onVisibleDelta: (text: string) => void) {
     }
   }
 
+  function enterBody(held: string): void {
+    buffer = "";
+    phase = "body";
+    pushBody(held);
+  }
+
   function resolveHead(): void {
     const trimmed = buffer.trimStart();
     if (!trimmed) return;
 
-    const couldBeTag = PLANNING_MODE_TAG_PREFIX.startsWith(trimmed) || trimmed.startsWith(PLANNING_MODE_TAG_PREFIX);
+    const couldBeTag = LEADING_TAG_PREFIX.startsWith(trimmed) || trimmed.startsWith(LEADING_TAG_PREFIX);
     if (!couldBeTag) {
-      const held = buffer;
-      buffer = "";
-      phase = "body";
-      pushBody(held);
+      enterBody(buffer);
       return;
     }
 
     const close = trimmed.indexOf("]]");
     if (close === -1) {
-      if (trimmed.length > MAX_MODE_TAG_CHARS) {
-        const held = buffer;
-        buffer = "";
-        phase = "body";
-        pushBody(held);
-      }
+      if (trimmed.length > MAX_LEADING_TAG_CHARS) enterBody(buffer);
       return;
     }
 
-    const rest = trimmed.slice(close + 2);
-    buffer = "";
-    phase = "body";
     dropLeadingWhitespace = true;
-    pushBody(rest);
+    enterBody(trimmed.slice(close + 2));
   }
 
   return {
@@ -142,8 +149,17 @@ export function createTagAwareStreamer(onVisibleDelta: (text: string) => void) {
       resolveHead();
     },
     finish(): void {
-      const { text } = extractResponseTags(buffer);
-      if (text) onVisibleDelta(text);
+      let rest: string;
+      if (phase === "head") {
+        // The whole response is still held, so it is safe to trim both ends.
+        rest = extractResponseTags(buffer).text;
+      } else {
+        // Earlier text was already flushed, so only the trailing tag and
+        // trailing whitespace may be removed here -- trimming the start would
+        // drop a real space that sits at the flush boundary ("can" + " transform").
+        rest = buffer.replace(TAG_PATTERN, "").trimEnd();
+      }
+      if (rest) onVisibleDelta(rest);
       buffer = "";
     },
   };
