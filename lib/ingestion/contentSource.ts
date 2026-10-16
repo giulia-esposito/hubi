@@ -1,7 +1,9 @@
-import { mkdtempSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { createWriteStream, mkdtempSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import type { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { SUPPORTED_EXTENSIONS, isSupportedFile } from "./supportedFormats.ts";
 
 /**
@@ -71,9 +73,9 @@ async function downloadFromGcs(): Promise<string> {
 export const LARGE_FILE_WARN_BYTES = 50 * 1024 * 1024;
 /**
  * Supported Office files above this size are skipped (and reported), not
- * downloaded: each one is buffered whole in memory and, on Cloud Run, /tmp is
- * memory-backed. Sized above the largest known real document (~191 MiB slide
- * library) so no current content is dropped.
+ * downloaded: on Cloud Run /tmp is memory-backed, so every byte written
+ * there counts against the container's memory. Sized above the largest known
+ * real document (~191 MiB slide library) so no current content is dropped.
  */
 export const MAX_FILE_BYTES = 256 * 1024 * 1024;
 
@@ -96,7 +98,8 @@ export function planObject(name: string, prefix: string, size: number): { relati
 export interface GcsFileLike {
   name: string;
   metadata?: { size?: string | number };
-  download(): Promise<[Buffer]>;
+  /** Opens a read stream on the object. Only ever called for supported files. */
+  createReadStream(): Readable;
 }
 export interface GcsBucketLike {
   getFiles(options: { prefix: string }): Promise<[GcsFileLike[], ...unknown[]]>;
@@ -111,11 +114,21 @@ export interface DownloadSummary {
   skippedOversized: string[];
 }
 
+interface PlannedDownload {
+  file: GcsFileLike;
+  relative: string;
+  size: number;
+}
+
 /**
  * Downloads only ingestible files (see supportedFormats.ts) from the bucket
  * into destDir, preserving the nested path relative to the prefix.
- * Unsupported objects are filtered on their name BEFORE download() so media
- * is never pulled into memory.
+ *
+ * Two phases: (1) classify every listed object from its name and size alone
+ * and log the aggregate plan BEFORE any byte is fetched, so the plan is in
+ * the logs even if a later download fails; (2) stream each selected object
+ * straight to disk. Unsupported objects never reach phase 2, so no read
+ * stream is ever opened for them, and no object is held whole in memory.
  */
 export async function downloadSupportedObjects(
   bucket: GcsBucketLike,
@@ -140,6 +153,7 @@ export async function downloadSupportedObjects(
     skippedUnsupportedByExtension: {},
     skippedOversized: [],
   };
+  const selected: PlannedDownload[] = [];
 
   for (const file of files) {
     const size = Number(file.metadata?.size ?? 0);
@@ -151,38 +165,39 @@ export async function downloadSupportedObjects(
       summary.skippedUnsupported++;
       summary.skippedUnsupportedBytes += size;
       summary.skippedUnsupportedByExtension[ext] = (summary.skippedUnsupportedByExtension[ext] ?? 0) + 1;
-      continue;
-    }
-
-    if (action === "skip-oversized") {
+    } else if (action === "skip-oversized") {
       summary.skippedOversized.push(relative);
-      log(`[contentSource] Skipping ${relative}: ${formatMiB(size)} exceeds the ${formatMiB(MAX_FILE_BYTES)} per-file limit.`);
-      continue;
+    } else {
+      selected.push({ file, relative, size });
     }
-    if (size >= LARGE_FILE_WARN_BYTES) {
-      log(`[contentSource] Warning: ${relative} is large (${formatMiB(size)}).`);
-    }
-
-    const destPath = path.join(destDir, relative);
-    await mkdir(path.dirname(destPath), { recursive: true });
-    const [contents] = await file.download();
-    await writeFile(destPath, contents);
-    summary.downloaded++;
-    summary.downloadedBytes += size;
   }
 
-  if (summary.downloaded === 0) {
+  const selectedBytes = selected.reduce((total, item) => total + item.size, 0);
+  const large = selected.filter((item) => item.size >= LARGE_FILE_WARN_BYTES);
+  log(
+    `[contentSource] Plan: ${selected.length} supported files selected (${formatMiB(selectedBytes)}); ` +
+      `large: ${large.length ? large.map((item) => `${item.relative} (${formatMiB(item.size)})`).join(", ") : "none"}; ` +
+      `skipped ${summary.skippedUnsupported} unsupported (${formatMiB(summary.skippedUnsupportedBytes)}, ` +
+      `by extension: ${JSON.stringify(summary.skippedUnsupportedByExtension)}); ` +
+      `skipped ${summary.skippedOversized.length} oversized` +
+      `${summary.skippedOversized.length ? `: ${summary.skippedOversized.join(", ")}` : ""}.`
+  );
+
+  if (selected.length === 0) {
     throw new Error(
       `Objects exist under gs://${bucketName}/${prefix} but none are supported (${[...SUPPORTED_EXTENSIONS].join(", ")}) or within the size limit -- check the Content Repository sync.`
     );
   }
 
-  log(
-    `[contentSource] Downloaded ${summary.downloaded} files (${formatMiB(summary.downloadedBytes)}); ` +
-      `skipped ${summary.skippedUnsupported} unsupported (${formatMiB(summary.skippedUnsupportedBytes)}, ` +
-      `by extension: ${JSON.stringify(summary.skippedUnsupportedByExtension)}); ` +
-      `skipped ${summary.skippedOversized.length} oversized.`
-  );
+  for (const { file, relative, size } of selected) {
+    const destPath = path.join(destDir, relative);
+    await mkdir(path.dirname(destPath), { recursive: true });
+    await pipeline(file.createReadStream(), createWriteStream(destPath));
+    summary.downloaded++;
+    summary.downloadedBytes += size;
+  }
+
+  log(`[contentSource] Downloaded ${summary.downloaded} files (${formatMiB(summary.downloadedBytes)}).`);
   return summary;
 }
 

@@ -3,7 +3,7 @@ import { planObject, LARGE_FILE_WARN_BYTES, MAX_FILE_BYTES } from "../lib/ingest
 
 /**
  * READ-ONLY diagnostic: lists a GCS prefix (metadata only) and reports what
- * contentSource.ts would download vs skip. Never calls download(), never
+ * contentSource.ts would download vs skip. Never opens a read stream, never
  * writes or deletes. Uses Application Default Credentials.
  *
  * Usage: node --experimental-strip-types scripts/dry-run-content-source.ts <bucket> [prefix]
