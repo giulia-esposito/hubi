@@ -1,5 +1,7 @@
+import type { Chunk } from "../ingestion/chunk.ts";
 import type { ScoredChunk } from "../retrieval/index.ts";
 import type { Turn } from "./sessionState.ts";
+import { regionLabel, UNSPECIFIED_REGION_LABEL, type ApplicabilityDecision } from "../applicability/evaluate.ts";
 
 export const HUBI_SYSTEM_PROMPT = `You are Hubi, Wellhub Revenue's AI Copilot. Your job is to help Revenue teammates get work done using Wellhub's approved organizational knowledge. You have no tools, files, or knowledge sources other than the "Retrieved Knowledge" provided in the user message below.
 
@@ -33,6 +35,12 @@ Clarifying questions:
 - Otherwise do not ask: complete the work, and state any assumption you made in one short line.
 - If a "Conversation so far" section is present, use it -- do not re-ask for context the user already gave.
 
+Applicability labels (every source and notice):
+- Each source carries "Applicability: region=... | audience=...". region=Global means the source metadata explicitly says the content applies in every region. A named region (for example SS Latam) means the content is specific to that region. region=${UNSPECIFIED_REGION_LABEL} means its regional scope is UNKNOWN: it is not Global, and it is not confirmed for any region.
+- Never present region-specific content as the general or operational answer for a different region or for an unknown region, and never treat "not specified" as Global or as evidence that content applies to the user's region.
+- If a region-sensitive answer relies materially on sources whose region is not specified, say plainly that their region is not specified, and do not present the answer as confirmed for the user's region.
+- A message headed "[Applicability gate -- mandatory]" overrides every other instruction except the required response format: follow it exactly.
+
 Style: focused and conversational, as if speaking to a Revenue teammate. Never address the user by name or assume an identity. Format artifacts so they are ready to use.
 
 Required response format (machine-read, never shown to the user -- both tags are stripped automatically):
@@ -54,11 +62,50 @@ Required response format (machine-read, never shown to the user -- both tags are
  * Citations are rendered from the retrieval results directly
  * (lib/runtime/citationBuilder.ts), not parsed back out of the model's text,
  * so citation accuracy never depends on the model self-reporting sources.
+ *
+ * When an Applicability decision is supplied (Finding #002), `results` must be
+ * decision.eligible: each source then carries a structured Applicability line,
+ * withheld region-specific content is never included (only its region names
+ * appear, in a notice), and the two gate modes send no retrieved content at
+ * all.
  */
-export function buildPrompt(question: string, results: ScoredChunk[], history: Turn[] = []): string {
+export function buildPrompt(
+  question: string,
+  results: ScoredChunk[],
+  history: Turn[] = [],
+  decision?: ApplicabilityDecision
+): string {
   const historyBlock = history.length
     ? `Conversation so far:\n${history.map((t) => `${t.role === "user" ? "User" : "Assistant"}: ${t.content}`).join("\n")}\n\n---\n\n`
     : "";
+
+  if (decision?.mode === "must-clarify") {
+    const regions = decision.withheldRegions;
+    const regionList = regions.length > 0 ? regions.join(", ") : "specific regions";
+    return (
+      `${historyBlock}User question: ${question}\n\n` +
+      `[Applicability gate -- mandatory]\n` +
+      `Approved material for this question exists only as region-specific content (${regionList}), and the user's region is not known. ` +
+      `That material is withheld and is NOT shown to you: do not describe, summarize or guess any regional process, and do not answer from general knowledge. ` +
+      `Respond with ONLY one short clarifying question asking which region applies to the user's situation` +
+      `${regions.length > 0 ? `, naming these options: ${regions.join(", ")}` : ""}. ` +
+      `Write it in the language of the user's question. If the user already named a place in the conversation that is not one of these regions, say you cannot tell which region it belongs to and ask them to choose one of the options. ` +
+      `End with the [[HUBI:CLARIFYING_QUESTION]] tag.`
+    );
+  }
+
+  if (decision?.mode === "no-applicable-content") {
+    const known = decision.taskRegions.join(", ");
+    const others = decision.mismatchRegions.length > 0 ? decision.mismatchRegions.join(", ") : "other regions";
+    return (
+      `${historyBlock}User question: ${question}\n\n` +
+      `[Applicability gate -- mandatory]\n` +
+      `The user's region is ${known}. The only approved material found for this question is specific to ${others}, which does not apply to ${known}, and it is NOT shown to you. ` +
+      `Tell the user plainly, in the language of their question, that you have no approved content for ${known} on this topic. ` +
+      `Do not present another region's process as the answer; you may say that material exists for ${others}. ` +
+      `End with the [[HUBI:NO_GROUNDED_ANSWER]] tag.`
+    );
+  }
 
   if (results.length === 0) {
     return `${historyBlock}${question}\n\n(No retrieved knowledge was found for this question -- the Retrieved Knowledge section is empty. Per your instructions, say clearly that you don't have grounded information on this rather than guessing.)`;
@@ -67,9 +114,34 @@ export function buildPrompt(question: string, results: ScoredChunk[], history: T
   const contextBlock = results
     .map((r, i) => {
       const locator = r.chunk.heading ? `${r.chunk.documentTitle} -> ${r.chunk.heading}` : r.chunk.documentTitle;
-      return `[Source ${i + 1}] ${locator}\n${r.chunk.text}`;
+      const applicability = decision ? `Applicability: ${applicabilityLine(r.chunk)}\n` : "";
+      return `[Source ${i + 1}] ${locator}\n${applicability}${r.chunk.text}`;
     })
     .join("\n\n---\n\n");
 
-  return `${historyBlock}Retrieved Knowledge:\n\n${contextBlock}\n\n---\n\nUser question: ${question}`;
+  const notices: string[] = [];
+  if (decision && decision.taskRegions.length > 0) {
+    notices.push(`[Applicability context] The user's region: ${decision.taskRegions.join(", ")}.`);
+  }
+  if (decision?.mode === "notice") {
+    notices.push(
+      `[Applicability notice] Region-specific material for ${decision.withheldRegions.join(", ")} was withheld because the user's region is not known. ` +
+        `If the answer depends on region, ask one clarifying question about the region before giving region-specific details; otherwise answer from the sources above.`
+    );
+  }
+  if (decision && decision.unspecifiedUsed > 0) {
+    const regionNote = decision.taskRegions.length > 0 ? ` (${decision.taskRegions.join(", ")})` : "";
+    notices.push(
+      `[Applicability notice] Sources marked "region=${UNSPECIFIED_REGION_LABEL}" have unknown regional scope: they are not Global and not confirmed for any region. ` +
+        `If a region-sensitive answer relies materially on them, say that their region is not specified and do not present the answer as confirmed for the user's region${regionNote}.`
+    );
+  }
+  const noticeBlock = notices.length > 0 ? `\n\n${notices.join("\n")}` : "";
+
+  return `${historyBlock}Retrieved Knowledge:\n\n${contextBlock}${noticeBlock}\n\n---\n\nUser question: ${question}`;
+}
+
+function applicabilityLine(chunk: Chunk): string {
+  const audience = chunk.audience && chunk.audience.length > 0 ? chunk.audience.join(", ") : "not specified in source metadata";
+  return `region=${regionLabel(chunk)} | audience=${audience}`;
 }

@@ -10,6 +10,8 @@ interface SourceRef {
   documentTitle: string;
   heading: string | null;
   citationUrl: string | null;
+  /** Region label from source metadata: Global, a named region, or "not specified in source metadata". */
+  regionLabel?: string;
 }
 
 interface ChatMessage {
@@ -85,6 +87,7 @@ function SourcesList({ sources }: { sources: SourceRef[] }) {
             ) : (
               <span>{locator} (no link available)</span>
             )}
+            {s.regionLabel && <span className="source-region">region: {s.regionLabel}</span>}
           </div>
         );
       })}

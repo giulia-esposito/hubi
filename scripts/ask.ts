@@ -1,14 +1,15 @@
 import readline from "node:readline";
 import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
-import { buildIndex, search, type RetrievalIndex } from "../lib/retrieval/index.ts";
+import type { RetrievalIndex } from "../lib/retrieval/index.ts";
+import { buildGovernedIndex } from "../lib/runtime/governedIndex.ts";
+import { retrieveApplicable } from "../lib/runtime/retrieveApplicable.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../lib/runtime/promptBuilder.ts";
-import { formatCitation } from "../lib/runtime/citationBuilder.ts";
+import { formatApplicabilityLabel, formatCitation } from "../lib/runtime/citationBuilder.ts";
 import { getReasoningEngine, resolveReasoningProvider } from "../lib/runtime/reasoningEngine.ts";
 import { createSession, addTurn, accumulatedUserQuery, type Session } from "../lib/runtime/sessionState.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../lib/runtime/turnKind.ts";
 
 const CONTENT_REPO = "Content Repository";
-const TOP_K = 5;
 
 async function handleQuestion(question: string, index: RetrievalIndex, session: Session): Promise<void> {
   const historyBeforeThisTurn = [...session.turns];
@@ -18,14 +19,26 @@ async function handleQuestion(question: string, index: RetrievalIndex, session: 
   // lib/runtime/sessionState.ts for why (keeps a clarifying-question
   // exchange retrieving relevant content without a separate classifier).
   const retrievalQuery = accumulatedUserQuery(session);
-  const results = search(index, retrievalQuery, TOP_K);
+  const userMessages = session.turns.filter((t) => t.role === "user").map((t) => t.content);
+  const { raw, decision } = retrieveApplicable(index, retrievalQuery, userMessages);
+  const results = decision.eligible;
 
-  console.log(`\n[Retrieval] ${results.length} chunk(s) matched.`);
+  console.log(`\n[Retrieval] ${raw.length} chunk(s) matched; ${results.length} passed the Applicability Layer.`);
+  console.log(
+    `[Applicability] mode=${decision.mode} | task region: ${decision.taskRegions.join(", ") || "unknown"}` +
+      ` | withheld (region unknown): ${decision.withheldCount}${decision.withheldRegions.length ? " [" + decision.withheldRegions.join(", ") + "]" : ""}` +
+      ` | excluded (other region): ${decision.mismatchCount}${decision.mismatchRegions.length ? " [" + decision.mismatchRegions.join(", ") + "]" : ""}`
+  );
   results.forEach((r, i) =>
-    console.log(`  [${i + 1}] score=${r.score.toFixed(2)} ${r.chunk.documentTitle}${r.chunk.heading ? " -> " + r.chunk.heading : ""}`)
+    console.log(
+      `  [${i + 1}] score=${r.score.toFixed(2)} ${r.chunk.documentTitle}${r.chunk.heading ? " -> " + r.chunk.heading : ""} (${formatApplicabilityLabel(r.chunk)})`
+    )
   );
 
-  if (results.length === 0) {
+  // Deterministic refusal only when retrieval itself found nothing; a gated
+  // turn still calls the model (with no retrieved content) so the reply is
+  // written in the user's language.
+  if (raw.length === 0) {
     const refusal =
       "I don't have grounded information on this in the current knowledge base. " +
       "I won't guess -- try rephrasing, or this may be outside what's been ingested so far.";
@@ -34,7 +47,7 @@ async function handleQuestion(question: string, index: RetrievalIndex, session: 
     return;
   }
 
-  const prompt = buildPrompt(question, results, historyBeforeThisTurn);
+  const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision);
 
   process.stdout.write("\nHubi: ");
   const streamer = createTagAwareStreamer((visible) => process.stdout.write(visible));
@@ -56,7 +69,7 @@ async function handleQuestion(question: string, index: RetrievalIndex, session: 
   console.log(`\n[planningMode: ${planningMode}] [turnKind: ${turnKind}]`);
 
   console.log(`\n[Citations]`);
-  results.forEach((r, i) => console.log(`  [${i + 1}] ${formatCitation(r.chunk)}`));
+  results.forEach((r, i) => console.log(`  [${i + 1}] ${formatCitation(r.chunk)} [${formatApplicabilityLabel(r.chunk)}]`));
   console.log(`\n(response time: ${(response.durationMs / 1000).toFixed(1)}s)`);
 }
 
@@ -70,7 +83,8 @@ async function main() {
   console.log(`Loaded ${documents.length} documents, ${chunks.length} chunks (${failed.length} failed).`);
   for (const f of failed) console.log(`  FAILED: ${f.file} -- ${f.reason}`);
 
-  const index = buildIndex(chunks);
+  const { index, excluded } = buildGovernedIndex(chunks);
+  for (const e of excluded) console.log(`Excluded by AI Eligibility (${e.aiEligibility}): ${e.contentId} (${e.chunkCount} chunks) -- never indexed.`);
   const session = createSession();
 
   const argQuestion = process.argv.slice(2).join(" ").trim();

@@ -14,6 +14,10 @@ export interface IngestionReportEntry {
   chunkCount?: number;
   usedTemplate?: boolean;
   warnings?: string[];
+  /** global / regional / unspecified, from the document's Target Region metadata. */
+  regionScope?: string;
+  /** Region metadata tokens that matched no vocabulary entry (treated as unspecified, never Global). */
+  regionWarnings?: string[];
 }
 
 export interface IngestionResult {
@@ -68,6 +72,8 @@ export function ingestContentRepository(rootDir: string): IngestionResult {
         chunkCount: docChunks.length,
         usedTemplate: doc.usedTemplate,
         warnings: doc.extractionWarnings,
+        regionScope: docChunks[0]?.regionScope,
+        regionWarnings: docChunks[0]?.unrecognizedRegionTokens?.map((t) => `unrecognized region value "${t}"`),
       });
     } catch (err) {
       report.push({ file: relative, status: "failed", reason: String((err as Error).message ?? err) });

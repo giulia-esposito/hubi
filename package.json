@@ -11,6 +11,7 @@
     "ingest": "node --experimental-strip-types scripts/test-ingestion.ts \"Content Repository\"",
     "ask": "node --experimental-strip-types scripts/ask.ts",
     "eval:task-planning": "node --experimental-strip-types scripts/eval-task-planning.ts",
+    "eval:applicability": "node --experimental-strip-types scripts/eval-applicability.ts",
     "eval:claim-fidelity": "node --experimental-strip-types scripts/eval-claim-fidelity.ts",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "validate-phase0": "node scripts/validate-phase0.mjs",

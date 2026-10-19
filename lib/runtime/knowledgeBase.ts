@@ -1,11 +1,14 @@
 import { ingestContentRepository } from "../ingestion/ingest.ts";
 import { resolveContentRepositoryPath } from "../ingestion/contentSource.ts";
-import { buildIndex, type RetrievalIndex } from "../retrieval/index.ts";
+import type { RetrievalIndex } from "../retrieval/index.ts";
+import { buildGovernedIndex } from "./governedIndex.ts";
 
 interface KnowledgeBase {
   index: RetrievalIndex;
   documentCount: number;
   chunkCount: number;
+  /** Documents removed by the AI Eligibility gate before indexing (never retrievable). */
+  excluded: { contentId: string; aiEligibility: string; chunkCount: number }[];
 }
 
 let cached: Promise<KnowledgeBase> | null = null;
@@ -28,10 +31,12 @@ export async function getKnowledgeBase(): Promise<KnowledgeBase> {
     cached = (async () => {
       const contentPath = await resolveContentRepositoryPath();
       const { documents, chunks } = ingestContentRepository(contentPath);
+      const { index, excluded } = buildGovernedIndex(chunks);
       return {
-        index: buildIndex(chunks),
+        index,
         documentCount: documents.length,
         chunkCount: chunks.length,
+        excluded,
       };
     })();
     // A transient failure (e.g. a momentary GCS download error) must not

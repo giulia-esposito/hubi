@@ -275,6 +275,12 @@ body {
   text-decoration: underline;
 }
 
+.source-region {
+  margin-left: 8px;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
 .feedback {
   display: flex;
   align-items: center;

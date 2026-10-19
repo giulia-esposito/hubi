@@ -1,4 +1,5 @@
 import type { NormalizedDocument, Section, CitationUrlType } from "./normalize.ts";
+import { getRegionVocabulary, parseAudience, parseRegionMetadata, type RegionScope, type RegionVocabulary } from "../applicability/regions.ts";
 
 export interface Chunk {
   id: string;
@@ -8,6 +9,21 @@ export interface Chunk {
   text: string;
   citationUrl: string | null;
   citationUrlType: CitationUrlType;
+  /**
+   * Applicability metadata propagated from the document (Finding #002). All
+   * optional so existing Chunk literals stay valid; a missing value means
+   * "unspecified", never "Global".
+   */
+  /** Canonical regions the content applies to ("Global" when the metadata says so). */
+  regions?: string[];
+  /** global only when the metadata literally says Global; unspecified means scope unknown. */
+  regionScope?: RegionScope;
+  /** The document's raw "Target Region" value, for traceability. */
+  regionRaw?: string;
+  /** Raw metadata tokens no vocabulary entry recognized. Reported, never guessed. */
+  unrecognizedRegionTokens?: string[];
+  /** Label-only in this slice; not used for gating. */
+  audience?: string[];
 }
 
 // Keeps a chunk small enough to be a tight, specific citation while staying
@@ -31,8 +47,10 @@ function splitLongText(text: string): string[] {
  * Every chunk keeps its parent section's heading as its citation locator —
  * splitting for retrieval granularity never degrades citation granularity.
  */
-export function chunkDocument(doc: NormalizedDocument): Chunk[] {
+export function chunkDocument(doc: NormalizedDocument, vocabulary: RegionVocabulary = getRegionVocabulary()): Chunk[] {
   const chunks: Chunk[] = [];
+  const region = parseRegionMetadata(vocabulary, doc.metadata.targetRegion);
+  const audience = parseAudience(doc.metadata.targetAudience);
   doc.sections.forEach((section: Section, idx: number) => {
     const parts = splitLongText(section.text);
     parts.forEach((part, partIdx) => {
@@ -44,6 +62,11 @@ export function chunkDocument(doc: NormalizedDocument): Chunk[] {
         text: part,
         citationUrl: doc.citationUrl,
         citationUrlType: doc.citationUrlType,
+        regions: region.regions,
+        regionScope: region.scope,
+        regionRaw: doc.metadata.targetRegion,
+        unrecognizedRegionTokens: region.unrecognized.length ? region.unrecognized : undefined,
+        audience: audience.length ? audience : undefined,
       });
     });
   });

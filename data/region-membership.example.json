@@ -1,0 +1,7 @@
+{
+  "_comment": "Copy to data/region-membership.local.json (gitignored) to add region membership or extra aliases. Only Brazil, United States, SS Latam and Global aliases are built in (approved). Country membership for SS Latam, Europe and Canada must NOT be filled in here until Content/Governance validates it. Ambiguous umbrella terms (LATAM, EMEA, Iberia) and language names are rejected as aliases or countries.",
+  "regions": {
+    "SS Latam": { "aliases": [], "countries": [] },
+    "Europe": { "aliases": [], "countries": [] }
+  }
+}

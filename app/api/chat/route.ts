@@ -1,11 +1,13 @@
 import { getKnowledgeBase } from "../../../lib/runtime/knowledgeBase.ts";
 import { getOrCreateSession } from "../../../lib/runtime/sessionRegistry.ts";
 import { addTurn, accumulatedUserQuery } from "../../../lib/runtime/sessionState.ts";
-import { search } from "../../../lib/retrieval/index.ts";
+import { retrieveApplicable } from "../../../lib/runtime/retrieveApplicable.ts";
+
+import { regionLabel } from "../../../lib/applicability/evaluate.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../../lib/runtime/promptBuilder.ts";
 import { getReasoningEngine } from "../../../lib/runtime/reasoningEngine.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtime/turnKind.ts";
-import { logInteraction, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
+import { logInteraction, type ApplicabilityLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
 
 // Route Handler must run in the Node.js runtime, not Edge. The Claude Code
 // adapter spawns the `claude` CLI via child_process (Edge cannot do that);
@@ -13,8 +15,6 @@ import { logInteraction, type SourceRef } from "../../../lib/runtime/interaction
 // Node.js unconditionally so switching HUBI_REASONING_PROVIDER never
 // silently changes which Next.js runtime this route executes in.
 export const runtime = "nodejs";
-
-const TOP_K = 5;
 
 const NO_KNOWLEDGE_MESSAGE =
   "I don't have grounded information on this in the current knowledge base. " +
@@ -40,12 +40,29 @@ export async function POST(req: Request): Promise<Response> {
   // Retrieval uses every user message so far, not just this one -- see
   // lib/runtime/sessionState.ts for why.
   const retrievalQuery = accumulatedUserQuery(session);
-  const results = search(index, retrievalQuery, TOP_K);
-  const sources: SourceRef[] = results.map((r) => ({
+  const userMessages = session.turns.filter((t) => t.role === "user").map((t) => t.content);
+
+  // Retrieval is unchanged; the Applicability Layer (Finding #002) then
+  // filters what the model may see: mismatched regions never pass, region-
+  // specific content is withheld until the user's region is known.
+  const { raw, decision } = retrieveApplicable(index, retrievalQuery, userMessages);
+  const results = decision.eligible;
+  const sources: SourceRef[] = results.map((r, i) => ({
     documentTitle: r.chunk.documentTitle,
     heading: r.chunk.heading,
     citationUrl: r.chunk.citationUrl,
+    regionLabel: regionLabel(r.chunk),
+    regionStatus: decision.eligibleStatuses[i],
   }));
+  const applicability: ApplicabilityLog = {
+    taskRegions: decision.taskRegions,
+    mode: decision.mode,
+    withheldCount: decision.withheldCount,
+    withheldRegions: decision.withheldRegions,
+    mismatchCount: decision.mismatchCount,
+    mismatchRegions: decision.mismatchRegions,
+    unspecifiedUsed: decision.unspecifiedUsed,
+  };
 
   const encoder = new TextEncoder();
   const start = Date.now();
@@ -56,9 +73,18 @@ export async function POST(req: Request): Promise<Response> {
         controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
       };
 
-      send({ type: "retrieval", chunkCount: results.length, sources });
+      send({
+        type: "retrieval",
+        chunkCount: results.length,
+        sources,
+        applicability: { mode: decision.mode, taskRegions: decision.taskRegions },
+      });
 
-      if (results.length === 0) {
+      // Deterministic refusal only when retrieval itself found nothing. When
+      // retrieval found content but the Applicability Layer gated all of it
+      // (must-clarify / no-applicable-content), the model is still called, with
+      // no retrieved content, so the reply comes back in the user's language.
+      if (raw.length === 0) {
         // Deterministic, retrieval-level refusal -- no reasoning engine call.
         send({ type: "delta", text: NO_KNOWLEDGE_MESSAGE });
         addTurn(session, "assistant", NO_KNOWLEDGE_MESSAGE);
@@ -76,6 +102,7 @@ export async function POST(req: Request): Promise<Response> {
           turnKind: "no-grounded-answer",
           // No model call happened, so no planning mode was determined.
           planningMode: "unknown",
+          applicability,
           latencyMs: durationMs,
           ok: true,
         });
@@ -85,7 +112,7 @@ export async function POST(req: Request): Promise<Response> {
         return;
       }
 
-      const prompt = buildPrompt(question, results, historyBeforeThisTurn);
+      const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision);
       const streamer = createTagAwareStreamer((visible) => send({ type: "delta", text: visible }));
 
       const askReasoningEngine = getReasoningEngine();
@@ -119,6 +146,7 @@ export async function POST(req: Request): Promise<Response> {
         sources,
         turnKind,
         planningMode,
+        applicability,
         latencyMs: durationMs,
         ok: true,
       });

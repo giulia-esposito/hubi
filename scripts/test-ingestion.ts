@@ -13,7 +13,8 @@ for (const entry of report) {
   if (entry.status === "skipped-unsupported-format") continue; // too noisy (media files) for the summary view
   console.log(`[${entry.status}] ${entry.file}`);
   if (entry.status === "ingested") {
-    console.log(`   sections=${entry.sectionCount} chunks=${entry.chunkCount} usedTemplate=${entry.usedTemplate}`);
+    console.log(`   sections=${entry.sectionCount} chunks=${entry.chunkCount} usedTemplate=${entry.usedTemplate} regionScope=${entry.regionScope}`);
+    if (entry.regionWarnings?.length) console.log(`   region warnings: ${entry.regionWarnings.join(" | ")}`);
     if (entry.warnings?.length) console.log(`   warnings: ${entry.warnings.join(" | ")}`);
   }
   if (entry.status === "failed") console.log(`   reason: ${entry.reason}`);
