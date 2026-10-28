@@ -210,6 +210,7 @@ export default function ChatPage() {
         body: JSON.stringify({ sessionId, question, history, lastPlanningMode, pinned }),
       });
 
+      if (res.status === 429) throw new Error("rate-limited");
       if (!res.body) throw new Error("No response body");
 
       const reader = res.body.getReader();
@@ -236,7 +237,8 @@ export default function ChatPage() {
         const last = prev[lastIndex];
         if (last?.role !== "assistant") return prev;
         const next = [...prev];
-        next[lastIndex] = { ...last, isStreaming: false, error: "Hubi is currently unavailable -- please retry." };
+        const tooFast = err instanceof Error && err.message === "rate-limited";
+        next[lastIndex] = { ...last, isStreaming: false, error: tooFast ? "You are sending messages faster than Hubi can handle -- wait a few seconds and try again." : "Hubi is currently unavailable -- please retry." };
         return next;
       });
     } finally {

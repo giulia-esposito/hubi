@@ -3,6 +3,7 @@ import { askGemini } from "./reasoningEngine.gemini.ts";
 
 export type { ReasoningResult, ReasoningOptions } from "./reasoningEngine.claudeCode.ts";
 import type { ReasoningOptions, ReasoningResult } from "./reasoningEngine.claudeCode.ts";
+import { withResilience } from "./resilience.ts";
 
 /**
  * The provider-agnostic contract every Reasoning Engine adapter implements.
@@ -51,6 +52,21 @@ export function resolveReasoningProvider(): ReasoningProvider {
  * reasoningEngine.gemini.ts directly, or the provider-selection point
  * silently duplicates.
  */
+/** The provider's adapter itself, without the resilience wrapper. */
+export function rawEngine(provider: ReasoningProvider): ReasoningEngine {
+  return PROVIDERS[provider];
+}
+
+// One wrapped engine per provider for the life of the process: the concurrency cap
+// must be shared by every request, so the wrapper cannot be rebuilt per call.
+const resilient = new Map<ReasoningProvider, ReasoningEngine>();
+
 export function getReasoningEngine(): ReasoningEngine {
-  return PROVIDERS[resolveReasoningProvider()];
+  const provider = resolveReasoningProvider();
+  let engine = resilient.get(provider);
+  if (!engine) {
+    engine = withResilience(rawEngine(provider));
+    resilient.set(provider, engine);
+  }
+  return engine;
 }

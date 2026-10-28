@@ -7,6 +7,8 @@ import { retrieveApplicable } from "../../../lib/runtime/retrieveApplicable.ts";
 import { regionLabel } from "../../../lib/applicability/evaluate.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../../lib/runtime/promptBuilder.ts";
 import { getReasoningEngine } from "../../../lib/runtime/reasoningEngine.ts";
+import { createRequestGuard } from "../../../lib/runtime/resilience.ts";
+import { emitTelemetry } from "../../../lib/runtime/telemetry.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtime/turnKind.ts";
 import { generateWithVerification, ledgerEnabled, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
 import { logInteraction, logInteractionError, type ApplicabilityLog, type ContinuityLog, type RetrievalLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
@@ -22,7 +24,22 @@ const NO_KNOWLEDGE_MESSAGE =
   "I don't have grounded information on this in the current knowledge base. " +
   "I won't guess -- try rephrasing, or this may be outside what's been ingested so far.";
 
+// One guard per server process: a backstop against a runaway client or loop, not an exact quota
+// (each instance keeps its own windows; see lib/runtime/resilience.ts).
+const requestGuard = createRequestGuard();
+
 export async function POST(req: Request): Promise<Response> {
+  // Behind IAP the caller is the authenticated user; locally every caller shares one bucket.
+  const callerKey = req.headers.get("x-goog-authenticated-user-email") ?? "anonymous";
+  const verdict = requestGuard.check(callerKey);
+  if (!verdict.allowed) {
+    const retryAfterSec = Math.max(1, Math.ceil(verdict.retryAfterMs / 1000));
+    emitTelemetry("interaction_error", { type: "interaction_error", timestamp: new Date().toISOString(), error: `rate-limited (${verdict.scope})`, retryAfterSec });
+    return new Response(JSON.stringify({ error: "rate-limited", scope: verdict.scope, retryAfterSec }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Retry-After": String(retryAfterSec) },
+    });
+  }
   const body = await req.json().catch(() => null);
   const parsed = parseChatRequest(body);
 
@@ -232,6 +249,8 @@ export async function POST(req: Request): Promise<Response> {
           question,
           error: String(response.error ?? "reasoning engine failed"),
           latencyMs: durationMs,
+          engineAttempts: response.attempts,
+          engineRetryWaitMs: response.retryWaitMs,
           applicability,
           retrieval,
           continuity,
@@ -267,6 +286,8 @@ export async function POST(req: Request): Promise<Response> {
         modelMs: response.durationMs,
         verification: verification.buffered ? verification : undefined,
         latencyMs: durationMs,
+        engineAttempts: response.attempts,
+        engineRetryWaitMs: response.retryWaitMs,
         ok: true,
       });
 

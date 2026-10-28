@@ -99,6 +99,9 @@ export interface InteractionRecord {
     ledger?: { claim: string; source: number; quote: string }[];
   };
   latencyMs: number;
+  /** Model calls made for the final response and time spent waiting between retries (provider resilience). */
+  engineAttempts?: number;
+  engineRetryWaitMs?: number;
   ok: boolean;
 }
 
@@ -111,6 +114,8 @@ export interface InteractionErrorRecord {
   question: string;
   error: string;
   latencyMs: number;
+  engineAttempts?: number;
+  engineRetryWaitMs?: number;
   applicability?: ApplicabilityLog;
   retrieval?: RetrievalLog;
   continuity?: ContinuityLog;

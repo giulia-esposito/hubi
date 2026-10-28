@@ -1,6 +1,6 @@
 import { test, describe, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { resolveReasoningProvider, getReasoningEngine } from "../lib/runtime/reasoningEngine.ts";
+import { resolveReasoningProvider, getReasoningEngine, rawEngine } from "../lib/runtime/reasoningEngine.ts";
 import { askClaudeCode } from "../lib/runtime/reasoningEngine.claudeCode.ts";
 import { askGemini } from "../lib/runtime/reasoningEngine.gemini.ts";
 
@@ -24,19 +24,22 @@ afterEach(() => {
 describe("reasoningEngine provider selection", () => {
   test("defaults to claude-code when unset -- local dev must be unaffected by this migration", () => {
     assert.equal(resolveReasoningProvider(), "claude-code");
-    assert.equal(getReasoningEngine(), askClaudeCode);
+    assert.equal(rawEngine(resolveReasoningProvider()), askClaudeCode);
+    assert.equal(typeof getReasoningEngine(), "function");
   });
 
   test("selects claude-code when explicitly set", () => {
     process.env.HUBI_REASONING_PROVIDER = "claude-code";
     assert.equal(resolveReasoningProvider(), "claude-code");
-    assert.equal(getReasoningEngine(), askClaudeCode);
+    assert.equal(rawEngine(resolveReasoningProvider()), askClaudeCode);
+    assert.equal(typeof getReasoningEngine(), "function");
   });
 
   test("selects gemini when explicitly set", () => {
     process.env.HUBI_REASONING_PROVIDER = "gemini";
     assert.equal(resolveReasoningProvider(), "gemini");
-    assert.equal(getReasoningEngine(), askGemini);
+    assert.equal(rawEngine(resolveReasoningProvider()), askGemini);
+    assert.notEqual(getReasoningEngine(), rawEngine("gemini")); // wrapped with the resilience policy
   });
 
   test("is case-insensitive and trims whitespace", () => {

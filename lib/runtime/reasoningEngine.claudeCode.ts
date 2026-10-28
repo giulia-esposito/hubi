@@ -7,6 +7,9 @@ export interface ReasoningResult {
   mode: "stream";
   durationMs: number;
   error?: string;
+  /** Set by the resilience wrapper (lib/runtime/resilience.ts): model calls made, and time spent waiting between retries. */
+  attempts?: number;
+  retryWaitMs?: number;
 }
 
 export interface ReasoningOptions {
