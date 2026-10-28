@@ -49,3 +49,31 @@ Answers with unsupported figures or value language, baseline vs after the guardr
 - A creation verb in an operational question ("create an opportunity in Salesforce") buffers that turn although it can never be revised.
 - If the model omits the planning-mode tag, the draft is not checked.
 - A revision can swap a term for a synonym the sources do contain ("ROI" -> "measurable results") instead of removing the claim.
+
+## Claims ledger: attribution check (observe-only by default)
+
+Toward closing Finding #005, a Business Assistance answer can also return a hidden **claims ledger**: each factual claim, the `[Source n]` it relies on, and the exact words quoted from it (`lib/runtime/claimAttribution.ts`). The ledger is stripped from the visible answer and from conversation history, and verified deterministically:
+
+| Check | Flags |
+|---|---|
+| `bad-source`, `quote-not-found` | a citation that does not exist, or a quote that is not verbatim in the cited source |
+| `figure-not-in-quote`, `figure-unattributed` | a figure in a claim, or in the answer, that no quote backs |
+| `causal-strengthening` | "drives", "ensures", "leads to", "significantly"... in the claim but not in the quote |
+| `dropped-qualifier` | region, population, sample (from the quote's line or its note/source line), a comparison basis or an "up to"/"average" hedge (from the quote's line only) that the claim leaves out |
+
+Nothing in the rules names a product, offer, region, industry or artifact type; region names come from the approved vocabulary. A missing or malformed ledger is recorded as such and never penalized. Limits: it cannot judge whether a quote truly supports a claim's meaning, and a claim left out of the ledger is caught only when it contains a figure (an unledgered "drives company performance" is not seen).
+
+### Setting
+
+- Default: the ledger is requested and verified, but attribution violations are **recorded only** (`verification.attribution`, `verification.ledger` in the interaction log); they do not trigger a revision.
+- `HUBI_CLAIM_LEDGER=enforce`: attribution violations also trigger the single revision call.
+- `HUBI_CLAIM_LEDGER=0`: no ledger (the figure/value-language check is unchanged).
+
+### Why observe-only (Gemini 2.5 Flash, real corpus, 5 scenarios x 3 runs, enforced)
+
+- 100% of drafts were flagged in every scenario; a revision was triggered every time and accepted only 1/3 to 2/3 of the time. Mean violations per answer fell, e.g. 3.7 to 2.3, 6.3 to 5.3, but no scenario reached zero.
+- Latency roughly doubled (for example 8.3s to 16.6s, 15.0s to 28.5s; the revision adds 11-27s).
+- Precision, after narrowing hedge/comparison to the quote's own line: the `causal-strengthening` and `figure-not-in-quote` flags inspected by hand were real ("ensures", "drives", "leading to" where the source states a comparison). `dropped-qualifier` is the noisiest class and `quote-not-found` often reflects a paraphrased quote.
+- So enforcing by default would cost about 2x latency for a partial effect. Observe-only gives pilot telemetry on how often each type occurs at no latency cost; enforcement is a Product decision (latency against fidelity).
+
+Finding #005 stays open.

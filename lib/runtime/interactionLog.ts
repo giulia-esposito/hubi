@@ -89,6 +89,10 @@ export interface InteractionRecord {
     extraMs: number;
     /** The first draft, kept only when a revision was attempted; the final text is `response`. */
     draft?: string;
+    /** Claims-ledger outcome for the final answer (Finding #005 attribution check). */
+    attribution?: { status: string; claims: number; violations: number; byType: Record<string, number> };
+    /** The final answer's ledger (capped): each claim, its source number and the quoted words. */
+    ledger?: { claim: string; source: number; quote: string }[];
   };
   latencyMs: number;
   ok: boolean;

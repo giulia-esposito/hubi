@@ -10,7 +10,7 @@ import { buildGovernedIndex } from "../../lib/runtime/governedIndex.ts";
 import { retrieveApplicable } from "../../lib/runtime/retrieveApplicable.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../lib/runtime/promptBuilder.ts";
 import { getReasoningEngine, type ReasoningEngine } from "../../lib/runtime/reasoningEngine.ts";
-import { generateWithVerification, shouldVerify, type VerificationInfo } from "../../lib/runtime/verifiedGeneration.ts";
+import { generateWithVerification, ledgerEnabled, shouldVerify, type VerificationInfo } from "../../lib/runtime/verifiedGeneration.ts";
 import { extractResponseTags } from "../../lib/runtime/turnKind.ts";
 import { formatCitation } from "../../lib/runtime/citationBuilder.ts";
 import { regionLabel } from "../../lib/applicability/evaluate.ts";
@@ -98,12 +98,15 @@ export async function converse(corpus: LiveCorpus, userMessages: string[]): Prom
       const modelStart = performance.now();
       // Same path as app/api/chat/route.ts, including the pilot claim guardrail.
       const gated = decision.mode === "must-clarify" || decision.mode === "no-applicable-content";
+      const verify = shouldVerify(question, lastPlanningMode) && !gated;
+      const useLedger = verify && ledgerEnabled();
       const generated = await generateWithVerification({
         engine: retryingEngine,
-        prompt: buildPrompt(question, decision.eligible, history, decision),
+        prompt: buildPrompt(question, decision.eligible, history, decision, { ledger: useLedger }),
         systemPrompt: HUBI_SYSTEM_PROMPT,
         retrievedTexts: decision.eligible.map((r) => r.chunk.text),
-        verify: shouldVerify(question, lastPlanningMode) && !gated,
+        verify,
+        ledger: useLedger,
       });
       const response = generated.response;
       verification = generated.verification;

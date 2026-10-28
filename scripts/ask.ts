@@ -6,7 +6,7 @@ import { retrieveApplicable } from "../lib/runtime/retrieveApplicable.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../lib/runtime/promptBuilder.ts";
 import { formatApplicabilityLabel, formatCitation } from "../lib/runtime/citationBuilder.ts";
 import { getReasoningEngine, resolveReasoningProvider } from "../lib/runtime/reasoningEngine.ts";
-import { generateWithVerification, shouldVerify } from "../lib/runtime/verifiedGeneration.ts";
+import { generateWithVerification, ledgerEnabled, shouldVerify } from "../lib/runtime/verifiedGeneration.ts";
 import { createSession, addTurn, accumulatedUserQuery, type Session } from "../lib/runtime/sessionState.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../lib/runtime/turnKind.ts";
 
@@ -53,18 +53,20 @@ async function handleQuestion(question: string, index: RetrievalIndex, session: 
     return;
   }
 
-  const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision);
+  const verify = shouldVerify(question, session.lastPlanningMode);
+  const useLedger = verify && ledgerEnabled();
+  const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision, { ledger: useLedger });
 
   process.stdout.write("\nHubi: ");
   const streamer = createTagAwareStreamer((visible) => process.stdout.write(visible));
   // Verify-and-revise (prototype, HUBI_VERIFY_CLAIMS=1): artifact-request turns are buffered and checked.
-  const verify = shouldVerify(question, session.lastPlanningMode);
   const { response, verification } = await generateWithVerification({
     engine: getReasoningEngine(),
     prompt,
     systemPrompt: HUBI_SYSTEM_PROMPT,
     retrievedTexts: results.map((r) => r.chunk.text),
     verify,
+    ledger: useLedger,
     onDelta: (t) => streamer.push(t),
   });
   if (verify) {

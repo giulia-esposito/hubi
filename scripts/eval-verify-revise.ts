@@ -32,7 +32,7 @@ import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../lib/runtime/promptBuilder.ts
 import { getReasoningEngine, resolveReasoningProvider, type ReasoningEngine } from "../lib/runtime/reasoningEngine.ts";
 import { extractResponseTags } from "../lib/runtime/turnKind.ts";
 import { verifyClaims } from "../lib/runtime/claimVerifier.ts";
-import { generateWithVerification, type VerificationInfo } from "../lib/runtime/verifiedGeneration.ts";
+import { generateWithVerification, ledgerEnabled, type VerificationInfo } from "../lib/runtime/verifiedGeneration.ts";
 import type { Turn } from "../lib/runtime/sessionState.ts";
 import { CAUSAL_STRENGTHENING, splitSentences } from "./lib/claimFidelityChecks.ts";
 import { loadCorpus } from "./lib/liveConversation.ts";
@@ -95,10 +95,11 @@ async function runArm(s: Scenario, history: Turn[], verify: boolean): Promise<Ar
     lastPlanningMode: userMessages.length > 1 ? "business-assistance" : undefined,
   });
   const retrievedTexts = decision.eligible.map((r) => r.chunk.text);
-  const prompt = buildPrompt(question, decision.eligible, history, decision);
+  const useLedger = verify && ledgerEnabled();
+  const prompt = buildPrompt(question, decision.eligible, history, decision, { ledger: useLedger });
 
   const log: string[] = [];
-  const turn = await generateWithVerification({ engine: recordingEngine(log), prompt, systemPrompt: HUBI_SYSTEM_PROMPT, retrievedTexts, verify });
+  const turn = await generateWithVerification({ engine: recordingEngine(log), prompt, systemPrompt: HUBI_SYSTEM_PROMPT, retrievedTexts, verify, ledger: useLedger });
   if (!turn.response.ok) throw new Error(`engine error: ${turn.response.error}`);
   const final = extractResponseTags(turn.response.text);
   return {
@@ -110,6 +111,18 @@ async function runArm(s: Scenario, history: Turn[], verify: boolean): Promise<Ar
     firstDraft: extractResponseTags(log[0] ?? "").text,
     planningMode: final.planningMode,
   };
+}
+
+function ledgerStatus(runs: ArmRun[]): string {
+  const counts: Record<string, number> = {};
+  for (const r of runs) if (r.verification?.checked) counts[r.verification.attribution?.status ?? "none"] = (counts[r.verification.attribution?.status ?? "none"] ?? 0) + 1;
+  return Object.entries(counts).map(([k, v]) => `${k} ${v}`).join(", ") || "n/a";
+}
+
+function attributionTypes(runs: ArmRun[]): string {
+  const counts: Record<string, number> = {};
+  for (const r of runs) for (const [k, v] of Object.entries(r.verification?.attribution?.byType ?? {})) counts[k] = (counts[k] ?? 0) + v;
+  return Object.entries(counts).map(([k, v]) => `${k} ${v}`).join(", ") || "none";
 }
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
@@ -166,6 +179,8 @@ async function main() {
       `  verified arm: drafts with violations  ${pct(draftViolating.length, checked.length)}  (business-assistance turns: ${ba.length}/${ver.length})`,
       `  verified arm: revision triggered      ${pct(triggered.length, ver.length)} | accepted ${pct(accepted.length, triggered.length)}`,
       `  verified arm: FINAL with violations   ${pct(finalViolating.length, ver.length)}`,
+      `  verified arm: FINAL with any violation (incl. attribution) ${pct(checked.filter((v) => (v.verification?.violationsAfter ?? 0) > 0).length, checked.length)} | mean violations ${mean(checked.map((v) => v.verification?.violationsBefore ?? 0)).toFixed(1)} -> ${mean(checked.map((v) => v.verification?.violationsAfter ?? 0)).toFixed(1)}`,
+      `  ledger: status ${ledgerStatus(ver)} | drafts with attribution violations ${pct(checked.filter((v) => (v.verification?.attribution?.violations ?? 0) > 0).length, checked.length)} (${attributionTypes(checked)})`,
       `  causal-vocabulary sentences per answer: baseline ${mean(base.map((b) => b.causalSentences)).toFixed(1)} | verified final ${mean(ver.map((v) => v.causalSentences)).toFixed(1)}`,
       `  latency: baseline ${secs(mean(base.map((b) => b.modelMs)))} | verified ${secs(mean(ver.map((v) => v.modelMs)))} overall` +
         (triggered.length ? ` | revision adds ${secs(mean(extra))} (max ${secs(Math.max(...extra))}) when triggered` : ""),

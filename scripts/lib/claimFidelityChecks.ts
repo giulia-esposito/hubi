@@ -13,7 +13,7 @@
  * Measurement only: only the shared helpers re-exported from lib/runtime/claimVerifier.ts are used by production.
  */
 
-import { splitSentences, type CheckResult } from "../../lib/runtime/claimVerifier.ts";
+import { CAUSAL_STRENGTHENING, splitSentences, type CheckResult } from "../../lib/runtime/claimVerifier.ts";
 
 // The generic checks that production also uses (unsupported figures, unsupported
 // value language, sentence splitting) live in lib/runtime/claimVerifier.ts so the
@@ -23,6 +23,7 @@ export {
   VALUE_LANGUAGE,
   checkUnsupportedValueLanguage,
   checkUngroundedFigures,
+  CAUSAL_STRENGTHENING,
 } from "../../lib/runtime/claimVerifier.ts";
 export type { CheckResult } from "../../lib/runtime/claimVerifier.ts";
 
@@ -86,14 +87,6 @@ export function checkFigureQualifiers(
   }
   return { claimPresent, violations };
 }
-
-/**
- * Words that turn a comparison ("companies with X show higher Y than those
- * without") into a causal or conclusive statement. Matching is deliberately
- * limited to strengthening vocabulary, not to every verb.
- */
-export const CAUSAL_STRENGTHENING =
-  /\b(prove[sdn]?|proven|proof|caus(e|es|ed|ing)|driv(e|es|en|ing)|boost(s|ed|ing)?|increas(e|es|ed|ing)|improv(e|es|ed|ing)|rais(e|es|ed|ing)|guarantee[sd]?|ensur(e|es|ed|ing)|lead(s|ing)? to|result(s|ed|ing)? in|because of|thanks to|significantly)\b/i;
 
 /**
  * Builds the trigger that identifies a sentence stating a compared claim:

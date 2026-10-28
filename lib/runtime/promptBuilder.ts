@@ -2,6 +2,7 @@ import type { Chunk } from "../ingestion/chunk.ts";
 import type { ScoredChunk } from "../retrieval/index.ts";
 import type { Turn } from "./sessionState.ts";
 import { regionLabel, UNSPECIFIED_REGION_LABEL, type ApplicabilityDecision } from "../applicability/evaluate.ts";
+import { LEDGER_INSTRUCTION } from "./claimAttribution.ts";
 
 export const HUBI_SYSTEM_PROMPT = `You are Hubi, Wellhub Revenue's AI Copilot. Your job is to help Revenue teammates get work done using Wellhub's approved organizational knowledge. You have no tools, files, or knowledge sources other than the "Retrieved Knowledge" provided in the user message below.
 
@@ -77,7 +78,8 @@ export function buildPrompt(
   question: string,
   results: ScoredChunk[],
   history: Turn[] = [],
-  decision?: ApplicabilityDecision
+  decision?: ApplicabilityDecision,
+  options: { ledger?: boolean } = {}
 ): string {
   const historyBlock = history.length
     ? `Conversation so far:\n${history.map((t) => `${t.role === "user" ? "User" : "Assistant"}: ${t.content}`).join("\n")}\n\n---\n\n`
@@ -148,6 +150,7 @@ export function buildPrompt(
         `If a region-sensitive answer relies materially on them, say that their region is not specified and do not present the answer as confirmed for the user's region${regionNote}. Say it once, in one short note at the end, not after individual sentences; if the answer is not region-sensitive, do not mention it.`
     );
   }
+  if (options.ledger) notices.push(LEDGER_INSTRUCTION);
   const noticeBlock = notices.length > 0 ? `\n\n${notices.join("\n")}` : "";
 
   return `${historyBlock}${contextBlock}${noticeBlock}\n\n---\n\nUser question: ${question}`;

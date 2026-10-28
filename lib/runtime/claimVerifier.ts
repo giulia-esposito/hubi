@@ -39,6 +39,14 @@ export function splitSentences(text: string): string[] {
 }
 
 /**
+ * Words that turn a comparison ("companies with X show higher Y than those
+ * without") into a causal or conclusive statement. Matching is deliberately
+ * limited to strengthening vocabulary, not to every verb.
+ */
+export const CAUSAL_STRENGTHENING =
+  /\b(prove[sdn]?|proven|proof|caus(e|es|ed|ing)|driv(e|es|en|ing)|boost(s|ed|ing)?|increas(e|es|ed|ing)|improv(e|es|ed|ing)|rais(e|es|ed|ing)|guarantee[sd]?|ensur(e|es|ed|ing)|lead(s|ing)? to|result(s|ed|ing)? in|because of|thanks to|significantly)\b/i;
+
+/**
  * Return-on-investment, savings, productivity and similar value language.
  * Value claims are factual claims about what a product delivers, so each one
  * must exist in the retrieved knowledge.

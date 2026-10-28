@@ -1,4 +1,5 @@
 import { PLANNING_MODE_KEYWORDS, type PlanningMode } from "./planningMode.ts";
+import { stripClaimsBlock } from "./claimAttribution.ts";
 
 export type TurnKind = "grounded-answer" | "clarifying-question" | "no-grounded-answer" | "unknown";
 
@@ -44,7 +45,8 @@ export interface ResponseTags {
  * trailing tag does, and the planning mode stays "unknown".
  */
 export function extractResponseTags(rawText: string): ResponseTags {
-  let text = rawText;
+  // The hidden claims ledger (lib/runtime/claimAttribution.ts) is never part of the visible text.
+  let text = stripClaimsBlock(rawText);
   let planningMode: PlanningMode = "unknown";
   let leadingTurnKind: TurnKind = "unknown";
 

@@ -1,5 +1,6 @@
 import type { ReasoningEngine, ReasoningResult } from "./reasoningEngine.ts";
-import { buildRevisionPrompt, verifyClaims } from "./claimVerifier.ts";
+import { buildRevisionPrompt, verifyClaims, type ClaimVerification } from "./claimVerifier.ts";
+import { extractLedger, verifyAttribution, type LedgerClaim, type LedgerStatus } from "./claimAttribution.ts";
 import { isArtifactRequest } from "./factRetrieval.ts";
 import { extractResponseTags } from "./turnKind.ts";
 
@@ -49,6 +50,16 @@ export interface VerificationInfo {
   extraMs: number;
   /** The first draft, kept only when a revision was attempted, so a reviewer can see exactly what was changed. */
   draft?: string;
+  /** Claims ledger outcome for the final answer (Finding #005 attribution check). */
+  attribution?: {
+    status: LedgerStatus;
+    claims: number;
+    violations: number;
+    /** Violation counts by kind, e.g. { "dropped-qualifier": 2 }. */
+    byType: Record<string, number>;
+  };
+  /** The final answer's ledger (capped), so a reviewer can see what each claim rested on. */
+  ledger?: LedgerClaim[];
 }
 
 export interface GeneratedTurn {
@@ -75,6 +86,42 @@ export function verificationEnabled(env: Record<string, string | undefined> = pr
   return CLAIM_VERIFIER_PILOT_DEFAULT;
 }
 
+/** The claims ledger rides on verified turns; HUBI_CLAIM_LEDGER=0 turns it off (the figure and value-language check stays). */
+export function ledgerEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.HUBI_CLAIM_LEDGER?.trim() !== "0";
+}
+
+/**
+ * Whether attribution violations trigger a revision (HUBI_CLAIM_LEDGER=enforce). Default is observe-only:
+ * they are recorded in telemetry but do not cost a revision call. Measured on the pilot corpus, the
+ * attribution checks flag nearly every draft and a revision clears them only about a third of the time,
+ * so enforcing them by default would roughly double latency for little gain.
+ */
+export function ledgerEnforced(env: Record<string, string | undefined> = process.env): boolean {
+  return env.HUBI_CLAIM_LEDGER?.trim() === "enforce";
+}
+
+/** Everything the verifier checks on a Business Assistance answer: unsupported content, plus ledger attribution when a ledger came back. */
+export function verifyAnswer(rawResponse: string, retrievedTexts: string[], useLedger: boolean, enforce = false): {
+  text: string;
+  verification: ClaimVerification;
+  attribution: NonNullable<VerificationInfo["attribution"]>;
+  ledger: LedgerClaim[];
+} {
+  const ledger = extractLedger(rawResponse);
+  const artifact = extractResponseTags(rawResponse).text;
+  const base = verifyClaims(artifact, retrievedTexts);
+  const attribution = useLedger && ledger.status === "ok" ? verifyAttribution(artifact, ledger.claims, retrievedTexts) : [];
+  const byType: Record<string, number> = {};
+  for (const v of attribution) byType[v.type] = (byType[v.type] ?? 0) + 1;
+  return {
+    text: ledger.text,
+    verification: { violations: enforce ? [...base.violations, ...attribution.map((v) => v.message)] : base.violations, phrases: enforce ? [...base.phrases, ...attribution.map((v) => v.type)] : base.phrases },
+    attribution: { status: useLedger ? ledger.status : "missing", claims: ledger.claims.length, violations: attribution.length, byType },
+    ledger: ledger.claims,
+  };
+}
+
 /** Whether this turn should be buffered and verified: enabled, and predicted to be an artifact request. */
 export function shouldVerify(question: string, lastPlanningMode: string | undefined, env: Record<string, string | undefined> = process.env): boolean {
   return verificationEnabled(env) && isArtifactRequest(question, lastPlanningMode);
@@ -90,6 +137,10 @@ export async function generateWithVerification(options: {
   /** Texts of the chunks the model was given: the only support a claim can have. */
   retrievedTexts: string[];
   verify: boolean;
+  /** The prompt asked for a claims ledger, so the answer's attribution is checked too. */
+  ledger?: boolean;
+  /** Attribution violations also trigger a revision; default ledgerEnforced(). */
+  ledgerEnforce?: boolean;
   /** Streaming callback; used only when `verify` is false. */
   onDelta?: (text: string) => void;
 }): Promise<GeneratedTurn> {
@@ -107,8 +158,19 @@ export async function generateWithVerification(options: {
   const draftTags = extractResponseTags(draft.text);
   if (draftTags.planningMode !== "business-assistance") return { response: draft, verification: base };
 
-  const before = verifyClaims(draftTags.text, retrievedTexts);
-  const checked: VerificationInfo = { ...base, checked: true, violationsBefore: before.violations.length, violationsAfter: before.violations.length, phrases: before.phrases };
+  const useLedger = options.ledger === true;
+  const enforce = options.ledgerEnforce ?? ledgerEnforced();
+  const beforeAll = verifyAnswer(draft.text, retrievedTexts, useLedger, enforce);
+  const before = beforeAll.verification;
+  const checked: VerificationInfo = {
+    ...base,
+    checked: true,
+    violationsBefore: before.violations.length,
+    violationsAfter: before.violations.length,
+    phrases: before.phrases,
+    attribution: beforeAll.attribution,
+    ledger: beforeAll.ledger.slice(0, 40),
+  };
   if (before.violations.length === 0) return { response: draft, verification: checked };
 
   const start = performance.now();
@@ -118,14 +180,15 @@ export async function generateWithVerification(options: {
   if (!revision.ok) return { response: draft, verification: revised };
 
   const revisedTags = extractResponseTags(revision.text);
-  const after = verifyClaims(revisedTags.text, retrievedTexts);
+  const afterAll = verifyAnswer(revision.text, retrievedTexts, useLedger, enforce);
+  const after = afterAll.verification;
   revised.violationsAfter = after.violations.length;
 
   const intact = revisedTags.text.length >= draftTags.text.length * MIN_REVISION_RATIO;
   if (after.violations.length < before.violations.length && intact) {
     return {
       response: { ...revision, durationMs: draft.durationMs + revision.durationMs },
-      verification: { ...revised, revisionAccepted: true },
+      verification: { ...revised, revisionAccepted: true, attribution: afterAll.attribution, ledger: afterAll.ledger.slice(0, 40) },
     };
   }
   revised.violationsAfter = before.violations.length;

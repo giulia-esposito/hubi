@@ -8,7 +8,7 @@ import { regionLabel } from "../../../lib/applicability/evaluate.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../../lib/runtime/promptBuilder.ts";
 import { getReasoningEngine } from "../../../lib/runtime/reasoningEngine.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtime/turnKind.ts";
-import { generateWithVerification, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
+import { generateWithVerification, ledgerEnabled, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
 import { logInteraction, logInteractionError, type ApplicabilityLog, type ContinuityLog, type RetrievalLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
 
 // Route Handler must run in the Node.js runtime, not Edge. The Claude Code
@@ -173,7 +173,9 @@ export async function POST(req: Request): Promise<Response> {
         return;
       }
 
-      const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision);
+      // The claims ledger rides only on buffered (verified) turns, so it can never reach a streamed answer.
+      const useLedger = bufferForVerification && ledgerEnabled();
+      const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision, { ledger: useLedger });
       const streamer = createTagAwareStreamer((visible) => send({ type: "delta", text: visible }));
 
       // Verify-and-revise (prototype, HUBI_VERIFY_CLAIMS=1): turns that may be
@@ -188,6 +190,7 @@ export async function POST(req: Request): Promise<Response> {
           systemPrompt: HUBI_SYSTEM_PROMPT,
           retrievedTexts: results.map((r) => r.chunk.text),
           verify,
+          ledger: useLedger,
           onDelta: (t) => streamer.push(t),
         });
       } catch (err) {
