@@ -42,14 +42,14 @@ The two rankings are fused by reciprocal rank fusion (equal weights for a non-En
 |---|---|---|---|---|
 | plain BM25 | 87% | 93% | 0.789 | 84% |
 | **with expansion** | **91%** | **98%** | **0.817** | **89%** |
-| cross-language only (n=4), R@5 / R@15 / MRR | 25% to 50% | 25% to 75% | 0.25 to 0.39 | see note |
+| cross-language only (n=4), R@5 / R@15 / MRR | 25% to 50% | 25% to 75% | 0.25 to 0.39 | 25% to 50% |
 
 - Triggered on 17 of 45 benchmark questions (12 non-English, 5 weak English), which over-represents non-English questions by design; the real share is unknown until pilot traffic exists.
 - Cost when triggered: about 0.9s of model time with extended thinking disabled for this call (it was 3.2s with default thinking, with similar recall), plus the tokens of one short call.
 - Gains: a Spanish pricing question and a Spanish pitch request now find the English documents; a paraphrased pitch question moves from rank 7 to rank 1.
 - No lost answers, one cost: same-language Portuguese questions keep every hit in the top 15 (Recall@5 100%), but an English-expansion result can push the right passage down a place (Portuguese MRR 0.900 to 0.867).
 - Still missing: an English question about Portuguese content (`en-pt-rejection`). The model's terms were right ("rejeitadas") but the document says "Rejeição": different word forms, and BM25 has no stemming. That is a morphology limit, not a language one.
-- Tried and rejected: folding accents and adding Spanish and Portuguese stopwords to the BM25 tokenizer. It improved plain cross-language recall a little but lowered recall with expansion (R@5 91% to 89%, served 91% to 84%), so it was reverted. The benchmark is what made that a quick, evidence-based call.
+- Tried and rejected: folding accents and adding Spanish and Portuguese stopwords to the BM25 tokenizer. It improved plain cross-language recall a little but lowered recall with expansion (R@5 91% to 89%, served 89% to 84%), so it was reverted. The benchmark is what made that a quick, evidence-based call.
 
 ### What this does not change
 
