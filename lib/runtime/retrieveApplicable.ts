@@ -23,12 +23,16 @@ export interface ApplicableRetrieval {
   factPass: FactPassInfo;
   /** Wall-clock milliseconds spent in retrieval, both passes and applicability included. */
   retrievalMs: number;
+  /** Where the user's region came from: a message in the window, the pinned context, or nowhere. */
+  regionSource: "message" | "pinned" | "none";
 }
 
 export interface RetrieveOptions {
   vocabulary?: RegionVocabulary;
   /** planningMode reported on the previous turn, so a short follow-up can continue an artifact request. */
   lastPlanningMode?: string;
+  /** Region and country in force after the previous turn; used only when no message in the window names a region. */
+  pinned?: { regions: string[]; countries: string[] };
 }
 
 /**
@@ -47,7 +51,14 @@ export function retrieveApplicable(
 ): ApplicableRetrieval {
   const start = performance.now();
   const vocabulary = options.vocabulary ?? getRegionVocabulary();
-  const context = detectTaskContext(vocabulary, userMessages);
+  let context = detectTaskContext(vocabulary, userMessages);
+  // A region stated in a message always wins; the pinned region only fills in when
+  // that message has fallen out of the history window.
+  let regionSource: "message" | "pinned" | "none" = context.regions.length > 0 ? "message" : "none";
+  if (context.regions.length === 0 && options.pinned && options.pinned.regions.length > 0) {
+    context = { regions: options.pinned.regions, countries: options.pinned.countries };
+    regionSource = "pinned";
+  }
 
   const raw = search(index, retrievalQuery, OVER_FETCH_K);
   let decision: ApplicabilityDecision = { ...applyApplicability(context.regions, raw, TOP_K, { regionCue: userMessages.some(refersToOwnRegion) }), taskCountries: context.countries };
@@ -71,5 +82,5 @@ export function retrieveApplicable(
     }
   }
 
-  return { raw, decision, factPass, retrievalMs: performance.now() - start };
+  return { raw, decision, factPass, retrievalMs: performance.now() - start, regionSource };
 }

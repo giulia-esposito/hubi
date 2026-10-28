@@ -1,6 +1,6 @@
 import { getKnowledgeBase } from "../../../lib/runtime/knowledgeBase.ts";
 import { getOrCreateSession } from "../../../lib/runtime/sessionRegistry.ts";
-import { parseChatRequest, sessionFromRequest } from "../../../lib/runtime/requestSession.ts";
+import { describeHistory, parseChatRequest, sessionFromRequest } from "../../../lib/runtime/requestSession.ts";
 import { addTurn, accumulatedUserQuery } from "../../../lib/runtime/sessionState.ts";
 import { retrieveApplicable } from "../../../lib/runtime/retrieveApplicable.ts";
 
@@ -9,7 +9,7 @@ import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../../lib/runtime/promptBuil
 import { getReasoningEngine } from "../../../lib/runtime/reasoningEngine.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtime/turnKind.ts";
 import { generateWithVerification, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
-import { logInteraction, logInteractionError, type ApplicabilityLog, type RetrievalLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
+import { logInteraction, logInteractionError, type ApplicabilityLog, type ContinuityLog, type RetrievalLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
 
 // Route Handler must run in the Node.js runtime, not Edge. The Claude Code
 // adapter spawns the `claude` CLI via child_process (Edge cannot do that);
@@ -41,7 +41,18 @@ export async function POST(req: Request): Promise<Response> {
   // one) falls back to this instance's memory.
   const clientHistory = parsed.value.history !== undefined;
   const session = clientHistory ? sessionFromRequest(parsed.value) : getOrCreateSession(sessionId);
-  const continuity = { source: clientHistory ? "client-history" : "instance-memory", priorTurns: session.turns.length } as const;
+  const historyReport = parsed.value.historyReport;
+  const continuity: ContinuityLog = {
+    source: clientHistory ? "client-history" : "instance-memory",
+    priorTurns: session.turns.length,
+    // The client supplies the history, so record exactly what was received and used.
+    history: clientHistory ? describeHistory(session.turns, historyReport) : undefined,
+  };
+  // A context loss is never silent: tell the user when the caps dropped earlier turns.
+  const historyNotice =
+    historyReport && (historyReport.droppedOldest > 0 || historyReport.truncatedTurns > 0)
+      ? { droppedOldest: historyReport.droppedOldest, truncatedTurns: historyReport.truncatedTurns }
+      : undefined;
   const historyBeforeThisTurn = [...session.turns];
   addTurn(session, "user", question);
 
@@ -53,8 +64,9 @@ export async function POST(req: Request): Promise<Response> {
   // Retrieval is unchanged; the Applicability Layer (Finding #002) then
   // filters what the model may see: mismatched regions never pass, region-
   // specific content is withheld until the user's region is known.
-  const { raw, decision, factPass, retrievalMs } = retrieveApplicable(index, retrievalQuery, userMessages, {
+  const { raw, decision, factPass, retrievalMs, regionSource } = retrieveApplicable(index, retrievalQuery, userMessages, {
     lastPlanningMode: session.lastPlanningMode,
+    pinned: parsed.value.pinned,
   });
   const results = decision.eligible;
   const sources: SourceRef[] = results.map((r, i) => ({
@@ -80,6 +92,7 @@ export async function POST(req: Request): Promise<Response> {
   const applicability: ApplicabilityLog = {
     taskRegions: decision.taskRegions,
     taskCountries: decision.taskCountries,
+    regionSource,
     mode: decision.mode,
     withheldCount: decision.withheldCount,
     withheldRegions: decision.withheldRegions,
@@ -114,6 +127,8 @@ export async function POST(req: Request): Promise<Response> {
         // Pilot claim guardrail: a buffered turn shows nothing until the whole
         // answer is drafted and checked, so the UI needs to say so.
         buffered: bufferForVerification && raw.length > 0,
+        // Set when the history caps dropped earlier turns from this answer's context.
+        historyNotice,
       });
 
       // Deterministic refusal only when retrieval itself found nothing. When
@@ -145,7 +160,15 @@ export async function POST(req: Request): Promise<Response> {
           ok: true,
         });
 
-        send({ type: "done", ok: true, durationMs, interactionId, turnKind: "no-grounded-answer", planningMode: "unknown" });
+        send({
+          type: "done",
+          ok: true,
+          durationMs,
+          interactionId,
+          turnKind: "no-grounded-answer",
+          planningMode: "unknown",
+          pinned: { regions: decision.taskRegions, countries: decision.taskCountries },
+        });
         controller.close();
         return;
       }
@@ -253,6 +276,8 @@ export async function POST(req: Request): Promise<Response> {
         verification: verification.buffered
           ? { checked: verification.checked, revised: verification.revised, accepted: verification.revisionAccepted }
           : undefined,
+        // Region and country in force; the client sends them back so they outlive the history window.
+        pinned: { regions: decision.taskRegions, countries: decision.taskCountries },
       });
       controller.close();
     },

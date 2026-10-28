@@ -1,4 +1,5 @@
 import { emitTelemetry } from "./telemetry.ts";
+import type { HistoryLog } from "./requestSession.ts";
 
 export interface SourceRef {
   documentTitle: string;
@@ -18,6 +19,8 @@ export interface SourceRef {
 
 /** Where this turn's conversation context came from. */
 export interface ContinuityLog {
+  /** What the model was given as history (digest, size, last turns, what the caps dropped). */
+  history?: HistoryLog;
   /** "client-history": rebuilt from the turns the browser sent (instance-independent); "instance-memory": fallback for clients that send none. */
   source: "client-history" | "instance-memory";
   /** Turns of earlier conversation available to this turn. */
@@ -51,6 +54,8 @@ export interface ApplicabilityLog {
   factPass?: { triggered: boolean; reason: string; added: number; query?: string };
   /** Milliseconds spent in retrieval (both passes plus applicability). */
   retrievalMs?: number;
+  /** Where the region in force came from: a message in the window, the pinned context, or nowhere. */
+  regionSource?: "message" | "pinned" | "none";
 }
 
 export interface InteractionRecord {

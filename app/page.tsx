@@ -33,10 +33,15 @@ interface ChatMessage {
   waitMs?: number;
   /** planningMode reported for this answer; sent back so a short follow-up can continue an artifact request. */
   planningMode?: string;
+  /** Region and country in force after this answer; sent back so they outlive the history window. */
+  pinned?: { regions: string[]; countries: string[] };
+  /** Set when the server's history caps left earlier turns out of this answer's context. */
+  historyNotice?: { droppedOldest: number; truncatedTurns: number };
 }
 
 // Continuity does not depend on a Cloud Run instance: every request carries the prior turns.
-const MAX_HISTORY_TURNS = 24;
+// More than the server keeps (24), so the server can tell the user when it had to drop turns.
+const MAX_HISTORY_SENT = 48;
 
 const SESSION_STORAGE_KEY = "hubi-session-id";
 
@@ -186,9 +191,10 @@ export default function ChatPage() {
     // The conversation travels with the request (see lib/runtime/requestSession.ts).
     const history = messages
       .filter((m) => !m.error && m.text.trim())
-      .slice(-MAX_HISTORY_TURNS)
+      .slice(-MAX_HISTORY_SENT)
       .map((m) => ({ role: m.role, content: m.text }));
     const lastPlanningMode = [...messages].reverse().find((m) => m.role === "assistant" && !m.error && m.planningMode)?.planningMode;
+    const pinned = [...messages].reverse().find((m) => m.role === "assistant" && !m.error && m.pinned)?.pinned;
 
     setInput("");
     setIsStreaming(true);
@@ -198,7 +204,7 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, question, history, lastPlanningMode }),
+        body: JSON.stringify({ sessionId, question, history, lastPlanningMode, pinned }),
       });
 
       if (!res.body) throw new Error("No response body");
@@ -249,13 +255,13 @@ export default function ChatPage() {
 
       let updated: ChatMessage;
       if (event.type === "retrieval") {
-        updated = { ...last, sources: event.sources, buffered: Boolean(event.buffered) };
+        updated = { ...last, sources: event.sources, buffered: Boolean(event.buffered), historyNotice: event.historyNotice };
       } else if (event.type === "delta") {
         const firstText = last.waitMs === undefined && last.sentAt !== undefined && event.text;
         updated = { ...last, text: last.text + event.text, waitMs: firstText ? Math.round(performance.now() - (last.sentAt as number)) : last.waitMs };
       } else if (event.type === "done") {
         updated = event.ok
-          ? { ...last, isStreaming: false, turnKind: event.turnKind, planningMode: event.planningMode, interactionId: event.interactionId }
+          ? { ...last, isStreaming: false, turnKind: event.turnKind, planningMode: event.planningMode, pinned: event.pinned, interactionId: event.interactionId }
           : { ...last, isStreaming: false, error: "Hubi is currently unavailable -- please retry." };
       } else {
         return prev;
@@ -324,6 +330,12 @@ export default function ChatPage() {
               <span className={`turn-kind-badge ${turnKindClassName(m.turnKind)}`}>{turnKindLabel(m.turnKind)}</span>
             )}
             {m.role === "assistant" && m.error && <div className="error-banner">{m.error}</div>}
+            {m.role === "assistant" && m.historyNotice && (
+              <div className="history-notice">
+                Earlier messages in this conversation were left out of this answer's context ({m.historyNotice.droppedOldest} turn
+                {m.historyNotice.droppedOldest === 1 ? "" : "s"}). Restate anything important, or start a new session.
+              </div>
+            )}
             {m.role === "assistant" && !m.isStreaming && m.sources && <SourcesList sources={m.sources} />}
             {m.role === "assistant" && !m.isStreaming && !m.error && (
               <Feedback message={m} onSubmit={(helpful, comment, tags) => submitFeedback(i, helpful, comment, tags)} />

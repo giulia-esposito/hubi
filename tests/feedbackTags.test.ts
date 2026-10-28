@@ -18,3 +18,11 @@ describe("pilot feedback tags", () => {
     for (const bad of [undefined, null, "too-slow", 3, { 0: "too-slow" }]) assert.deepEqual(sanitizeFeedbackTags(bad), []);
   });
 });
+
+describe("lost-context tag", () => {
+  test("testers can report a forgotten conversation, which is a tripwire for server-side sessions", () => {
+    assert.ok((FEEDBACK_TAGS as readonly string[]).includes("lost-context"));
+    assert.ok(FEEDBACK_TAG_LABELS["lost-context"]);
+    assert.deepEqual(sanitizeFeedbackTags(["lost-context"]), ["lost-context"]);
+  });
+});

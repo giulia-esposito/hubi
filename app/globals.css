@@ -275,6 +275,14 @@ body {
   text-decoration: underline;
 }
 
+.history-notice {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  border-left: 3px solid var(--border, #d0d0d0);
+  padding-left: 8px;
+  margin-top: 2px;
+}
+
 .feedback-tags {
   display: flex;
   flex-wrap: wrap;
