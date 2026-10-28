@@ -20,9 +20,10 @@
  * text is never logged, only chunk ids.
  */
 import { appendFileSync, mkdirSync } from "node:fs";
+import { BUILD_INFO } from "./buildInfo.ts";
 import path from "node:path";
 
-export type TelemetryEvent = "interaction" | "feedback" | "interaction_error";
+export type TelemetryEvent = "interaction" | "feedback" | "interaction_error" | "startup";
 
 export const TELEMETRY_SCHEMA = "hubi-pilot-telemetry-v1";
 
@@ -83,6 +84,8 @@ export function buildTelemetryEntry(
     // Which deployed build produced this entry; absent when running locally.
     service: env.K_SERVICE,
     revision: env.K_REVISION,
+    // The exact commit that produced this entry (set by the deploy script's build).
+    commit: BUILD_INFO.commit,
     provider: env.HUBI_REASONING_PROVIDER || "claude-code",
     model: env.HUBI_REASONING_PROVIDER === "gemini" ? env.HUBI_GEMINI_MODEL || "gemini-2.5-flash" : undefined,
     ...record,

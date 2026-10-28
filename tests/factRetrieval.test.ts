@@ -1,3 +1,4 @@
+import { SKIP_WITHOUT_CORPUS } from "./helpers/corpus.ts";
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
@@ -74,7 +75,7 @@ describe("buildFactQuery", () => {
   });
 });
 
-describe("real corpus: the conditional second pass", () => {
+describe("real corpus: the conditional second pass", { skip: SKIP_WITHOUT_CORPUS }, () => {
   const { chunks } = ingestContentRepository("Content Repository");
   const { index } = buildGovernedIndex(chunks);
   const run = (messages: string[], lastPlanningMode?: string) => retrieveApplicable(index, messages.join(" "), messages, { lastPlanningMode });

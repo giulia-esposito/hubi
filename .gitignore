@@ -46,3 +46,6 @@ npm-debug.log*
 # Deliberately NOT committed until validated; see
 # data/region-membership.example.json and lib/applicability/regions.ts.
 data/region-membership.local.json
+
+# Written by scripts/deploy.ts into the exported commit; never committed.
+build-info.json

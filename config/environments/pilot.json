@@ -1,0 +1,8 @@
+{
+  "name": "pilot",
+  "project": "wh-revenue-sandbox",
+  "region": "us-central1",
+  "service": "hubi-pilot",
+  "deployFlags": ["--memory", "2Gi"],
+  "allowedBranches": ["main", "develop"]
+}

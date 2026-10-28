@@ -1,3 +1,4 @@
+import { SKIP_WITHOUT_CORPUS } from "./helpers/corpus.ts";
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
@@ -452,7 +453,7 @@ describe("prompt construction under the Applicability Layer", () => {
 
 // ---- Real-corpus regressions (Findings #001 and #002). No model call. ----
 
-describe("real corpus: Findings #001 / #002 applicability scenarios", () => {
+describe("real corpus: Findings #001 / #002 applicability scenarios", { skip: SKIP_WITHOUT_CORPUS }, () => {
   const { chunks } = ingestContentRepository("Content Repository");
   const index = buildIndex(chunks);
 
@@ -595,7 +596,7 @@ describe("region cue: the user says the answer depends on their own region", () 
     assert.equal(applyApplicability([], scored([globalChunk("g")]), 5, { regionCue: true }).mode, "none");
   });
 
-  test("real corpus: 'in my region' with no region stated clarifies; the same question without the cue does not force it", () => {
+  test("real corpus: 'in my region' with no region stated clarifies; the same question without the cue does not force it", { skip: SKIP_WITHOUT_CORPUS }, () => {
     const { chunks } = ingestContentRepository("Content Repository");
     const index = buildIndex(chunks);
     const cued = retrieveApplicable(index, "What is the process for onboarding a new client in my region?", ["What is the process for onboarding a new client in my region?"], { vocabulary: vocab });

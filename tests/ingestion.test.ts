@@ -1,9 +1,10 @@
+import { SKIP_WITHOUT_CORPUS } from "./helpers/corpus.ts";
 import { test, describe, before } from "node:test";
 import assert from "node:assert/strict";
 import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
 import type { IngestionResult } from "../lib/ingestion/ingest.ts";
 
-describe("ingestion: real Content Repository", () => {
+describe("ingestion: real Content Repository", { skip: SKIP_WITHOUT_CORPUS }, () => {
   let result: IngestionResult;
 
   before(() => {

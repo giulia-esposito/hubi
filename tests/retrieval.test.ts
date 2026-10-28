@@ -1,3 +1,4 @@
+import { SKIP_WITHOUT_CORPUS } from "./helpers/corpus.ts";
 import { test, describe, before } from "node:test";
 import assert from "node:assert/strict";
 import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
@@ -44,7 +45,7 @@ describe("retrieval: BM25 mechanics (synthetic fixture)", () => {
   });
 });
 
-describe("retrieval: real corpus integration", () => {
+describe("retrieval: real corpus integration", { skip: SKIP_WITHOUT_CORPUS }, () => {
   let index: ReturnType<typeof buildIndex>;
 
   before(() => {

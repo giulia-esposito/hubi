@@ -1,3 +1,4 @@
+import { SKIP_WITHOUT_CORPUS } from "./helpers/corpus.ts";
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
@@ -121,7 +122,7 @@ describe("sessionFromRequest: no state is shared between requests or instances",
   });
 });
 
-describe("real corpus: context survives a change of instance", () => {
+describe("real corpus: context survives a change of instance", { skip: SKIP_WITHOUT_CORPUS }, () => {
   const { chunks } = ingestContentRepository("Content Repository");
   const index = buildIndex(chunks);
 
@@ -239,7 +240,9 @@ describe("pinned context survives the history window", () => {
     assert.ok(r.ok);
     assert.deepEqual(r.value.pinned, { regions: ["Brazil"], countries: [] });
   });
+});
 
+describe("pinned context survives the history window (real corpus)", { skip: SKIP_WITHOUT_CORPUS }, () => {
   const { chunks } = ingestContentRepository("Content Repository");
   const index = buildIndex(chunks);
   const longConversation = (firstMessage: string) => {

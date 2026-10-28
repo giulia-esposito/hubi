@@ -169,12 +169,14 @@ export function getRegionVocabulary(): RegionVocabulary {
   if (cached) return cached;
   const configured = process.env.HUBI_REGION_CONFIG?.trim();
   const configPath = configured || path.join(process.cwd(), DEFAULT_REGION_CONFIG_PATH);
-  if (!existsSync(configPath)) {
+  // The path is dynamic on purpose (an optional local override). Without the ignore
+  // comments below the bundler traces the whole project into the production output.
+  if (!existsSync(/*turbopackIgnore: true*/ configPath)) {
     cached = createRegionVocabulary(null);
     return cached;
   }
   try {
-    const parsed = JSON.parse(readFileSync(configPath, "utf8")) as RegionConfigFile;
+    const parsed = JSON.parse(readFileSync(/*turbopackIgnore: true*/ configPath, "utf8")) as RegionConfigFile;
     cached = createRegionVocabulary(parsed, configPath);
   } catch (err) {
     cached = createRegionVocabulary(null);

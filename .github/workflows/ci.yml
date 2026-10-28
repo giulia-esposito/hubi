@@ -1,0 +1,44 @@
+name: CI
+
+# Runs on every push and pull request to develop and main. It needs no GCP
+# credentials and deploys nothing: deployment is scripts/deploy.ts (see
+# docs/deployment-runbook.md). The real Content Repository is gitignored, so
+# the tests that need it skip themselves here; every synthetic and
+# deterministic test still runs.
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # matches the production image (Dockerfile)
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Tests (real-corpus tests skip: Content Repository is not in GitHub)
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      # Informational: transitive advisories are tracked in docs/gcp-deployment-guide.md.
+      - name: Dependency audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true

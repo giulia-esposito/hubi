@@ -144,6 +144,8 @@ Do not proceed to §6 until this passes.
 
 ## 6. Build and deploy
 
+> **Superseded for day-to-day deploys:** use `scripts/deploy.ts` and `docs/deployment-runbook.md` (exact commit, only the flags that must change, before/after protection check, rollback). The commands below describe the original from-scratch setup and its flags (`--set-env-vars`, `--service-account`...) must NOT be passed to the existing sandbox service.
+
 Simplest path — build and deploy from source in one command (uses Cloud Build):
 
 ```bash

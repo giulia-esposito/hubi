@@ -1,3 +1,4 @@
+import { SKIP_WITHOUT_CORPUS } from "./helpers/corpus.ts";
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
@@ -48,7 +49,7 @@ describe("AI Eligibility deny-list", () => {
   });
 });
 
-describe("real corpus: Not Eligible content never reaches retrieval or reasoning", () => {
+describe("real corpus: Not Eligible content never reaches retrieval or reasoning", { skip: SKIP_WITHOUT_CORPUS }, () => {
   const { chunks } = ingestContentRepository("Content Repository");
   const rkc21 = chunks.filter((c) => c.documentId === "RKC-000021");
   const { index, excluded } = buildGovernedIndex(chunks);
