@@ -41,8 +41,8 @@ The two rankings are fused by reciprocal rank fusion (equal weights for a non-En
 | | Raw R@5 | Raw R@15 | Raw MRR | Served R@5 |
 |---|---|---|---|---|
 | plain BM25 | 87% | 93% | 0.789 | 84% |
-| **with expansion** | **91%** | **98%** | **0.817** | **91%** |
-| cross-language only (n=4) | 25% to 50% | 25% to 75% | 0.25 to 0.39 | 25% to 75% |
+| **with expansion** | **91%** | **98%** | **0.817** | **89%** |
+| cross-language only (n=4), R@5 / R@15 / MRR | 25% to 50% | 25% to 75% | 0.25 to 0.39 | see note |
 
 - Triggered on 17 of 45 benchmark questions (12 non-English, 5 weak English), which over-represents non-English questions by design; the real share is unknown until pilot traffic exists.
 - Cost when triggered: about 0.9s of model time with extended thinking disabled for this call (it was 3.2s with default thinking, with similar recall), plus the tokens of one short call.
