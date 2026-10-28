@@ -8,7 +8,7 @@ import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../../lib/runtime/promptBuil
 import { getReasoningEngine } from "../../../lib/runtime/reasoningEngine.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtime/turnKind.ts";
 import { generateWithVerification, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
-import { logInteraction, type ApplicabilityLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
+import { logInteraction, logInteractionError, type ApplicabilityLog, type RetrievalLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
 
 // Route Handler must run in the Node.js runtime, not Edge. The Claude Code
 // adapter spawns the `claude` CLI via child_process (Edge cannot do that);
@@ -56,7 +56,20 @@ export async function POST(req: Request): Promise<Response> {
     citationUrl: r.chunk.citationUrl,
     regionLabel: regionLabel(r.chunk),
     regionStatus: decision.eligibleStatuses[i],
+    chunkId: r.chunk.id,
+    documentId: r.chunk.documentId,
+    score: Math.round(r.score * 100) / 100,
+    pass: i < (decision.factSourceCount ?? 0) ? "facts" : "request-match",
   }));
+  const retrieval: RetrievalLog = {
+    query: retrievalQuery,
+    rawTop: raw.slice(0, 10).map((r) => ({
+      chunkId: r.chunk.id,
+      documentId: r.chunk.documentId,
+      score: Math.round(r.score * 100) / 100,
+      regionScope: r.chunk.regionScope,
+    })),
+  };
   const applicability: ApplicabilityLog = {
     taskRegions: decision.taskRegions,
     taskCountries: decision.taskCountries,
@@ -119,6 +132,7 @@ export async function POST(req: Request): Promise<Response> {
           // No model call happened, so no planning mode was determined.
           planningMode: "unknown",
           applicability,
+          retrieval,
           latencyMs: durationMs,
           ok: true,
         });
@@ -135,14 +149,35 @@ export async function POST(req: Request): Promise<Response> {
       // artifact requests are buffered so the draft can be checked before the
       // user sees it; everything else keeps streaming token by token.
       const verify = bufferForVerification;
-      const { response, verification } = await generateWithVerification({
-        engine: getReasoningEngine(),
-        prompt,
-        systemPrompt: HUBI_SYSTEM_PROMPT,
-        retrievedTexts: results.map((r) => r.chunk.text),
-        verify,
-        onDelta: (t) => streamer.push(t),
-      });
+      let generated: Awaited<ReturnType<typeof generateWithVerification>>;
+      try {
+        generated = await generateWithVerification({
+          engine: getReasoningEngine(),
+          prompt,
+          systemPrompt: HUBI_SYSTEM_PROMPT,
+          retrievedTexts: results.map((r) => r.chunk.text),
+          verify,
+          onDelta: (t) => streamer.push(t),
+        });
+      } catch (err) {
+        // An unexpected failure must be visible in the pilot logs, not just a blank answer.
+        logInteractionError({
+          type: "interaction_error",
+          timestamp: new Date().toISOString(),
+          sessionId,
+          interactionId: crypto.randomUUID(),
+          question,
+          error: String((err as Error)?.message ?? err),
+          latencyMs: Date.now() - start,
+          applicability,
+          retrieval,
+          buffered: verify,
+        });
+        send({ type: "done", ok: false, error: "unexpected error", durationMs: Date.now() - start });
+        controller.close();
+        return;
+      }
+      const { response, verification } = generated;
       if (verify) {
         if (response.ok) send({ type: "delta", text: extractResponseTags(response.text).text });
       } else {
@@ -152,6 +187,18 @@ export async function POST(req: Request): Promise<Response> {
       const durationMs = Date.now() - start;
 
       if (!response.ok) {
+        logInteractionError({
+          type: "interaction_error",
+          timestamp: new Date().toISOString(),
+          sessionId,
+          interactionId: crypto.randomUUID(),
+          question,
+          error: String(response.error ?? "reasoning engine failed"),
+          latencyMs: durationMs,
+          applicability,
+          retrieval,
+          buffered: verify,
+        });
         send({ type: "done", ok: false, error: response.error, durationMs });
         controller.close();
         return;
@@ -176,6 +223,9 @@ export async function POST(req: Request): Promise<Response> {
         turnKind,
         planningMode,
         applicability,
+        retrieval,
+        buffered: verification.buffered,
+        modelMs: response.durationMs,
         verification: verification.buffered ? verification : undefined,
         latencyMs: durationMs,
         ok: true,

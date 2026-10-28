@@ -1,8 +1,4 @@
-import { appendFileSync, mkdirSync } from "node:fs";
-import path from "node:path";
-
-const LOG_DIR = "logs";
-const LOG_FILE = path.join(LOG_DIR, "interactions.jsonl");
+import { emitTelemetry } from "./telemetry.ts";
 
 export interface SourceRef {
   documentTitle: string;
@@ -12,6 +8,20 @@ export interface SourceRef {
   regionLabel?: string;
   /** global / match / unspecified: the only statuses a source can have once it has passed the Applicability Layer. */
   regionStatus?: string;
+  /** Ids for diagnosing tester feedback (chunk text is never logged). */
+  chunkId?: string;
+  documentId?: string;
+  score?: number;
+  /** "request-match" came from the pass that matched the request's wording; "facts" from the conditional fact pass. */
+  pass?: "request-match" | "facts";
+}
+
+/** What retrieval returned for this turn, for diagnosing wrong or missing sources. */
+export interface RetrievalLog {
+  /** The BM25 query (all the user's messages so far). */
+  query: string;
+  /** Top of the raw pass-1 ranking, before applicability filtering. */
+  rawTop: { chunkId: string; documentId: string; score: number; regionScope?: string }[];
 }
 
 /** Summary of the Applicability Layer's decision for one turn (Finding #002). */
@@ -49,6 +59,11 @@ export interface InteractionRecord {
   planningMode?: string;
   /** Applicability Layer decision for this turn. Optional so older records stay valid. */
   applicability?: ApplicabilityLog;
+  retrieval?: RetrievalLog;
+  /** The answer was buffered for the pilot claim check: nothing streamed until it was complete. */
+  buffered?: boolean;
+  /** Milliseconds spent in the reasoning provider (all calls, including a revision). */
+  modelMs?: number;
   /** Verify-and-revise outcome, present only for turns that were buffered for verification (HUBI_VERIFY_CLAIMS=1). */
   verification?: {
     checked: boolean;
@@ -58,9 +73,25 @@ export interface InteractionRecord {
     revisionAccepted: boolean;
     phrases: string[];
     extraMs: number;
+    /** The first draft, kept only when a revision was attempted; the final text is `response`. */
+    draft?: string;
   };
   latencyMs: number;
   ok: boolean;
+}
+
+/** A turn that failed before an answer was produced. */
+export interface InteractionErrorRecord {
+  type: "interaction_error";
+  timestamp: string;
+  sessionId: string;
+  interactionId: string;
+  question: string;
+  error: string;
+  latencyMs: number;
+  applicability?: ApplicabilityLog;
+  retrieval?: RetrievalLog;
+  buffered?: boolean;
 }
 
 export interface FeedbackRecord {
@@ -79,22 +110,20 @@ export interface FeedbackRecord {
 }
 
 /**
- * Append-only JSONL log, one record per line. Feedback is a separate record
- * correlated by interactionId rather than an in-place edit of the original
- * interaction line -- simpler and safer than mutating a specific line in a
- * flat file, and a reviewer can join the two by interactionId when reading
- * the log. No personal data is captured: sessionId is a random UUID with no
- * identity attached, and nothing about the browser/user is logged beyond it.
+ * Interaction and feedback records go through lib/runtime/telemetry.ts: stdout
+ * as structured JSON on Cloud Run (so they survive instances and restarts in
+ * Cloud Logging) and the local logs/interactions.jsonl file in development.
+ * Feedback is a separate record correlated by interactionId. No user identity
+ * is captured: sessionId is a random UUID.
  */
-function appendRecord(record: InteractionRecord | FeedbackRecord): void {
-  mkdirSync(LOG_DIR, { recursive: true });
-  appendFileSync(LOG_FILE, JSON.stringify(record) + "\n", "utf8");
-}
-
 export function logInteraction(record: InteractionRecord): void {
-  appendRecord(record);
+  emitTelemetry("interaction", { ...record });
 }
 
 export function logFeedback(record: FeedbackRecord): void {
-  appendRecord(record);
+  emitTelemetry("feedback", { ...record });
+}
+
+export function logInteractionError(record: InteractionErrorRecord): void {
+  emitTelemetry("interaction_error", { ...record });
 }
