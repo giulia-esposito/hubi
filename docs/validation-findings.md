@@ -517,6 +517,9 @@ Retrieval for turn 2 is deterministic. No claim about productivity, retention or
 - Both are Business Assistance artifacts, where the prompt deliberately allows persuasive framing. The boundary "facts must be grounded" is currently enforced at the level of *whether a claim exists in the sources*, not *whether it is restated at the strength and scope the source gives it*.
 - This evidence is from one provider and model (Gemini 2.5 Flash) and small samples (5 runs). Behavior on Claude Code was not measured for these two cases.
 
+### Engineering update (2026-10-29): pilot mitigation, finding remains open
+The single general generation rule ("restate claims at the same strength and scope the source supports, or omit them") is now in the system prompt. Measured against the committed baseline it did **not** show a clear improvement on Gemini 2.5 Flash (strict violations 13/50 before, 14/50 after; the footnote-population case still 5/5). As a pilot guardrail only, a verify-and-revise pass now removes figures and business-value language that no retrieved source contains (see `docs/pilot-claim-verifier.md`). It does not address scope or causality strengthening, which stay open under this finding: a comparison restated as a cause, one offer's claim stated as general, and dropped region or population qualifiers are not detected. Testers can flag these in the pilot UI ("Claim overstated (scope or cause)").
+
 ## Expected behavior
 
 _To be completed after review of the evidence._

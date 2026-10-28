@@ -305,3 +305,43 @@ describe("Business Assistance completion and benefit-claim rules", () => {
     assert.match(HUBI_SYSTEM_PROMPT, /do not suggest example figures, outcomes or benefits to fill it/);
   });
 });
+
+describe("claim-fidelity generation rule (Finding #005)", () => {
+  test("states one general rule: same strength and scope as the source, or omit", () => {
+    assert.match(HUBI_SYSTEM_PROMPT, /restate every claim at the same strength and scope the source supports, or omit it/);
+  });
+
+  test("names the four material qualifiers", () => {
+    assert.match(HUBI_SYSTEM_PROMPT, /product or offer the claim belongs to/);
+    assert.match(HUBI_SYSTEM_PROMPT, /region it applies to/);
+    assert.match(HUBI_SYSTEM_PROMPT, /population or sample it was measured on/);
+    assert.match(HUBI_SYSTEM_PROMPT, /comparison or a cause/);
+  });
+
+  test("forbids unsupported ROI / productivity / retention / business-value / outcome language", () => {
+    assert.match(HUBI_SYSTEM_PROMPT, /Do not add ROI, productivity, retention, business-value or outcome language that the sources do not state/);
+  });
+
+  test("stays general: it names no product, region or industry exception", () => {
+    const rule = HUBI_SYSTEM_PROMPT.slice(HUBI_SYSTEM_PROMPT.indexOf("Claim fidelity:"), HUBI_SYSTEM_PROMPT.indexOf("- If the retrieved knowledge does not clearly answer"));
+    assert.ok(rule.length > 200);
+    for (const term of ["D2E", "Direct-to-Employee", "payroll", "financial", "Financial Services", "Brazil", "SS Latam"]) {
+      assert.ok(!rule.includes(term), `the rule must not special-case ${term}`);
+    }
+  });
+});
+
+describe("Business Assistance: choosing the basis of an artifact by scope", () => {
+  test("a source about one offer is not the basis of a general artifact, and its claims are not restated as general", () => {
+    assert.match(HUBI_SYSTEM_PROMPT, /Choose the basis of the artifact by scope/);
+    assert.match(HUBI_SYSTEM_PROMPT, /about one specific product, offer, add-on or program/);
+    assert.match(HUBI_SYSTEM_PROMPT, /do not restate its claims as general claims/);
+  });
+
+  test("the rule is general: no product, offer or region names", () => {
+    const start = HUBI_SYSTEM_PROMPT.indexOf("Choose the basis of the artifact by scope");
+    const rule = HUBI_SYSTEM_PROMPT.slice(start, HUBI_SYSTEM_PROMPT.indexOf("- Deliver what was asked for", start));
+    assert.ok(rule.length > 200);
+    for (const term of ["D2E", "Direct-to-Employee", "payroll", "Smart Reminders", "Challenges"]) assert.ok(!rule.includes(term), term);
+  });
+});

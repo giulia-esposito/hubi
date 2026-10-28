@@ -6,6 +6,7 @@ import { retrieveApplicable } from "../lib/runtime/retrieveApplicable.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../lib/runtime/promptBuilder.ts";
 import { formatApplicabilityLabel, formatCitation } from "../lib/runtime/citationBuilder.ts";
 import { getReasoningEngine, resolveReasoningProvider } from "../lib/runtime/reasoningEngine.ts";
+import { generateWithVerification, shouldVerify } from "../lib/runtime/verifiedGeneration.ts";
 import { createSession, addTurn, accumulatedUserQuery, type Session } from "../lib/runtime/sessionState.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../lib/runtime/turnKind.ts";
 
@@ -20,14 +21,19 @@ async function handleQuestion(question: string, index: RetrievalIndex, session: 
   // exchange retrieving relevant content without a separate classifier).
   const retrievalQuery = accumulatedUserQuery(session);
   const userMessages = session.turns.filter((t) => t.role === "user").map((t) => t.content);
-  const { raw, decision } = retrieveApplicable(index, retrievalQuery, userMessages);
+  const { raw, decision, factPass, retrievalMs } = retrieveApplicable(index, retrievalQuery, userMessages, {
+    lastPlanningMode: session.lastPlanningMode,
+  });
   const results = decision.eligible;
 
   console.log(`\n[Retrieval] ${raw.length} chunk(s) matched; ${results.length} passed the Applicability Layer.`);
   console.log(
-    `[Applicability] mode=${decision.mode} | task region: ${decision.taskRegions.join(", ") || "unknown"}` +
+    `[Applicability] mode=${decision.mode} | task region: ${decision.taskRegions.join(", ") || "unknown"}${decision.taskCountries.length ? " (country: " + decision.taskCountries.join(", ") + ")" : ""}` +
       ` | withheld (region unknown): ${decision.withheldCount}${decision.withheldRegions.length ? " [" + decision.withheldRegions.join(", ") + "]" : ""}` +
       ` | excluded (other region): ${decision.mismatchCount}${decision.mismatchRegions.length ? " [" + decision.mismatchRegions.join(", ") + "]" : ""}`
+  );
+  console.log(
+    `[Fact pass] ${factPass.triggered ? "triggered, added " + factPass.added + " chunk(s); query: " + factPass.query : "not run (" + factPass.reason + ")"} | retrieval ${retrievalMs.toFixed(1)} ms`
   );
   results.forEach((r, i) =>
     console.log(
@@ -51,11 +57,21 @@ async function handleQuestion(question: string, index: RetrievalIndex, session: 
 
   process.stdout.write("\nHubi: ");
   const streamer = createTagAwareStreamer((visible) => process.stdout.write(visible));
-  const askReasoningEngine = getReasoningEngine();
-  const response = await askReasoningEngine(prompt, HUBI_SYSTEM_PROMPT, {
+  // Verify-and-revise (prototype, HUBI_VERIFY_CLAIMS=1): artifact-request turns are buffered and checked.
+  const verify = shouldVerify(question, session.lastPlanningMode);
+  const { response, verification } = await generateWithVerification({
+    engine: getReasoningEngine(),
+    prompt,
+    systemPrompt: HUBI_SYSTEM_PROMPT,
+    retrievedTexts: results.map((r) => r.chunk.text),
+    verify,
     onDelta: (t) => streamer.push(t),
   });
-  streamer.finish();
+  if (verify) {
+    if (response.ok) process.stdout.write(extractResponseTags(response.text).text);
+  } else {
+    streamer.finish();
+  }
   process.stdout.write("\n");
 
   if (!response.ok) {
@@ -66,7 +82,15 @@ async function handleQuestion(question: string, index: RetrievalIndex, session: 
 
   const { text: finalText, turnKind, planningMode } = extractResponseTags(response.text);
   addTurn(session, "assistant", finalText);
+  session.lastPlanningMode = planningMode;
   console.log(`\n[planningMode: ${planningMode}] [turnKind: ${turnKind}]`);
+  if (verification.buffered) {
+    console.log(
+      `[Claim check] checked=${verification.checked} violations ${verification.violationsBefore} -> ${verification.violationsAfter}` +
+        (verification.revised ? ` | revised (${verification.revisionAccepted ? "accepted" : "discarded"}, +${(verification.extraMs / 1000).toFixed(1)}s)` : "") +
+        (verification.phrases.length ? ` | flagged: ${verification.phrases.join(", ")}` : "")
+    );
+  }
 
   console.log(`\n[Citations]`);
   results.forEach((r, i) => console.log(`  [${i + 1}] ${formatCitation(r.chunk)} [${formatApplicabilityLabel(r.chunk)}]`));

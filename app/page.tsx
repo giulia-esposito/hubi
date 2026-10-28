@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { FEEDBACK_TAGS, FEEDBACK_TAG_LABELS, type FeedbackTag } from "../lib/runtime/feedbackTags.ts";
 
 type TurnKind = "grounded-answer" | "clarifying-question" | "no-grounded-answer" | "unknown";
 
@@ -24,6 +25,12 @@ interface ChatMessage {
   error?: string;
   feedback?: { helpful: boolean; submitted: boolean };
   showCommentBox?: boolean;
+  /** The server is buffering this answer for the pilot claim check: nothing streams until it is complete. */
+  buffered?: boolean;
+  /** performance.now() when the question was sent. */
+  sentAt?: number;
+  /** Milliseconds from sending the question to the first visible text. */
+  waitMs?: number;
 }
 
 const SESSION_STORAGE_KEY = "hubi-session-id";
@@ -100,29 +107,44 @@ function Feedback({
   onSubmit,
 }: {
   message: ChatMessage;
-  onSubmit: (helpful: boolean, comment?: string) => void;
+  onSubmit: (helpful: boolean, comment?: string, tags?: FeedbackTag[]) => void;
 }) {
-  const [showComment, setShowComment] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [comment, setComment] = useState("");
+  const [tags, setTags] = useState<FeedbackTag[]>([]);
 
   if (message.feedback?.submitted) {
     return <div className="feedback-thanks">Thanks for the feedback.</div>;
+  }
+
+  function toggleTag(tag: FeedbackTag) {
+    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   }
 
   return (
     <div>
       <div className="feedback">
         <button onClick={() => onSubmit(true)}>Helpful</button>
-        <button onClick={() => setShowComment(true)}>Not helpful</button>
+        <button onClick={() => onSubmit(true, undefined, ["too-slow"])} title="The answer was useful but the wait felt too long">
+          Helpful, but slow
+        </button>
+        <button onClick={() => setShowDetails(true)}>Not helpful</button>
       </div>
-      {showComment && (
+      {showDetails && (
         <div className="feedback-comment">
+          <div className="feedback-tags">
+            {FEEDBACK_TAGS.map((tag) => (
+              <button key={tag} type="button" className={tags.includes(tag) ? "tag selected" : "tag"} onClick={() => toggleTag(tag)}>
+                {FEEDBACK_TAG_LABELS[tag]}
+              </button>
+            ))}
+          </div>
           <textarea
             placeholder="Optional: what was wrong? (not required)"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
-          <button onClick={() => onSubmit(false, comment.trim() || undefined)}>Send</button>
+          <button onClick={() => onSubmit(false, comment.trim() || undefined, tags)}>Send</button>
         </div>
       )}
     </div>
@@ -158,7 +180,7 @@ export default function ChatPage() {
 
     setInput("");
     setIsStreaming(true);
-    setMessages((prev) => [...prev, { role: "user", text: question }, { role: "assistant", text: "", isStreaming: true }]);
+    setMessages((prev) => [...prev, { role: "user", text: question }, { role: "assistant", text: "", isStreaming: true, sentAt: performance.now() }]);
 
     try {
       const res = await fetch("/api/chat", {
@@ -215,9 +237,10 @@ export default function ChatPage() {
 
       let updated: ChatMessage;
       if (event.type === "retrieval") {
-        updated = { ...last, sources: event.sources };
+        updated = { ...last, sources: event.sources, buffered: Boolean(event.buffered) };
       } else if (event.type === "delta") {
-        updated = { ...last, text: last.text + event.text };
+        const firstText = last.waitMs === undefined && last.sentAt !== undefined && event.text;
+        updated = { ...last, text: last.text + event.text, waitMs: firstText ? Math.round(performance.now() - (last.sentAt as number)) : last.waitMs };
       } else if (event.type === "done") {
         updated = event.ok
           ? { ...last, isStreaming: false, turnKind: event.turnKind, interactionId: event.interactionId }
@@ -232,7 +255,7 @@ export default function ChatPage() {
     });
   }
 
-  async function submitFeedback(index: number, helpful: boolean, comment?: string) {
+  async function submitFeedback(index: number, helpful: boolean, comment?: string, tags?: FeedbackTag[]) {
     const message = messages[index];
     if (!message?.interactionId || !sessionId) return;
 
@@ -245,7 +268,15 @@ export default function ChatPage() {
     await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId, interactionId: message.interactionId, helpful, comment }),
+      body: JSON.stringify({
+        sessionId,
+        interactionId: message.interactionId,
+        helpful,
+        comment,
+        tags,
+        waitMs: message.waitMs,
+        buffered: message.buffered,
+      }),
     }).catch(() => {
       // Best-effort logging for an internal prototype -- a failed feedback
       // POST shouldn't disrupt the conversation.
@@ -274,7 +305,7 @@ export default function ChatPage() {
               {m.text ? (
                 m.role === "assistant" ? <MarkdownMessage text={m.text} /> : m.text
               ) : (
-                m.isStreaming ? "..." : ""
+                m.isStreaming ? (m.buffered ? "Drafting and checking the answer against the sources -- this can take up to about 20 seconds." : "...") : ""
               )}
             </div>
             {m.role === "assistant" && turnKindLabel(m.turnKind) && (
@@ -283,7 +314,7 @@ export default function ChatPage() {
             {m.role === "assistant" && m.error && <div className="error-banner">{m.error}</div>}
             {m.role === "assistant" && !m.isStreaming && m.sources && <SourcesList sources={m.sources} />}
             {m.role === "assistant" && !m.isStreaming && !m.error && (
-              <Feedback message={m} onSubmit={(helpful, comment) => submitFeedback(i, helpful, comment)} />
+              <Feedback message={m} onSubmit={(helpful, comment, tags) => submitFeedback(i, helpful, comment, tags)} />
             )}
           </div>
         ))}

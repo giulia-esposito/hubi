@@ -1,6 +1,14 @@
-import { applyApplicability, type ApplicabilityDecision } from "../applicability/evaluate.ts";
-import { detectTaskRegions, getRegionVocabulary, type RegionVocabulary } from "../applicability/regions.ts";
+import { applyApplicability, mergeSupplementalDecision, type ApplicabilityDecision } from "../applicability/evaluate.ts";
+import { detectTaskContext, getRegionVocabulary, refersToOwnRegion, type RegionVocabulary } from "../applicability/regions.ts";
 import { search, type RetrievalIndex, type ScoredChunk } from "../retrieval/index.ts";
+import {
+  FACT_K,
+  buildFactQuery,
+  factsAreThin,
+  isArtifactRequest,
+  runFactPass,
+  type FactPassInfo,
+} from "./factRetrieval.ts";
 
 export const TOP_K = 5;
 // Retrieval is over-fetched so that withholding region-specific chunks does
@@ -8,23 +16,60 @@ export const TOP_K = 5;
 export const OVER_FETCH_K = 15;
 
 export interface ApplicableRetrieval {
-  /** The raw ranked results before applicability filtering (empty means retrieval found nothing at all). */
+  /** The raw ranked results of pass 1, before applicability filtering (empty means retrieval found nothing at all). */
   raw: ScoredChunk[];
   decision: ApplicabilityDecision;
+  /** What the conditional fact pass did (Finding #004). */
+  factPass: FactPassInfo;
+  /** Wall-clock milliseconds spent in retrieval, both passes and applicability included. */
+  retrievalMs: number;
+}
+
+export interface RetrieveOptions {
+  vocabulary?: RegionVocabulary;
+  /** planningMode reported on the previous turn, so a short follow-up can continue an artifact request. */
+  lastPlanningMode?: string;
 }
 
 /**
- * Retrieval, then the Applicability Layer. Retrieval itself is unchanged
- * (same BM25, same query); applicability is a pure post-filter. Region
- * detection reads only the user's own messages.
+ * Pass 1: BM25 over the governed index (unchanged), then the Applicability
+ * Layer. Pass 2 (conditional): when the turn asks for something to be created
+ * and pass 1 returned too few fact-bearing chunks, one targeted BM25 pass for
+ * the facts, filtered by the same Applicability Layer and appended. AI
+ * Eligibility applies to both passes because the index itself is governed.
+ * Region detection reads only the user's own messages. No model call.
  */
 export function retrieveApplicable(
   index: RetrievalIndex,
   retrievalQuery: string,
   userMessages: string[],
-  vocabulary: RegionVocabulary = getRegionVocabulary()
+  options: RetrieveOptions = {}
 ): ApplicableRetrieval {
+  const start = performance.now();
+  const vocabulary = options.vocabulary ?? getRegionVocabulary();
+  const context = detectTaskContext(vocabulary, userMessages);
+
   const raw = search(index, retrievalQuery, OVER_FETCH_K);
-  const taskRegions = detectTaskRegions(vocabulary, userMessages);
-  return { raw, decision: applyApplicability(taskRegions, raw, TOP_K) };
+  let decision: ApplicabilityDecision = { ...applyApplicability(context.regions, raw, TOP_K, { regionCue: userMessages.some(refersToOwnRegion) }), taskCountries: context.countries };
+  let factPass: FactPassInfo = { triggered: false, reason: "not-artifact-request", factChunksInPassOne: 0, added: 0 };
+
+  const latest = userMessages[userMessages.length - 1] ?? "";
+  if (isArtifactRequest(latest, options.lastPlanningMode)) {
+    if (decision.mode === "must-clarify" || decision.mode === "no-applicable-content") {
+      factPass = { triggered: false, reason: "gated", factChunksInPassOne: 0, added: 0 };
+    } else {
+      const { thin, factChunks } = factsAreThin(index, decision.eligible);
+      if (!thin) {
+        factPass = { triggered: false, reason: "facts-present", factChunksInPassOne: factChunks, added: 0 };
+      } else {
+        const query = buildFactQuery(userMessages, decision.eligible);
+        const extra = applyApplicability(context.regions, runFactPass(index, query), FACT_K, { gate: false });
+        const before = decision.eligible.length;
+        decision = mergeSupplementalDecision(decision, { ...extra, eligible: extra.eligible.slice(0, FACT_K) });
+        factPass = { triggered: true, reason: "triggered", query, factChunksInPassOne: factChunks, added: decision.eligible.length - before };
+      }
+    }
+  }
+
+  return { raw, decision, factPass, retrievalMs: performance.now() - start };
 }

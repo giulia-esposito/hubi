@@ -10,23 +10,21 @@
  * sentence as the claim it qualifies. That is deliberately strict, because a
  * rep may lift a single sentence into an email or a slide.
  *
- * Measurement only: nothing here is imported by production code.
+ * Measurement only: only the shared helpers re-exported from lib/runtime/claimVerifier.ts are used by production.
  */
 
-export interface CheckResult {
-  /** True when the claim the check is looking for appears in the text. */
-  claimPresent: boolean;
-  /** One entry per offending sentence; empty means the claim (if any) was faithful. */
-  violations: string[];
-}
+import { splitSentences, type CheckResult } from "../../lib/runtime/claimVerifier.ts";
 
-/** Splits generated copy into sentences; list items and line breaks also end a sentence. */
-export function splitSentences(text: string): string[] {
-  return text
-    .split(/(?<=[.!?])\s+|\n+/)
-    .map((s) => s.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
-}
+// The generic checks that production also uses (unsupported figures, unsupported
+// value language, sentence splitting) live in lib/runtime/claimVerifier.ts so the
+// eval and the runtime verifier can never drift apart.
+export {
+  splitSentences,
+  VALUE_LANGUAGE,
+  checkUnsupportedValueLanguage,
+  checkUngroundedFigures,
+} from "../../lib/runtime/claimVerifier.ts";
+export type { CheckResult } from "../../lib/runtime/claimVerifier.ts";
 
 /**
  * How far from the claim a qualifier may sit.
@@ -127,30 +125,3 @@ export function checkNoCausalStrengthening(text: string, trigger: RegExp): Check
   return { claimPresent, violations };
 }
 
-/**
- * Return-on-investment, savings, productivity and similar value language.
- * Value claims are factual claims about what a product delivers, so each one
- * must exist in the retrieved knowledge.
- */
-export const VALUE_LANGUAGE =
-  /\b(roi|return on investment|cost[- ]sav\w*|sav(?:e|es|ing|ings) (?:you |your )?(?:money|costs?)|payback|value for (?:your )?(?:money|investment|spend)|maximi[sz]e (?:your |the )?(?:investment|spend|value|impact)|productiv\w*|retention|retain\w*|turnover|absenteeism|healthcare costs?|measurable (?:results|impact|outcomes?)|bottom line)\b/gi;
-
-/**
- * Unsupported ROI / value language: any value term in the output that does
- * not occur in at least one retrieved chunk. A term that the sources
- * themselves use is not flagged here (its *scope* is the job of checkScope).
- */
-export function checkUnsupportedValueLanguage(text: string, retrievedTexts: string[]): CheckResult {
-  const retrieved = retrievedTexts.join("\n").toLowerCase();
-  const violations: string[] = [];
-  let claimPresent = false;
-  for (const sentence of splitSentences(text)) {
-    const matches = sentence.match(VALUE_LANGUAGE);
-    if (!matches) continue;
-    claimPresent = true;
-    for (const term of new Set(matches.map((m) => m.toLowerCase()))) {
-      if (!retrieved.includes(term)) violations.push(`value language not in retrieved knowledge ("${term}"): "${sentence}"`);
-    }
-  }
-  return { claimPresent, violations };
-}

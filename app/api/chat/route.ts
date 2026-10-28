@@ -7,6 +7,7 @@ import { regionLabel } from "../../../lib/applicability/evaluate.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../../lib/runtime/promptBuilder.ts";
 import { getReasoningEngine } from "../../../lib/runtime/reasoningEngine.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtime/turnKind.ts";
+import { generateWithVerification, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
 import { logInteraction, type ApplicabilityLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
 
 // Route Handler must run in the Node.js runtime, not Edge. The Claude Code
@@ -45,7 +46,9 @@ export async function POST(req: Request): Promise<Response> {
   // Retrieval is unchanged; the Applicability Layer (Finding #002) then
   // filters what the model may see: mismatched regions never pass, region-
   // specific content is withheld until the user's region is known.
-  const { raw, decision } = retrieveApplicable(index, retrievalQuery, userMessages);
+  const { raw, decision, factPass, retrievalMs } = retrieveApplicable(index, retrievalQuery, userMessages, {
+    lastPlanningMode: session.lastPlanningMode,
+  });
   const results = decision.eligible;
   const sources: SourceRef[] = results.map((r, i) => ({
     documentTitle: r.chunk.documentTitle,
@@ -56,13 +59,23 @@ export async function POST(req: Request): Promise<Response> {
   }));
   const applicability: ApplicabilityLog = {
     taskRegions: decision.taskRegions,
+    taskCountries: decision.taskCountries,
     mode: decision.mode,
     withheldCount: decision.withheldCount,
     withheldRegions: decision.withheldRegions,
     mismatchCount: decision.mismatchCount,
     mismatchRegions: decision.mismatchRegions,
     unspecifiedUsed: decision.unspecifiedUsed,
+    factPass: { triggered: factPass.triggered, reason: factPass.reason, added: factPass.added, query: factPass.query },
+    retrievalMs: Math.round(retrievalMs * 10) / 10,
   };
+
+  // Pilot claim guardrail (lib/runtime/verifiedGeneration.ts): turns that may be
+  // artifact requests are buffered so the draft can be checked before the user
+  // sees it. Gated turns (a short clarifying question or a no-content notice)
+  // keep streaming: there is nothing to verify in them.
+  const gated = decision.mode === "must-clarify" || decision.mode === "no-applicable-content";
+  const bufferForVerification = shouldVerify(question, session.lastPlanningMode) && !gated;
 
   const encoder = new TextEncoder();
   const start = Date.now();
@@ -78,6 +91,9 @@ export async function POST(req: Request): Promise<Response> {
         chunkCount: results.length,
         sources,
         applicability: { mode: decision.mode, taskRegions: decision.taskRegions },
+        // Pilot claim guardrail: a buffered turn shows nothing until the whole
+        // answer is drafted and checked, so the UI needs to say so.
+        buffered: bufferForVerification && raw.length > 0,
       });
 
       // Deterministic refusal only when retrieval itself found nothing. When
@@ -115,11 +131,23 @@ export async function POST(req: Request): Promise<Response> {
       const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision);
       const streamer = createTagAwareStreamer((visible) => send({ type: "delta", text: visible }));
 
-      const askReasoningEngine = getReasoningEngine();
-      const response = await askReasoningEngine(prompt, HUBI_SYSTEM_PROMPT, {
+      // Verify-and-revise (prototype, HUBI_VERIFY_CLAIMS=1): turns that may be
+      // artifact requests are buffered so the draft can be checked before the
+      // user sees it; everything else keeps streaming token by token.
+      const verify = bufferForVerification;
+      const { response, verification } = await generateWithVerification({
+        engine: getReasoningEngine(),
+        prompt,
+        systemPrompt: HUBI_SYSTEM_PROMPT,
+        retrievedTexts: results.map((r) => r.chunk.text),
+        verify,
         onDelta: (t) => streamer.push(t),
       });
-      streamer.finish();
+      if (verify) {
+        if (response.ok) send({ type: "delta", text: extractResponseTags(response.text).text });
+      } else {
+        streamer.finish();
+      }
 
       const durationMs = Date.now() - start;
 
@@ -134,6 +162,7 @@ export async function POST(req: Request): Promise<Response> {
       // the tags off the screen during streaming.
       const { text: finalText, turnKind, planningMode } = extractResponseTags(response.text);
       addTurn(session, "assistant", finalText);
+      session.lastPlanningMode = planningMode;
 
       const interactionId = crypto.randomUUID();
       logInteraction({
@@ -147,11 +176,23 @@ export async function POST(req: Request): Promise<Response> {
         turnKind,
         planningMode,
         applicability,
+        verification: verification.buffered ? verification : undefined,
         latencyMs: durationMs,
         ok: true,
       });
 
-      send({ type: "done", ok: true, durationMs, interactionId, turnKind, planningMode });
+      send({
+        type: "done",
+        ok: true,
+        durationMs,
+        interactionId,
+        turnKind,
+        planningMode,
+        buffered: verification.buffered,
+        verification: verification.buffered
+          ? { checked: verification.checked, revised: verification.revised, accepted: verification.revisionAccepted }
+          : undefined,
+      });
       controller.close();
     },
   });

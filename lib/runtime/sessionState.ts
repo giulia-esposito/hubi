@@ -5,6 +5,8 @@ export interface Turn {
 
 export interface Session {
   turns: Turn[];
+  /** planningMode reported on the previous assistant turn; lets a short follow-up continue an artifact request. */
+  lastPlanningMode?: string;
 }
 
 /**

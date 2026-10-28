@@ -7,6 +7,7 @@ import {
   checkNoCausalStrengthening,
   checkUnsupportedValueLanguage,
   comparisonClaimTrigger,
+  checkUngroundedFigures,
 } from "../scripts/lib/claimFidelityChecks.ts";
 
 // Deterministic tests of the Finding #005 check logic (no live model). They
@@ -234,5 +235,27 @@ describe("checkUnsupportedValueLanguage (ROI / value claims)", () => {
   test("is case-insensitive and passes text with no value language", () => {
     assert.deepEqual(checkUnsupportedValueLanguage("Wellhub gives employees one subscription.", []).violations, []);
     assert.equal(checkUnsupportedValueLanguage("A strong Return On Investment.", []).violations.length, 1);
+  });
+});
+
+describe("checkUngroundedFigures (invented statistics)", () => {
+  const sources = ["Clients see up to 42% enrollment. Starting at $2. 60% of subscribers had no gym membership before."];
+
+  test("flags a figure that no retrieved chunk contains", () => {
+    const r = checkUngroundedFigures("Wellhub boosts participation by 75% and saves 3x the time.", sources);
+    assert.equal(r.claimPresent, true);
+    assert.equal(r.violations.length, 2);
+  });
+
+  test("does not flag figures the sources state", () => {
+    const r = checkUngroundedFigures("Up to 42% enrollment, from $2, and 60% of subscribers are new to gyms.", sources);
+    assert.equal(r.claimPresent, true);
+    assert.deepEqual(r.violations, []);
+  });
+
+  test("text without figures passes with no claim present", () => {
+    const r = checkUngroundedFigures("Wellhub gives employees one subscription.", sources);
+    assert.equal(r.claimPresent, false);
+    assert.deepEqual(r.violations, []);
   });
 });

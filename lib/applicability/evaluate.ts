@@ -48,7 +48,10 @@ export type ApplicabilityMode =
   | "no-applicable-content";
 
 export interface ApplicabilityDecision {
+  /** Operating regions the user's situation falls in (empty when unknown). */
   taskRegions: string[];
+  /** Countries the user named; kept separate from the operating region they resolve to. */
+  taskCountries: string[];
   mode: ApplicabilityMode;
   /** Chunks the model may see, in rank order, at most topK. Empty in the two gate modes. */
   eligible: ScoredChunk[];
@@ -60,6 +63,12 @@ export interface ApplicabilityDecision {
   mismatchRegions: string[];
   withheldCount: number;
   mismatchCount: number;
+  /**
+   * When a conditional fact-retrieval pass added chunks, the number of
+   * leading chunks in `eligible` that came from it (the facts); the rest came
+   * from the pass that matched the request's own wording (references).
+   */
+  factSourceCount?: number;
   /** How many of the eligible chunks have unspecified scope. */
   unspecifiedUsed: number;
 }
@@ -83,7 +92,12 @@ function distinct(values: string[]): string[] {
  *  - notice/must-clarify consider only the top-K window of the ranking, so a
  *    low-ranked regional chunk cannot force a question on its own.
  */
-export function applyApplicability(taskRegions: string[], ranked: ScoredChunk[], topK: number): ApplicabilityDecision {
+export function applyApplicability(
+  taskRegions: string[],
+  ranked: ScoredChunk[],
+  topK: number,
+  options: { gate?: boolean; regionCue?: boolean } = {}
+): ApplicabilityDecision {
   const statuses = ranked.map((r) => classifyChunk(r.chunk, taskRegions));
 
   const eligibleIdx: number[] = [];
@@ -111,11 +125,24 @@ export function applyApplicability(taskRegions: string[], ranked: ScoredChunk[],
     else if (withheldInWindow.length > 0) mode = "notice";
   }
 
+  // The user said the answer depends on their own region and did not state it:
+  // if region-specific material was withheld, asking is mandatory, even when
+  // better-ranked Global or unspecified content exists.
+  if (options.regionCue && taskRegions.length === 0 && withheldInWindow.length > 0 && mode !== "must-clarify") {
+    mode = "must-clarify";
+  }
+
+  // A supplemental retrieval pass only filters: the first pass alone decides whether the turn is gated.
+  if (options.gate === false && (mode === "must-clarify" || mode === "no-applicable-content")) {
+    mode = withheldInWindow.length > 0 ? "notice" : "none";
+  }
+
   const gated = mode === "must-clarify" || mode === "no-applicable-content";
   const kept = gated ? [] : eligibleIdx.slice(0, topK);
 
   return {
     taskRegions,
+    taskCountries: [],
     mode,
     eligible: kept.map((i) => ranked[i]),
     eligibleStatuses: kept.map((i) => statuses[i]),
@@ -124,5 +151,34 @@ export function applyApplicability(taskRegions: string[], ranked: ScoredChunk[],
     withheldCount: withheldInWindow.length,
     mismatchCount: mismatchInWindow.length,
     unspecifiedUsed: kept.filter((i) => statuses[i] === "unspecified").length,
+  };
+}
+
+/**
+ * Appends the extra chunks from a second retrieval pass (already filtered by
+ * applyApplicability on that pass) to the first pass's decision. The first
+ * pass alone decides the gate: a second pass only runs when the first ended in
+ * "none" or "notice", and it can only add content or widen the notice.
+ */
+export function mergeSupplementalDecision(first: ApplicabilityDecision, extra: ApplicabilityDecision): ApplicabilityDecision {
+  const seen = new Set(first.eligible.map((r) => r.chunk.id));
+  const addedIdx = extra.eligible.map((r, i) => i).filter((i) => !seen.has(extra.eligible[i].chunk.id));
+  // Facts first, then the references that matched the request's wording: the
+  // prompt (and therefore the citation numbering) presents them in this order.
+  const eligible = [...addedIdx.map((i) => extra.eligible[i]), ...first.eligible];
+  const eligibleStatuses = [...addedIdx.map((i) => extra.eligibleStatuses[i]), ...first.eligibleStatuses];
+  const withheldRegions = distinct([...first.withheldRegions, ...extra.withheldRegions]);
+  const mode: ApplicabilityMode = first.mode === "none" && extra.withheldCount > 0 ? "notice" : first.mode;
+  return {
+    ...first,
+    mode,
+    eligible,
+    eligibleStatuses,
+    factSourceCount: addedIdx.length,
+    withheldRegions,
+    mismatchRegions: distinct([...first.mismatchRegions, ...extra.mismatchRegions]),
+    withheldCount: first.withheldCount + extra.withheldCount,
+    mismatchCount: first.mismatchCount + extra.mismatchCount,
+    unspecifiedUsed: eligibleStatuses.filter((s) => s === "unspecified").length,
   };
 }

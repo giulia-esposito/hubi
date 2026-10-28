@@ -17,72 +17,11 @@
  *   GOOGLE_CLOUD_PROJECT=<project> HUBI_REASONING_PROVIDER=gemini \
  *   EVAL_RUNS=5 node --experimental-strip-types scripts/eval-applicability.ts [scenario-id]
  */
-import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
-import { buildGovernedIndex } from "../lib/runtime/governedIndex.ts";
-import { retrieveApplicable } from "../lib/runtime/retrieveApplicable.ts";
-import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../lib/runtime/promptBuilder.ts";
-import { getReasoningEngine, resolveReasoningProvider } from "../lib/runtime/reasoningEngine.ts";
-import { extractResponseTags } from "../lib/runtime/turnKind.ts";
-import { formatCitation } from "../lib/runtime/citationBuilder.ts";
-import type { Turn } from "../lib/runtime/sessionState.ts";
+import { resolveReasoningProvider } from "../lib/runtime/reasoningEngine.ts";
+import { converse, loadCorpus, type TurnResult } from "./lib/liveConversation.ts";
 
-const { chunks } = ingestContentRepository("Content Repository");
-const { index, excluded } = buildGovernedIndex(chunks);
-
-interface TurnResult {
-  text: string;
-  turnKind: string;
-  planningMode: string;
-  mode: string;
-  taskRegions: string[];
-  citations: string[];
-  statuses: string[];
-}
-
-const RETRY = /429|RESOURCE_EXHAUSTED|Resource exhausted/i;
-
-async function ask(prompt: string) {
-  const engine = getReasoningEngine();
-  let last = await engine(prompt, HUBI_SYSTEM_PROMPT);
-  for (let attempt = 1; attempt <= 2 && !last.ok && RETRY.test(String(last.error)); attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, 8000 * attempt));
-    last = await engine(prompt, HUBI_SYSTEM_PROMPT);
-  }
-  return last;
-}
-
-/** One conversation through the real pipeline; returns the result of every turn. */
-async function converse(userMessages: string[]): Promise<TurnResult[]> {
-  const history: Turn[] = [];
-  const asked: string[] = [];
-  const out: TurnResult[] = [];
-  for (const question of userMessages) {
-    asked.push(question);
-    const { raw, decision } = retrieveApplicable(index, asked.join(" "), asked);
-    let text: string;
-    let turnKind = "unknown";
-    let planningMode = "unknown";
-    if (raw.length === 0) {
-      text = "(deterministic refusal: nothing retrieved)";
-      turnKind = "no-grounded-answer";
-    } else {
-      const response = await ask(buildPrompt(question, decision.eligible, history, decision));
-      if (!response.ok) throw new Error(`engine error: ${response.error}`);
-      ({ text, turnKind, planningMode } = extractResponseTags(response.text));
-    }
-    out.push({
-      text,
-      turnKind,
-      planningMode,
-      mode: decision.mode,
-      taskRegions: decision.taskRegions,
-      citations: decision.eligible.map((r) => formatCitation(r.chunk)),
-      statuses: decision.eligibleStatuses,
-    });
-    history.push({ role: "user", content: question }, { role: "assistant", content: text });
-  }
-  return out;
-}
+const corpus = loadCorpus();
+const excluded = corpus.excluded;
 
 type Check = (turns: TurnResult[]) => string | null;
 const last = (turns: TurnResult[]) => turns[turns.length - 1];
@@ -107,6 +46,11 @@ const notRefusal: Check = (t) => (/(does not|doesn't|do not|don't) (contain|incl
 const disclosesUnspecified: Check = (t) => (DISCLOSES_UNSPECIFIED.test(last(t).text) ? null : "does not disclose that the source's region is not specified");
 const usedUnspecified: Check = (t) => (last(t).statuses.includes("unspecified") ? null : "scenario invalid: no unspecified source was used");
 const answered: Check = (t) => (last(t).turnKind === "grounded-answer" ? null : `turnKind ${last(t).turnKind}, expected grounded-answer`);
+
+const noCitationOf = (needle: string, why: string): Check => (t) => (last(t).citations.some((c) => c.includes(needle)) ? why : null);
+const citationOf = (needle: string, why: string): Check => (t) => (last(t).citations.some((c) => c.includes(needle)) ? null : why);
+const countryIs = (country: string): Check => (t) => (last(t).taskCountries.includes(country) ? null : `task country ${JSON.stringify(last(t).taskCountries)}, expected ${country}`);
+const noRegionResolved: Check = (t) => (last(t).taskRegions.length === 0 ? null : `resolved a region from an ambiguous term: ${JSON.stringify(last(t).taskRegions)}`);
 
 interface Scenario {
   id: string;
@@ -164,6 +108,42 @@ const SCENARIOS: Scenario[] = [
     turns: ["Do we have an elevator pitch?"],
     checks: [planning("knowledge-retrieval"), noRkc21],
   },
+  {
+    id: "mexico-ssl",
+    describes: "Approved map: Mexico is SS Latam, so the SS Latam onboarding material is eligible (language Spanish, region from the country)",
+    turns: ["Tengo un cliente nuevo en México. ¿Qué reuniones de onboarding tengo que hacer?"],
+    checks: [taskRegionIs("SS Latam"), countryIs("Mexico"), citationOf("[SSL]", "the SS Latam onboarding document was not used for a Mexico client")],
+  },
+  {
+    id: "uk-europe",
+    describes: "Approved map: the UK is Europe; SS Latam / Brazil process content must not be presented for a UK client",
+    turns: ["I have a new client in the UK. What meetings do I run for onboarding?"],
+    checks: [taskRegionIs("Europe"), countryIs("United Kingdom"), noProcessContent, noSslCitation],
+  },
+  {
+    id: "brazil-ops",
+    describes: "Brazil operational question: only Brazil, Global or unspecified material; no SS Latam or US-only documents",
+    turns: ["How do I create and manage an opportunity in Salesforce for a client in Brazil?"],
+    checks: [taskRegionIs("Brazil"), noSslCitation, noCitationOf("US & SSL", "cites the US / SS Latam competition training for a Brazil client")],
+  },
+  {
+    id: "us-ops",
+    describes: "US operational question: US, Global or unspecified material; no Brazil-only or SS-Latam-only documents",
+    turns: ["As a rep covering a client in the US, how should I handle the competition?"],
+    checks: [taskRegionIs("United States"), noSslCitation, noCitationOf("Opportunity Best Practices - BR", "cites a Brazil-only document for a US client")],
+  },
+  {
+    id: "canada-as-us",
+    describes: "Approved rule: Canada operates as the United States region (country identity kept separate)",
+    turns: ["I have a client in Canada. How should I handle the competition?"],
+    checks: [taskRegionIs("United States"), countryIs("Canada"), noSslCitation, noCitationOf("Opportunity Best Practices - BR", "cites a Brazil-only document for a Canada client")],
+  },
+  {
+    id: "ambiguous-latam",
+    describes: "LATAM is an umbrella term: it must not resolve a region, and SS Latam process content must not be presented as the answer",
+    turns: ["What is the onboarding process for a client in LATAM?"],
+    checks: [noRegionResolved, noProcessContent],
+  },
 ];
 
 async function main() {
@@ -185,7 +165,7 @@ async function main() {
       total++;
       let turns: TurnResult[];
       try {
-        turns = await converse(s.turns);
+        turns = await converse(corpus, s.turns);
       } catch (err) {
         console.log(`--- run ${i + 1}: ERROR ${String((err as Error).message ?? err).slice(0, 160)}`);
         continue;

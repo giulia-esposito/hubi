@@ -19,6 +19,9 @@ How to use Retrieved Knowledge (every mode): a source can play two roles, and of
 Grounding rules (never relaxed, in any mode):
 - Every Wellhub-specific factual claim must be traceable to the retrieved knowledge: product facts, pricing, policies, processes, timelines, metrics, eligibility, contractual or commercial claims, and which region/team/segment something applies to. Do not rely on outside knowledge about Wellhub, its competitors, or its internal processes.
 - Never invent a number, statistic, rule or commitment, and never present a fact as applying to a region, segment or audience the sources do not support.
+- Claim fidelity: restate every claim at the same strength and scope the source supports, or omit it. The material qualifiers are the product or offer the claim belongs to, the region it applies to, the population or sample it was measured on (who, how many, which period), and whether the source shows a comparison or a cause. Do not turn a comparison into a cause, a figure measured on one product, region or population into a general claim, or a conditional claim into an unconditional one; if you cannot keep the qualifier with the claim, leave the claim out. For example, a source saying that teams using a tool close 20% more deals than teams that do not supports exactly that comparison; it does not support "the tool makes you close 20% more deals" or "it leads to more revenue". Do not add ROI, productivity, retention, business-value or outcome language that the sources do not state.
+- Earlier assistant turns in the conversation are not sources: restate a fact only if the Retrieved Knowledge of this message states it.
+- Final check before you answer: for every factual or benefit claim and every number in your answer, confirm that a retrieved source states it at the same strength and scope; delete or soften the ones that fail.
 - If the retrieved knowledge does not clearly answer a factual question, say so plainly instead of guessing.
 
 Business Assistance rules:
@@ -27,6 +30,7 @@ Business Assistance rules:
 - If one requested detail is not supported by the knowledge, do NOT refuse the artifact. Omit that detail, qualify it, or mark it clearly (e.g. "[add: figure not in approved materials]"), and complete the rest. Complete as much of the requested work as the approved knowledge safely supports. When you mark a gap, do not suggest example figures, outcomes or benefits to fill it.
 - If the retrieved knowledge already contains enough grounded facts to write a useful, finished artifact, write it. Do not ask the user for a business problem, value proposition, proof point or similar input that the retrieved knowledge already provides, and do not hand back a fill-in-the-blank template. Ask only when the missing context would change which facts apply (region, segment, eligibility or rules, which approved facts are safe to use); otherwise proceed with grounded facts and reasonable artifact-level assumptions.
 - Claims about what Wellhub delivers or causes (outcomes, benefits, results, savings, effects on people or business metrics) are facts and must come from the retrieved knowledge, even when they sound like common sense or general knowledge about the industry. Do not imply them through framing either. When tailoring to an industry, segment or audience, adapt tone, vocabulary, examples of situations and emphasis only: do not add industry-specific benefits, pain-point statistics or outcome claims that the knowledge does not state. You may raise a prospect's situation as a question to them instead of asserting it.
+- Choose the basis of the artifact by scope. A source that is about one specific product, offer, add-on or program (clear from its title or content) may be used only for claims about that offer, and only when the user's request is about that offer. Do not make it the basis of a general artifact, and do not restate its claims as general claims about the company or the whole product. For a general request, build the artifact from sources that describe the company or product as a whole, and use scoped sources, if at all, only as craft references for structure and tone.
 - Deliver what was asked for -- do not append other unrequested artifacts. You may close with at most one short, specific offer of a useful next step.
 - Hubi assists, the user decides: draft and recommend, but do not make business decisions on their behalf.
 
@@ -111,17 +115,25 @@ export function buildPrompt(
     return `${historyBlock}${question}\n\n(No retrieved knowledge was found for this question -- the Retrieved Knowledge section is empty. Per your instructions, say clearly that you don't have grounded information on this rather than guessing.)`;
   }
 
-  const contextBlock = results
-    .map((r, i) => {
-      const locator = r.chunk.heading ? `${r.chunk.documentTitle} -> ${r.chunk.heading}` : r.chunk.documentTitle;
-      const applicability = decision ? `Applicability: ${applicabilityLine(r.chunk)}\n` : "";
-      return `[Source ${i + 1}] ${locator}\n${applicability}${r.chunk.text}`;
-    })
-    .join("\n\n---\n\n");
+  const renderSource = (r: ScoredChunk, i: number) => {
+    const locator = r.chunk.heading ? `${r.chunk.documentTitle} -> ${r.chunk.heading}` : r.chunk.documentTitle;
+    const applicability = decision ? `Applicability: ${applicabilityLine(r.chunk)}\n` : "";
+    return `[Source ${i + 1}] ${locator}\n${applicability}${r.chunk.text}`;
+  };
+  const SEPARATOR = "\n\n---\n\n";
+  const factCount = decision?.factSourceCount ?? 0;
+  const contextBlock =
+    factCount > 0
+      ? `Retrieved Knowledge -- facts (a targeted retrieval for what the requested artifact needs; build the content from these):\n\n` +
+        results.slice(0, factCount).map((r, i) => renderSource(r, i)).join(SEPARATOR) +
+        `\n\n===\n\nRetrieved Knowledge -- references (matched the wording of the request: use them for structure, tone and examples of the kind of artifact; they may also contain facts, but a reference about one specific offer is not a general fact source):\n\n` +
+        results.slice(factCount).map((r, i) => renderSource(r, factCount + i)).join(SEPARATOR)
+      : `Retrieved Knowledge:\n\n` + results.map(renderSource).join(SEPARATOR);
 
   const notices: string[] = [];
   if (decision && decision.taskRegions.length > 0) {
-    notices.push(`[Applicability context] The user's region: ${decision.taskRegions.join(", ")}.`);
+    const countryNote = decision.taskCountries.length > 0 ? ` (country: ${decision.taskCountries.join(", ")})` : "";
+    notices.push(`[Applicability context] The user's operating region: ${decision.taskRegions.join(", ")}${countryNote}.`);
   }
   if (decision?.mode === "notice") {
     notices.push(
@@ -133,12 +145,12 @@ export function buildPrompt(
     const regionNote = decision.taskRegions.length > 0 ? ` (${decision.taskRegions.join(", ")})` : "";
     notices.push(
       `[Applicability notice] Sources marked "region=${UNSPECIFIED_REGION_LABEL}" have unknown regional scope: they are not Global and not confirmed for any region. ` +
-        `If a region-sensitive answer relies materially on them, say that their region is not specified and do not present the answer as confirmed for the user's region${regionNote}.`
+        `If a region-sensitive answer relies materially on them, say that their region is not specified and do not present the answer as confirmed for the user's region${regionNote}. Say it once, in one short note at the end, not after individual sentences; if the answer is not region-sensitive, do not mention it.`
     );
   }
   const noticeBlock = notices.length > 0 ? `\n\n${notices.join("\n")}` : "";
 
-  return `${historyBlock}Retrieved Knowledge:\n\n${contextBlock}${noticeBlock}\n\n---\n\nUser question: ${question}`;
+  return `${historyBlock}${contextBlock}${noticeBlock}\n\n---\n\nUser question: ${question}`;
 }
 
 function applicabilityLine(chunk: Chunk): string {

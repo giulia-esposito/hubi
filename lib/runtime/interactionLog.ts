@@ -16,8 +16,10 @@ export interface SourceRef {
 
 /** Summary of the Applicability Layer's decision for one turn (Finding #002). */
 export interface ApplicabilityLog {
-  /** Regions detected from the user's messages (empty when unknown). */
+  /** Operating regions detected from the user's messages (empty when unknown). */
   taskRegions: string[];
+  /** Countries the user named, kept separate from the operating region. */
+  taskCountries?: string[];
   mode: "none" | "notice" | "must-clarify" | "no-applicable-content";
   /** Region-specific chunks withheld because the user's region was unknown (top-K window). */
   withheldCount: number;
@@ -27,6 +29,10 @@ export interface ApplicabilityLog {
   mismatchRegions: string[];
   /** Sources used whose regional scope is unknown. */
   unspecifiedUsed: number;
+  /** Conditional fact-retrieval pass (Finding #004). */
+  factPass?: { triggered: boolean; reason: string; added: number; query?: string };
+  /** Milliseconds spent in retrieval (both passes plus applicability). */
+  retrievalMs?: number;
 }
 
 export interface InteractionRecord {
@@ -43,6 +49,16 @@ export interface InteractionRecord {
   planningMode?: string;
   /** Applicability Layer decision for this turn. Optional so older records stay valid. */
   applicability?: ApplicabilityLog;
+  /** Verify-and-revise outcome, present only for turns that were buffered for verification (HUBI_VERIFY_CLAIMS=1). */
+  verification?: {
+    checked: boolean;
+    violationsBefore: number;
+    violationsAfter: number;
+    revised: boolean;
+    revisionAccepted: boolean;
+    phrases: string[];
+    extraMs: number;
+  };
   latencyMs: number;
   ok: boolean;
 }
@@ -54,6 +70,12 @@ export interface FeedbackRecord {
   interactionId: string;
   helpful: boolean;
   comment?: string;
+  /** Pilot issue tags chosen by the tester (see lib/runtime/feedbackTags.ts). */
+  tags?: string[];
+  /** Milliseconds the tester waited before the first visible text appeared. */
+  waitMs?: number;
+  /** The answer was buffered for the pilot claim check (nothing streamed until it was complete). */
+  buffered?: boolean;
 }
 
 /**

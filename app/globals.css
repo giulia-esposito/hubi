@@ -275,6 +275,27 @@ body {
   text-decoration: underline;
 }
 
+.feedback-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.feedback-tags .tag {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border, #d0d0d0);
+  background: transparent;
+  cursor: pointer;
+}
+
+.feedback-tags .tag.selected {
+  background: var(--accent-soft, #e6efff);
+  border-color: var(--accent, #3b6fd4);
+}
+
 .source-region {
   margin-left: 8px;
   opacity: 0.75;

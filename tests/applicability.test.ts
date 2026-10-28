@@ -7,6 +7,7 @@ import { buildIndex, search, type ScoredChunk } from "../lib/retrieval/index.ts"
 import {
   AMBIGUOUS_TERMS,
   createRegionVocabulary,
+  detectTaskContext,
   detectTaskRegions,
   parseAudience,
   parseRegionMetadata,
@@ -80,12 +81,19 @@ describe("region metadata canonicalization (approved aliases only)", () => {
     assert.deepEqual(atlantis.unrecognized, ["Atlantis"]);
   });
 
-  test("Europe / EU are NOT built in: without validated config they are unrecognized, not guessed", () => {
-    for (const raw of ["Europe", "EU", "Europa"]) {
+  test("Europe is an approved region; EU / Europa are not approved aliases and stay unrecognized, never guessed", () => {
+    assert.deepEqual(parseRegionMetadata(vocab, "Europe"), { regions: ["Europe"], scope: "regional", unrecognized: [] });
+    for (const raw of ["EU", "Europa"]) {
       const parsed = parseRegionMetadata(vocab, raw);
       assert.equal(parsed.scope, "unspecified", raw);
       assert.deepEqual(parsed.unrecognized, [raw], raw);
     }
+  });
+
+  test("a country named in metadata resolves to its operating region", () => {
+    assert.deepEqual(parseRegionMetadata(vocab, "Mexico").regions, ["SS Latam"]);
+    assert.deepEqual(parseRegionMetadata(vocab, "Canada, US").regions, ["United States"]);
+    assert.deepEqual(parseRegionMetadata(vocab, "UK, Spain").regions, ["Europe"]);
   });
 
   test("a mix of known and unknown tokens stays regional on the known ones and reports the rest", () => {
@@ -100,19 +108,58 @@ describe("region metadata canonicalization (approved aliases only)", () => {
   });
 });
 
-describe("optional membership config (kept out of the built-in vocabulary)", () => {
-  test("country names resolve to nothing without config", () => {
-    for (const text of ["new client in Mexico", "client in Argentina", "cliente en España", "a customer in Canada"]) {
-      assert.deepEqual(detectTaskRegions(vocab, [text]), [], text);
+describe("approved operating-region map (Product, 2026-10-28)", () => {
+  const regionOf = (text: string) => detectTaskContext(vocab, [text]);
+
+  test("SS Latam = Mexico / México, Chile, Argentina", () => {
+    for (const text of ["new client in Mexico", "cliente en México", "client in Chile", "cliente en Argentina"]) {
+      assert.deepEqual(regionOf(text).regions, ["SS Latam"], text);
     }
   });
 
+  test("Europe = UK / United Kingdom, Ireland, Spain / España, Germany, Romania, Italy, Portugal, Netherlands / Holland, France, Benelux", () => {
+    const places = ["UK", "United Kingdom", "Ireland", "Spain", "España", "Germany", "Romania", "Italy", "Portugal", "Netherlands", "Holland", "France", "Benelux", "Europe"];
+    for (const place of places) assert.deepEqual(regionOf(`a client in ${place}`).regions, ["Europe"], place);
+  });
+
+  test("Brazil / Brasil / BR resolve to Brazil", () => {
+    for (const place of ["Brazil", "Brasil", "BR"]) assert.deepEqual(regionOf(`a client in ${place}`).regions, ["Brazil"], place);
+  });
+
+  test("country identity is kept separate from operating-region identity: Canada resolves to the United States region but is not the United States", () => {
+    assert.deepEqual(regionOf("a client in Canada"), { regions: ["United States"], countries: ["Canada"] });
+    assert.deepEqual(regionOf("a client in the US"), { regions: ["United States"], countries: ["United States"] });
+    assert.deepEqual(regionOf("a client in Spain"), { regions: ["Europe"], countries: ["Spain"] });
+  });
+
+  test("Canada can diverge from the United States by editing the map alone, with no code change", () => {
+    const diverged = createRegionVocabulary({ countries: { Canada: { region: "Canada" } } });
+    assert.deepEqual(detectTaskContext(diverged, ["a client in Canada"]), { regions: ["Canada"], countries: ["Canada"] });
+    assert.deepEqual(detectTaskContext(diverged, ["a client in the US"]).regions, ["United States"]);
+    // A chunk tagged United States no longer matches a Canadian user once they diverge.
+    assert.equal(classifyChunk(regionalChunk("r", "United States"), ["Canada"]), "mismatch");
+  });
+
+  test("'New Mexico' is not Mexico", () => {
+    assert.deepEqual(regionOf("a client in New Mexico").regions, []);
+    assert.deepEqual(regionOf("a client in new mexico and one in Mexico").regions, ["SS Latam"]);
+  });
+
+  test("umbrella terms and language names still never resolve, even next to approved places", () => {
+    for (const text of ["client in LATAM", "client in EMEA", "client in Iberia", "cliente de habla hispana", "cliente em português"]) {
+      assert.deepEqual(regionOf(text).regions, [], text);
+    }
+  });
+});
+
+describe("optional membership config (local override on top of the approved map)", () => {
+
   test("a config can add aliases and countries, and they then resolve", () => {
     const configured = createRegionVocabulary({
-      regions: { "SS Latam": { countries: ["Mexico"] }, Europe: { aliases: ["EU"], countries: ["Spain"] } },
+      regions: { "SS Latam": { countries: ["Colombia"] }, Europe: { aliases: ["EU"], countries: ["Poland"] } },
     });
-    assert.deepEqual(detectTaskRegions(configured, ["client in Mexico"]), ["SS Latam"]);
-    assert.deepEqual(detectTaskRegions(configured, ["client in Spain"]), ["Europe"]);
+    assert.deepEqual(detectTaskRegions(configured, ["client in Colombia"]), ["SS Latam"]);
+    assert.deepEqual(detectTaskRegions(configured, ["client in Poland"]), ["Europe"]);
     assert.deepEqual(parseRegionMetadata(configured, "EU").regions, ["Europe"]);
     assert.deepEqual(configured.warnings, []);
   });
@@ -411,7 +458,7 @@ describe("real corpus: Findings #001 / #002 applicability scenarios", () => {
 
   const run = (userMessages: string[], v = vocab) => {
     const query = userMessages.join(" ");
-    return { query, ...retrieveApplicable(index, query, userMessages, v) };
+    return { query, ...retrieveApplicable(index, query, userMessages, { vocabulary: v }) };
   };
 
   const eligibleIsSafe = (result: ReturnType<typeof run>) => {
@@ -450,10 +497,10 @@ describe("real corpus: Findings #001 / #002 applicability scenarios", () => {
     eligibleIsSafe(result);
   });
 
-  test("#001 multi-turn with Mexico: no membership is validated, so the region stays unresolved and SS Latam content is withheld", () => {
+  test("#001 multi-turn with Mexico: Mexico is SS Latam, so the SS Latam document matches; Brazil does not", () => {
     const result = run(["What meetings do I have to do for client onboarding?", "Tier 1 in Mexico"]);
-    assert.deepEqual(result.decision.taskRegions, []);
-    assert.ok(result.decision.eligible.every((r) => r.chunk.documentId !== "RKC-000006"));
+    assert.deepEqual(result.decision.taskRegions, ["SS Latam"]);
+    assert.deepEqual(result.decision.taskCountries, ["Mexico"]);
     eligibleIsSafe(result);
   });
 
@@ -521,5 +568,39 @@ describe("real corpus: Findings #001 / #002 applicability scenarios", () => {
     assert.deepEqual(byDoc.get("RKC-000006")?.regions, ["SS Latam"]);
     assert.deepEqual(byDoc.get("RKC-000023")?.regions, ["United States", "SS Latam"]);
     assert.equal(byDoc.get("RKC-000002")?.regionScope, "global");
+  });
+});
+
+describe("region cue: the user says the answer depends on their own region", () => {
+  test("detects the cue in English, Spanish and Portuguese, and nothing else", async () => {
+    const { refersToOwnRegion } = await import("../lib/applicability/regions.ts");
+    for (const text of ["What is the process in my region?", "in my country", "¿Cuál es el proceso en mi región?", "en nuestro país", "Qual é o processo na minha região?"]) {
+      assert.equal(refersToOwnRegion(text), true, text);
+    }
+    for (const text of ["What is the onboarding process?", "the region is Brazil", "a client in Mexico", "¿Cuál es el proceso de onboarding?"]) {
+      assert.equal(refersToOwnRegion(text), false, text);
+    }
+  });
+
+  test("with the cue, an unresolved region and withheld regional content, clarification is mandatory even when Global content ranks first", () => {
+    const ranked = scored([globalChunk("g"), regionalChunk("ssl", "SS Latam")]);
+    assert.equal(applyApplicability([], ranked, 5).mode, "notice");
+    const cued = applyApplicability([], ranked, 5, { regionCue: true });
+    assert.equal(cued.mode, "must-clarify");
+    assert.deepEqual(cued.eligible, []);
+  });
+
+  test("the cue does nothing when the region is known or nothing regional was withheld", () => {
+    assert.equal(applyApplicability(["Brazil"], scored([globalChunk("g"), regionalChunk("ssl", "SS Latam")]), 5, { regionCue: true }).mode, "none");
+    assert.equal(applyApplicability([], scored([globalChunk("g")]), 5, { regionCue: true }).mode, "none");
+  });
+
+  test("real corpus: 'in my region' with no region stated clarifies; the same question without the cue does not force it", () => {
+    const { chunks } = ingestContentRepository("Content Repository");
+    const index = buildIndex(chunks);
+    const cued = retrieveApplicable(index, "What is the process for onboarding a new client in my region?", ["What is the process for onboarding a new client in my region?"], { vocabulary: vocab });
+    assert.equal(cued.decision.mode, "must-clarify");
+    const plain = retrieveApplicable(index, "What is the onboarding process for a new client?", ["What is the onboarding process for a new client?"], { vocabulary: vocab });
+    assert.notEqual(plain.decision.mode, "must-clarify");
   });
 });
