@@ -16,6 +16,14 @@ export interface SourceRef {
   pass?: "request-match" | "facts";
 }
 
+/** Where this turn's conversation context came from. */
+export interface ContinuityLog {
+  /** "client-history": rebuilt from the turns the browser sent (instance-independent); "instance-memory": fallback for clients that send none. */
+  source: "client-history" | "instance-memory";
+  /** Turns of earlier conversation available to this turn. */
+  priorTurns: number;
+}
+
 /** What retrieval returned for this turn, for diagnosing wrong or missing sources. */
 export interface RetrievalLog {
   /** The BM25 query (all the user's messages so far). */
@@ -60,6 +68,7 @@ export interface InteractionRecord {
   /** Applicability Layer decision for this turn. Optional so older records stay valid. */
   applicability?: ApplicabilityLog;
   retrieval?: RetrievalLog;
+  continuity?: ContinuityLog;
   /** The answer was buffered for the pilot claim check: nothing streamed until it was complete. */
   buffered?: boolean;
   /** Milliseconds spent in the reasoning provider (all calls, including a revision). */
@@ -91,6 +100,7 @@ export interface InteractionErrorRecord {
   latencyMs: number;
   applicability?: ApplicabilityLog;
   retrieval?: RetrievalLog;
+  continuity?: ContinuityLog;
   buffered?: boolean;
 }
 

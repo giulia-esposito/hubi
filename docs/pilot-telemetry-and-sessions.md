@@ -1,6 +1,6 @@
-# Pilot telemetry on Cloud Run
+# Pilot telemetry and multi-turn continuity on Cloud Run
 
-Made so the stakeholder pilot does not lose data when Cloud Run scales or restarts. It needs no new GCP infrastructure.
+Two independent changes made so the stakeholder pilot does not lose data or context when Cloud Run scales or restarts. Neither needs new GCP infrastructure.
 
 ## 1. Persistent telemetry (stdout -> Cloud Logging)
 
@@ -33,3 +33,16 @@ jsonPayload.interactionId="<id from a feedback entry>"
 Retention is the project's default log bucket setting (30 days unless changed). A log sink to BigQuery can be added later without code changes.
 
 Verified here: the exact entry shape, size limits, routing, and that real requests against the production build emit the records above. Ingestion into Cloud Logging itself is standard Cloud Run behavior and can only be confirmed after a deploy.
+
+## 2. Multi-turn continuity without instance affinity
+
+**Problem:** conversation state lived in instance memory. With several instances and session affinity off, a turn could reach an instance that had never seen the conversation and the context silently reset.
+
+**Approach:** stateless server. The browser already holds the conversation, so each request now carries the prior turns (`history`) and the previous answer's `planningMode`; the server rebuilds the session from the request (`lib/runtime/requestSession.ts`). Any instance can serve any turn and nothing is shared between instances.
+
+- The history comes from the client, so it is validated and capped (24 turns, 8,000 characters per turn, 48,000 in total, most recent kept, never starting with an assistant turn) and treated as untrusted input like the question. Malformed history is rejected with a 400. It can only change the context of the conversation its own sender is having.
+- A request that sends no `history` at all (an older client) falls back to the in-memory session on that instance, so rollout is safe.
+- Each `interaction` log entry records `continuity.source` (`client-history` or `instance-memory`) and `priorTurns`, so a lost-context report can be diagnosed.
+- A page reload still starts a new conversation (the UI does not restore messages); that is unchanged.
+
+Verified here with two separate server processes (different ports, no shared memory) driven as the browser drives them: a pitch on instance A followed by a tailoring follow-up on instance B produces a tailored pitch, while the same follow-up with no history (the old behavior) asks "What would you like to know?"; a region clarification answered on another instance resolves the region and keeps the original onboarding question in the retrieval query.

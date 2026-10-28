@@ -31,7 +31,12 @@ interface ChatMessage {
   sentAt?: number;
   /** Milliseconds from sending the question to the first visible text. */
   waitMs?: number;
+  /** planningMode reported for this answer; sent back so a short follow-up can continue an artifact request. */
+  planningMode?: string;
 }
+
+// Continuity does not depend on a Cloud Run instance: every request carries the prior turns.
+const MAX_HISTORY_TURNS = 24;
 
 const SESSION_STORAGE_KEY = "hubi-session-id";
 
@@ -178,6 +183,13 @@ export default function ChatPage() {
     const question = input.trim();
     if (!question || isStreaming || !sessionId) return;
 
+    // The conversation travels with the request (see lib/runtime/requestSession.ts).
+    const history = messages
+      .filter((m) => !m.error && m.text.trim())
+      .slice(-MAX_HISTORY_TURNS)
+      .map((m) => ({ role: m.role, content: m.text }));
+    const lastPlanningMode = [...messages].reverse().find((m) => m.role === "assistant" && !m.error && m.planningMode)?.planningMode;
+
     setInput("");
     setIsStreaming(true);
     setMessages((prev) => [...prev, { role: "user", text: question }, { role: "assistant", text: "", isStreaming: true, sentAt: performance.now() }]);
@@ -186,7 +198,7 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, question }),
+        body: JSON.stringify({ sessionId, question, history, lastPlanningMode }),
       });
 
       if (!res.body) throw new Error("No response body");
@@ -243,7 +255,7 @@ export default function ChatPage() {
         updated = { ...last, text: last.text + event.text, waitMs: firstText ? Math.round(performance.now() - (last.sentAt as number)) : last.waitMs };
       } else if (event.type === "done") {
         updated = event.ok
-          ? { ...last, isStreaming: false, turnKind: event.turnKind, interactionId: event.interactionId }
+          ? { ...last, isStreaming: false, turnKind: event.turnKind, planningMode: event.planningMode, interactionId: event.interactionId }
           : { ...last, isStreaming: false, error: "Hubi is currently unavailable -- please retry." };
       } else {
         return prev;

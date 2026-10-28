@@ -1,5 +1,6 @@
 import { getKnowledgeBase } from "../../../lib/runtime/knowledgeBase.ts";
 import { getOrCreateSession } from "../../../lib/runtime/sessionRegistry.ts";
+import { parseChatRequest, sessionFromRequest } from "../../../lib/runtime/requestSession.ts";
 import { addTurn, accumulatedUserQuery } from "../../../lib/runtime/sessionState.ts";
 import { retrieveApplicable } from "../../../lib/runtime/retrieveApplicable.ts";
 
@@ -23,18 +24,24 @@ const NO_KNOWLEDGE_MESSAGE =
 
 export async function POST(req: Request): Promise<Response> {
   const body = await req.json().catch(() => null);
-  const sessionId = typeof body?.sessionId === "string" ? body.sessionId : null;
-  const question = typeof body?.question === "string" ? body.question.trim() : "";
+  const parsed = parseChatRequest(body);
 
-  if (!sessionId || !question) {
-    return new Response(JSON.stringify({ error: "sessionId and question are required" }), {
+  if (!parsed.ok) {
+    return new Response(JSON.stringify({ error: parsed.error }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
+  const { sessionId, question } = parsed.value;
 
   const { index } = await getKnowledgeBase();
-  const session = getOrCreateSession(sessionId);
+  // Continuity must not depend on which Cloud Run instance serves this turn:
+  // the browser sends the prior turns and the session is rebuilt from them
+  // (lib/runtime/requestSession.ts). A client that sends no history (an older
+  // one) falls back to this instance's memory.
+  const clientHistory = parsed.value.history !== undefined;
+  const session = clientHistory ? sessionFromRequest(parsed.value) : getOrCreateSession(sessionId);
+  const continuity = { source: clientHistory ? "client-history" : "instance-memory", priorTurns: session.turns.length } as const;
   const historyBeforeThisTurn = [...session.turns];
   addTurn(session, "user", question);
 
@@ -133,6 +140,7 @@ export async function POST(req: Request): Promise<Response> {
           planningMode: "unknown",
           applicability,
           retrieval,
+          continuity,
           latencyMs: durationMs,
           ok: true,
         });
@@ -171,6 +179,7 @@ export async function POST(req: Request): Promise<Response> {
           latencyMs: Date.now() - start,
           applicability,
           retrieval,
+          continuity,
           buffered: verify,
         });
         send({ type: "done", ok: false, error: "unexpected error", durationMs: Date.now() - start });
@@ -197,6 +206,7 @@ export async function POST(req: Request): Promise<Response> {
           latencyMs: durationMs,
           applicability,
           retrieval,
+          continuity,
           buffered: verify,
         });
         send({ type: "done", ok: false, error: response.error, durationMs });
@@ -224,6 +234,7 @@ export async function POST(req: Request): Promise<Response> {
         planningMode,
         applicability,
         retrieval,
+        continuity,
         buffered: verification.buffered,
         modelMs: response.durationMs,
         verification: verification.buffered ? verification : undefined,
