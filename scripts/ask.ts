@@ -8,6 +8,7 @@ import { formatApplicabilityLabel, formatCitation } from "../lib/runtime/citatio
 import { getReasoningEngine, resolveReasoningProvider } from "../lib/runtime/reasoningEngine.ts";
 import { generateWithVerification, ledgerEnabled, shouldVerify } from "../lib/runtime/verifiedGeneration.ts";
 import { createSession, addTurn, accumulatedUserQuery, type Session } from "../lib/runtime/sessionState.ts";
+import { describeGovernance } from "../lib/governance/governance.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../lib/runtime/turnKind.ts";
 
 const CONTENT_REPO = "Content Repository";
@@ -109,8 +110,8 @@ async function main() {
   console.log(`Loaded ${documents.length} documents, ${chunks.length} chunks (${failed.length} failed).`);
   for (const f of failed) console.log(`  FAILED: ${f.file} -- ${f.reason}`);
 
-  const { index, excluded } = buildGovernedIndex(chunks);
-  for (const e of excluded) console.log(`Excluded by AI Eligibility (${e.aiEligibility}): ${e.contentId} (${e.chunkCount} chunks) -- never indexed.`);
+  const { index, report: governance } = buildGovernedIndex(chunks);
+  for (const line of describeGovernance(governance)) console.log(line);
   const session = createSession();
 
   const argQuestion = process.argv.slice(2).join(" ").trim();

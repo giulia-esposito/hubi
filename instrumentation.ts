@@ -11,6 +11,7 @@ export async function register(): Promise<void> {
   const { BUILD_INFO } = await import("./lib/runtime/buildInfo.ts");
   const { verificationEnabled } = await import("./lib/runtime/verifiedGeneration.ts");
   const { getRegionVocabulary } = await import("./lib/applicability/regions.ts");
+  const { REGISTRY_SNAPSHOT } = await import("./lib/governance/registrySnapshot.ts");
   emitTelemetry("startup", {
     type: "startup",
     timestamp: new Date().toISOString(),
@@ -20,5 +21,8 @@ export async function register(): Promise<void> {
     logTarget: telemetryTarget(),
     contentSource: process.env.HUBI_CONTENT_SOURCE || "local",
     regionConfigWarnings: getRegionVocabulary().warnings.length,
+    registrySyncedAt: REGISTRY_SNAPSHOT.syncedAt,
+    registryEntries: REGISTRY_SNAPSHOT.entries.length,
+    registryAgeDays: Math.floor((Date.now() - Date.parse(REGISTRY_SNAPSHOT.syncedAt)) / 86_400_000),
   });
 }

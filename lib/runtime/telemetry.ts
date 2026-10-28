@@ -23,7 +23,7 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import { BUILD_INFO } from "./buildInfo.ts";
 import path from "node:path";
 
-export type TelemetryEvent = "interaction" | "feedback" | "interaction_error" | "startup";
+export type TelemetryEvent = "interaction" | "feedback" | "interaction_error" | "startup" | "governance";
 
 export const TELEMETRY_SCHEMA = "hubi-pilot-telemetry-v1";
 

@@ -2,13 +2,17 @@ import { ingestContentRepository } from "../ingestion/ingest.ts";
 import { resolveContentRepositoryPath } from "../ingestion/contentSource.ts";
 import type { RetrievalIndex } from "../retrieval/index.ts";
 import { buildGovernedIndex } from "./governedIndex.ts";
+import type { ExcludedContent, GovernanceReport } from "../governance/governance.ts";
+import { emitTelemetry } from "./telemetry.ts";
 
 interface KnowledgeBase {
   index: RetrievalIndex;
   documentCount: number;
   chunkCount: number;
   /** Documents removed by the AI Eligibility gate before indexing (never retrievable). */
-  excluded: { contentId: string; aiEligibility: string; chunkCount: number }[];
+  excluded: ExcludedContent[];
+  /** What the Content Registry did to this corpus: exclusions, restrictions, unregistered files, drift. */
+  governance: GovernanceReport;
 }
 
 let cached: Promise<KnowledgeBase> | null = null;
@@ -31,12 +35,24 @@ export async function getKnowledgeBase(): Promise<KnowledgeBase> {
     cached = (async () => {
       const contentPath = await resolveContentRepositoryPath();
       const { documents, chunks } = ingestContentRepository(contentPath);
-      const { index, excluded } = buildGovernedIndex(chunks);
+      const { index, excluded, report } = buildGovernedIndex(chunks);
+      emitTelemetry("governance", {
+        type: "governance",
+        timestamp: new Date().toISOString(),
+        registry: report.registry,
+        chunksIn: report.chunksIn,
+        chunksKept: report.chunksKept,
+        excluded: report.excluded,
+        restricted: report.restricted,
+        unregistered: report.unregistered,
+        drift: report.drift,
+      });
       return {
         index,
         documentCount: documents.length,
         chunkCount: chunks.length,
         excluded,
+        governance: report,
       };
     })();
     // A transient failure (e.g. a momentary GCS download error) must not

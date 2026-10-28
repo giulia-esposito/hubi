@@ -24,6 +24,20 @@ export interface Chunk {
   unrecognizedRegionTokens?: string[];
   /** Label-only in this slice; not used for gating. */
   audience?: string[];
+  /**
+   * Set by the governance gate (lib/governance/governance.ts), never by ingestion: how the Content
+   * Registry classified this document. Absent on chunks that have not passed through the gate.
+   */
+  governance?: ChunkGovernance;
+}
+
+export interface ChunkGovernance {
+  /** registered: listed in the Content Registry. unregistered: no registry identifier, so no governance record exists. */
+  status: "registered" | "unregistered";
+  aiEligibility?: string;
+  /** The registry's caveat for an Eligible with Restrictions document; shown with the source. */
+  restriction?: string;
+  risks?: string[];
 }
 
 // Keeps a chunk small enough to be a tight, specific citation while staying

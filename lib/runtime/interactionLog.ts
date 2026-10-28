@@ -15,6 +15,10 @@ export interface SourceRef {
   score?: number;
   /** "request-match" came from the pass that matched the request's wording; "facts" from the conditional fact pass. */
   pass?: "request-match" | "facts";
+  /** How the Content Registry classified the document; unregistered files have no governance record. */
+  governance?: "registered" | "unregistered";
+  /** The registry's caveat for an Eligible with Restrictions document, shown with the source. */
+  restriction?: string;
 }
 
 /** Where this turn's conversation context came from. */

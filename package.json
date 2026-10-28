@@ -18,6 +18,8 @@
     "deploy:status": "node --experimental-strip-types scripts/deploy.ts status",
     "deploy:verify": "node --experimental-strip-types scripts/deploy.ts verify",
     "eval:claim-fidelity": "node --experimental-strip-types scripts/eval-claim-fidelity.ts",
+    "registry:sync": "node --experimental-strip-types scripts/sync-registry.ts",
+    "registry:check": "node --experimental-strip-types scripts/sync-registry.ts --check",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "validate-phase0": "node scripts/validate-phase0.mjs",
     "validate-phase0:windows": "pwsh -File scripts/validate-phase0.ps1",

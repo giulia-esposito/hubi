@@ -120,7 +120,8 @@ export function buildPrompt(
   const renderSource = (r: ScoredChunk, i: number) => {
     const locator = r.chunk.heading ? `${r.chunk.documentTitle} -> ${r.chunk.heading}` : r.chunk.documentTitle;
     const applicability = decision ? `Applicability: ${applicabilityLine(r.chunk)}\n` : "";
-    return `[Source ${i + 1}] ${locator}\n${applicability}${r.chunk.text}`;
+    const restriction = r.chunk.governance?.restriction ? `Registry restriction: ${r.chunk.governance.restriction}\n` : "";
+    return `[Source ${i + 1}] ${locator}\n${applicability}${restriction}${r.chunk.text}`;
   };
   const SEPARATOR = "\n\n---\n\n";
   const factCount = decision?.factSourceCount ?? 0;
@@ -148,6 +149,11 @@ export function buildPrompt(
     notices.push(
       `[Applicability notice] Sources marked "region=${UNSPECIFIED_REGION_LABEL}" have unknown regional scope: they are not Global and not confirmed for any region. ` +
         `If a region-sensitive answer relies materially on them, say that their region is not specified and do not present the answer as confirmed for the user's region${regionNote}. Say it once, in one short note at the end, not after individual sentences; if the answer is not region-sensitive, do not mention it.`
+    );
+  }
+  if (results.some((r) => r.chunk.governance?.restriction)) {
+    notices.push(
+      `[Registry restriction notice] Sources marked "Registry restriction" are approved only with that caveat. If you rely materially on one, state the caveat once, briefly, in your own words; do not present such a source as unrestricted. If the answer does not rely on it, do not mention it.`
     );
   }
   if (options.ledger) notices.push(LEDGER_INSTRUCTION);

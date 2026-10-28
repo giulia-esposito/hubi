@@ -13,6 +13,8 @@ interface SourceRef {
   citationUrl: string | null;
   /** Region label from source metadata: Global, a named region, or "not specified in source metadata". */
   regionLabel?: string;
+  /** The Content Registry's caveat for an Eligible with Restrictions source. */
+  restriction?: string;
 }
 
 interface ChatMessage {
@@ -105,6 +107,7 @@ function SourcesList({ sources }: { sources: SourceRef[] }) {
               <span>{locator} (no link available)</span>
             )}
             {s.regionLabel && <span className="source-region">region: {s.regionLabel}</span>}
+            {s.restriction && <span className="source-region">restricted: {s.restriction}</span>}
           </div>
         );
       })}

@@ -79,6 +79,8 @@ export async function POST(req: Request): Promise<Response> {
     documentId: r.chunk.documentId,
     score: Math.round(r.score * 100) / 100,
     pass: i < (decision.factSourceCount ?? 0) ? "facts" : "request-match",
+    governance: r.chunk.governance?.status,
+    restriction: r.chunk.governance?.restriction,
   }));
   const retrieval: RetrievalLog = {
     query: retrievalQuery,
