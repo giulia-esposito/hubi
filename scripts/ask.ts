@@ -3,6 +3,7 @@ import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
 import type { RetrievalIndex } from "../lib/retrieval/index.ts";
 import { buildGovernedIndex } from "../lib/runtime/governedIndex.ts";
 import { retrieveApplicable } from "../lib/runtime/retrieveApplicable.ts";
+import { expandQuery, expansionEnabled } from "../lib/retrieval/queryExpansion.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../lib/runtime/promptBuilder.ts";
 import { formatApplicabilityLabel, formatCitation } from "../lib/runtime/citationBuilder.ts";
 import { getReasoningEngine, resolveReasoningProvider } from "../lib/runtime/reasoningEngine.ts";
@@ -22,10 +23,16 @@ async function handleQuestion(question: string, index: RetrievalIndex, session: 
   // exchange retrieving relevant content without a separate classifier).
   const retrievalQuery = accumulatedUserQuery(session);
   const userMessages = session.turns.filter((t) => t.role === "user").map((t) => t.content);
+  const expansion = expansionEnabled() ? await expandQuery({ engine: getReasoningEngine(), index, query: retrievalQuery, latestMessage: question }) : undefined;
   const { raw, decision, factPass, retrievalMs } = retrieveApplicable(index, retrievalQuery, userMessages, {
     lastPlanningMode: session.lastPlanningMode,
+    expansion: expansion?.terms ? expansion : undefined,
   });
   const results = decision.eligible;
+
+  if (expansion?.triggered) {
+    console.log(`\n[Query expansion] ${expansion.reason} (${expansion.language}) -> "${expansion.terms}" (${expansion.ms} ms${expansion.error ? `, ${expansion.error}` : ""})`);
+  }
 
   console.log(`\n[Retrieval] ${raw.length} chunk(s) matched; ${results.length} passed the Applicability Layer.`);
   console.log(

@@ -1,6 +1,7 @@
 import { applyApplicability, mergeSupplementalDecision, type ApplicabilityDecision } from "../applicability/evaluate.ts";
 import { detectTaskContext, getRegionVocabulary, refersToOwnRegion, type RegionVocabulary } from "../applicability/regions.ts";
 import { search, type RetrievalIndex, type ScoredChunk } from "../retrieval/index.ts";
+import { searchWithExpansion, type ExpansionInfo } from "../retrieval/queryExpansion.ts";
 import {
   FACT_K,
   buildFactQuery,
@@ -33,6 +34,11 @@ export interface RetrieveOptions {
   lastPlanningMode?: string;
   /** Region and country in force after the previous turn; used only when no message in the window names a region. */
   pinned?: { regions: string[]; countries: string[] };
+  /**
+   * Cross-language search terms already produced for this turn (lib/retrieval/queryExpansion.ts). When present,
+   * pass 1 searches the index with them as well and fuses the two rankings; everything after pass 1 is unchanged.
+   */
+  expansion?: Pick<ExpansionInfo, "terms" | "reason">;
 }
 
 /**
@@ -60,7 +66,7 @@ export function retrieveApplicable(
     regionSource = "pinned";
   }
 
-  const raw = search(index, retrievalQuery, OVER_FETCH_K);
+  const raw = searchWithExpansion(index, retrievalQuery, options.expansion, OVER_FETCH_K);
   let decision: ApplicabilityDecision = { ...applyApplicability(context.regions, raw, TOP_K, { regionCue: userMessages.some(refersToOwnRegion) }), taskCountries: context.countries };
   let factPass: FactPassInfo = { triggered: false, reason: "not-artifact-request", factChunksInPassOne: 0, added: 0 };
 

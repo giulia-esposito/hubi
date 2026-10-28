@@ -25,13 +25,36 @@ Two layers are measured. **Raw** is BM25 top 15 over the governed index (the pas
 
 1. **Same-language lexical retrieval works.** Exact terms and same-language Spanish and Portuguese questions are found. Typing Spanish or Portuguese without accents made no difference (checked with three dedicated cases), so there is no evidence for an accent-folding change.
 2. **Paraphrases are found but ranked low.** Every paraphrase has its answer within the top 15 and 75% within the top 5; the model sees about five sources, so the three misses at rank 6-7 (`pitch-structure`, `request-enablement`, `competition-us`) are lost to ranking, not to absence.
-3. **Cross-language is the one structural gap.** A Spanish question about pricing, or an English question about a Portuguese document, finds nothing relevant in the top 15 in 3 of 4 cases. BM25 has no vocabulary overlap to work with, and no amount of tuning changes that. The corpus is multilingual (English, Spanish, Portuguese) and so are the users, so this will occur in the pilot.
+3. **Cross-language was the one structural gap** (addressed below). A Spanish question about pricing, or an English question about a Portuguese document, finds nothing relevant in the top 15 in 3 of 4 cases. BM25 has no vocabulary overlap to work with, and no amount of tuning changes that. The corpus is multilingual (English, Spanish, Portuguese) and so are the users, so this will occur in the pilot.
 
-## Recommendation (for Product to confirm)
+## Conditional query expansion (built, on by default)
 
-- **Not needed now: embeddings or a vector store.** The measured failures that are not cross-language are ranking, and ranking has cheaper levers (retrieval depth, document-level signals) that the benchmark can now evaluate one at a time.
-- **Needed: cross-language recall, by conditional query expansion.** When the lexical result is weak and the question's language differs from the likely source language, ask the model once for the question's key terms in the other corpus languages, search with both, and merge. This is the "conditional multilingual expansion" already in `docs/context-applicability-architecture.md` Section 6 (not yet built). It adds a model call only on the weak-result path, needs no new infrastructure and has no vendor lock-in beyond the model call the product already makes. Verify with the 4 cross-language cases and add more before building.
-- **Revisit embeddings only if** expansion leaves cross-language or paraphrase recall below target after tuning, or if the corpus grows past what term matching can rank. That would be an architecture and cost decision (an embedding index built at startup, a second model dependency) and should be a separate proposal with numbers from this benchmark.
+Product approved the recommendation, so cross-language expansion is in (`lib/retrieval/queryExpansion.ts`, wired in `app/api/chat/route.ts` and `scripts/ask.ts`). It adds one small model call before retrieval, only when it is likely to help:
+
+- a **Spanish or Portuguese** question is expanded into English search terms (the corpus is mostly English, and the lexical score cannot be trusted for these questions: Spanish function words match the Spanish documents strongly while the answer sits in an English one);
+- an **English** question is expanded into Spanish and Portuguese terms only when its best BM25 score is weak (below 12).
+
+The two rankings are fused by reciprocal rank fusion (equal weights for a non-English question, the original ranking favoured for a weak English one), then everything downstream is unchanged: governance, the Applicability Layer, the fact pass. The model only ever supplies search words, never answer text. The language guess is a stopword and character heuristic (tested), because it only decides whether to spend a call. A failed, slow (10s limit) or empty expansion falls back to plain BM25 silently, and a helper call is never retried. `HUBI_QUERY_EXPANSION=0` switches it off. Each triggered turn logs the reason, language, terms, latency and any error (`retrieval.expansion` in the interaction log).
+
+### Measured (same 45 questions; expansions recorded from the live model in `benchmarks/retrieval/expansions.json`, so the numbers replay offline)
+
+| | Raw R@5 | Raw R@15 | Raw MRR | Served R@5 |
+|---|---|---|---|---|
+| plain BM25 | 87% | 93% | 0.789 | 84% |
+| **with expansion** | **91%** | **98%** | **0.817** | **91%** |
+| cross-language only (n=4) | 25% to 50% | 25% to 75% | 0.25 to 0.39 | 25% to 75% |
+
+- Triggered on 17 of 45 benchmark questions (12 non-English, 5 weak English), which over-represents non-English questions by design; the real share is unknown until pilot traffic exists.
+- Cost when triggered: about 0.9s of model time with extended thinking disabled for this call (it was 3.2s with default thinking, with similar recall), plus the tokens of one short call.
+- Gains: a Spanish pricing question and a Spanish pitch request now find the English documents; a paraphrased pitch question moves from rank 7 to rank 1.
+- No lost answers, one cost: same-language Portuguese questions keep every hit in the top 15 (Recall@5 100%), but an English-expansion result can push the right passage down a place (Portuguese MRR 0.900 to 0.867).
+- Still missing: an English question about Portuguese content (`en-pt-rejection`). The model's terms were right ("rejeitadas") but the document says "Rejeição": different word forms, and BM25 has no stemming. That is a morphology limit, not a language one.
+- Tried and rejected: folding accents and adding Spanish and Portuguese stopwords to the BM25 tokenizer. It improved plain cross-language recall a little but lowered recall with expansion (R@5 91% to 89%, served 91% to 84%), so it was reverted. The benchmark is what made that a quick, evidence-based call.
+
+### What this does not change
+
+- Embeddings and a vector store are still not needed: after expansion the remaining misses are ranking (ranks 6 and 7 for three paraphrases) and word forms, each with cheaper levers. Revisit only if pilot traffic shows cross-language or paraphrase recall below target after tuning.
+- The guard: `npm run eval:retrieval -- --expand --check`, and the same replay runs inside `npm test`. After changing the expansion prompt or model, re-record with `--expand-live` (needs the provider configured) and review the diff.
 
 ## Limits, stated plainly
 

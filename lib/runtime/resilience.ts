@@ -141,6 +141,8 @@ export function withResilience(engine: ReasoningEngine, config: ResilienceConfig
     let delivered = false;
     const guarded: ReasoningOptions = { ...opts, onDelta: opts.onDelta ? (t) => ((delivered = true), opts.onDelta?.(t)) : undefined };
 
+    // A helper call (opts.fast) must degrade, not wait: the caller has a fallback, so it gets one attempt.
+    const maxAttempts = opts.fast ? 1 : config.maxAttempts;
     let attempts = 0;
     let waited = 0;
     try {
@@ -148,7 +150,7 @@ export function withResilience(engine: ReasoningEngine, config: ResilienceConfig
         attempts++;
         const result = await engine(prompt, system, guarded);
         const base = { ...result, attempts, retryWaitMs: waited };
-        if (result.ok || delivered || result.text !== "" || attempts >= config.maxAttempts || !isRetryable(result.error)) return base;
+        if (result.ok || delivered || result.text !== "" || attempts >= maxAttempts || !isRetryable(result.error)) return base;
 
         const wait = backoffMs(attempts, config, hooks.random);
         if (now() - started + wait >= config.budgetMs) return base;

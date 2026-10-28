@@ -37,6 +37,8 @@ export interface RetrievalLog {
   query: string;
   /** Top of the raw pass-1 ranking, before applicability filtering. */
   rawTop: { chunkId: string; documentId: string; score: number; regionScope?: string }[];
+  /** Cross-language query expansion (lib/retrieval/queryExpansion.ts): whether it ran, why, and the search terms it added. */
+  expansion?: { triggered: boolean; reason: string; language: string; terms: string; ms: number; error?: string };
 }
 
 /** Summary of the Applicability Layer's decision for one turn (Finding #002). */

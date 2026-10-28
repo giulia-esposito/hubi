@@ -6,6 +6,7 @@ import type { Chunk } from "../lib/ingestion/chunk.ts";
 import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
 import { buildGovernedIndex } from "../lib/runtime/governedIndex.ts";
 import { search, type ScoredChunk } from "../lib/retrieval/index.ts";
+import { searchWithExpansion, type ExpansionInfo } from "../lib/retrieval/queryExpansion.ts";
 import { byCategory, compareToBaseline, matches, scoreCase, summarize, validateCases, type BenchmarkCase, type Metrics } from "../lib/retrieval/benchmark.ts";
 
 // The scoring is pure and tested offline. Against the real corpus the benchmark
@@ -104,7 +105,8 @@ describe("gold set", () => {
 
 describe("real corpus benchmark", { skip: SKIP_WITHOUT_CORPUS }, () => {
   const gold: BenchmarkCase[] = JSON.parse(readFileSync("benchmarks/retrieval/gold.json", "utf8"));
-  const baseline = JSON.parse(readFileSync("benchmarks/retrieval/baseline.json", "utf8")) as { raw: Metrics };
+  const baseline = JSON.parse(readFileSync("benchmarks/retrieval/baseline.json", "utf8")) as { raw: Metrics; rawExpanded: Metrics };
+  const recorded = JSON.parse(readFileSync("benchmarks/retrieval/expansions.json", "utf8")) as Record<string, Pick<ExpansionInfo, "terms" | "reason">>;
   const { index } = buildGovernedIndex(ingestContentRepository("Content Repository").chunks);
 
   test("every relevant passage in the gold set resolves to at least one indexed chunk", () => {
@@ -116,6 +118,14 @@ describe("real corpus benchmark", { skip: SKIP_WITHOUT_CORPUS }, () => {
         );
       }
     }
+  });
+
+  test("recall with the recorded cross-language expansions has not regressed, and beats plain BM25 on cross-language questions", () => {
+    const results = gold.map((c) => scoreCase(c, searchWithExpansion(index, c.question, recorded[c.id], 15)));
+    const check = compareToBaseline(summarize(results), baseline.rawExpanded);
+    assert.ok(check.ok, check.failures.join("; "));
+    const plain = summarize(gold.map((c) => scoreCase(c, search(index, c.question, 15))));
+    assert.ok(summarize(results).recallAt[15] > plain.recallAt[15]);
   });
 
   test("raw BM25 recall has not regressed against the committed baseline", () => {

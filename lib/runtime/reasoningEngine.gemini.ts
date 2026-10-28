@@ -82,7 +82,7 @@ export async function askGemini(
       const stream = await client.models.generateContentStream({
         model: MODEL,
         contents: [{ role: "user", parts: [{ text: preparedPrompt }] }],
-        config: { systemInstruction: systemPrompt },
+        config: { systemInstruction: systemPrompt, ...(opts.fast ? { thinkingConfig: { thinkingBudget: 0 } } : {}) },
       });
 
       for await (const chunk of stream) {

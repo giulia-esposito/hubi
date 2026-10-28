@@ -1,0 +1,317 @@
+{
+  "salesloft-cadences": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "hoffman-work-the-deal": {
+    "triggered": true,
+    "reason": "weak-lexical-match",
+    "language": "en",
+    "terms": "Work the Deal Hoffmann metodología Hoffmann Work the Deal metodologia Work the Deal Hoffmann",
+    "ms": 1800
+  },
+  "launch-readiness": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "wellhubverse": {
+    "triggered": true,
+    "reason": "weak-lexical-match",
+    "language": "en",
+    "terms": "Wellhubverse qué es Wellhubverse o que é",
+    "ms": 1453
+  },
+  "roe-global-deals": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "pricing-flat-fee": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "pricing-pps": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "family-member-sku": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "access-matrix": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "jira-access": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "salesforce-gmail": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "contract-adherence-t3-t4": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "magic-link-order-form": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "hierarchy-ai": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "slide-roi": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "golden-pitch-deck": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "tools-access": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "multi-country-owner": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "payment-options": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "referral-credit": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "mandatory-training": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "cfo-business-case": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "pitch-structure": {
+    "triggered": true,
+    "reason": "weak-lexical-match",
+    "language": "en",
+    "terms": "pitch estructura prospecto nuevo propuesta nueva venta nuevo cliente pitch estrutura novo prospecto proposta nova venda novo cliente",
+    "ms": 1752
+  },
+  "request-enablement": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "cs-handover": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "service-level-tier": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "es-onboarding-steps": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "es",
+    "terms": "Mexico Tier 1 client onboarding process steps",
+    "ms": 650
+  },
+  "es-onboarding-meetings": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "es",
+    "terms": "Mexico onboarding meetings required",
+    "ms": 585
+  },
+  "es-health-checkpoint": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "es",
+    "terms": "Mexico Health Checkpoint meeting time",
+    "ms": 771
+  },
+  "es-pricing-pps": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "es",
+    "terms": "Mexico subscriber pricing model what is",
+    "ms": 536
+  },
+  "es-pitch": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "es",
+    "terms": "Mexico elevator pitch prospect",
+    "ms": 856
+  },
+  "pt-launch-readiness": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Launch Readiness importance",
+    "ms": 545
+  },
+  "pt-rejection-reasons": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil common opportunity rejection reasons",
+    "ms": 675
+  },
+  "pt-contract-incomplete": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil incomplete contract what to do incomplete contract Brazil",
+    "ms": 648
+  },
+  "pt-opportunity-brazil": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "create manage opportunity Salesforce Brazil",
+    "ms": 675
+  },
+  "en-pt-rejection": {
+    "triggered": true,
+    "reason": "weak-lexical-match",
+    "language": "en",
+    "terms": "oportunidades rechazadas evitar rechazo Brasil por que se rechazan oportunidades como evitar rechazo Brasil",
+    "ms": 1062
+  },
+  "en-pt-split-billing": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "artifact-pitch": {
+    "triggered": true,
+    "reason": "weak-lexical-match",
+    "language": "en",
+    "terms": "elevador propuesta discurso ascensor pitch presentación español portugués discurso de ascensor elavador proposta discurso de elevador",
+    "ms": 751
+  },
+  "artifact-pitch-prospect": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "artifact-email": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "competition-us": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "competition-info-sharing": {
+    "triggered": false,
+    "reason": "sufficient",
+    "language": "en",
+    "terms": "",
+    "ms": 0
+  },
+  "es-no-accents-meetings": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "es",
+    "terms": "Mexico onboarding meetings required",
+    "ms": 854
+  },
+  "es-no-accents-steps": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "es",
+    "terms": "Mexico onboarding process steps",
+    "ms": 560
+  },
+  "pt-no-accents-launch": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Launch Readiness importance",
+    "ms": 824
+  }
+}

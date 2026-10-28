@@ -15,6 +15,8 @@ export interface ReasoningResult {
 export interface ReasoningOptions {
   timeoutMs?: number;
   onDelta?: (text: string) => void;
+  /** A short helper call (for example query expansion): the provider should skip extended thinking where it supports that. */
+  fast?: boolean;
 }
 
 // Confirmed in Phase 0 (Prototype_Plan.md Section 3.2): these three flags are

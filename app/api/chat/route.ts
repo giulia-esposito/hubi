@@ -3,6 +3,7 @@ import { getOrCreateSession } from "../../../lib/runtime/sessionRegistry.ts";
 import { describeHistory, parseChatRequest, sessionFromRequest } from "../../../lib/runtime/requestSession.ts";
 import { addTurn, accumulatedUserQuery } from "../../../lib/runtime/sessionState.ts";
 import { retrieveApplicable } from "../../../lib/runtime/retrieveApplicable.ts";
+import { expandQuery, expansionEnabled } from "../../../lib/retrieval/queryExpansion.ts";
 
 import { regionLabel } from "../../../lib/applicability/evaluate.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../../lib/runtime/promptBuilder.ts";
@@ -81,9 +82,14 @@ export async function POST(req: Request): Promise<Response> {
   // Retrieval is unchanged; the Applicability Layer (Finding #002) then
   // filters what the model may see: mismatched regions never pass, region-
   // specific content is withheld until the user's region is known.
+  // Cross-language recall: one cheap model call, only for a non-English or weakly matched question; a failure falls back to plain BM25.
+  const expansion = expansionEnabled()
+    ? await expandQuery({ engine: getReasoningEngine(), index, query: retrievalQuery, latestMessage: question })
+    : undefined;
   const { raw, decision, factPass, retrievalMs, regionSource } = retrieveApplicable(index, retrievalQuery, userMessages, {
     lastPlanningMode: session.lastPlanningMode,
     pinned: parsed.value.pinned,
+    expansion: expansion?.terms ? expansion : undefined,
   });
   const results = decision.eligible;
   const sources: SourceRef[] = results.map((r, i) => ({
@@ -101,6 +107,7 @@ export async function POST(req: Request): Promise<Response> {
   }));
   const retrieval: RetrievalLog = {
     query: retrievalQuery,
+    expansion: expansion?.triggered ? { triggered: true, reason: expansion.reason, language: expansion.language, terms: expansion.terms, ms: expansion.ms, error: expansion.error } : undefined,
     rawTop: raw.slice(0, 10).map((r) => ({
       chunkId: r.chunk.id,
       documentId: r.chunk.documentId,
