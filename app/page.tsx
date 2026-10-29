@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { FEEDBACK_TAGS, FEEDBACK_TAG_LABELS, type FeedbackTag } from "../lib/runtime/feedbackTags.ts";
+import { CONVERSATION_TTL_MS, clearConversation, loadConversation, saveConversation, type KeyValueStore } from "../lib/runtime/conversationStore.ts";
 
 type TurnKind = "grounded-answer" | "clarifying-question" | "no-grounded-answer" | "unknown";
 
@@ -47,15 +48,19 @@ interface ChatMessage {
 // More than the server keeps (24), so the server can tell the user when it had to drop turns.
 const MAX_HISTORY_SENT = 48;
 
-const SESSION_STORAGE_KEY = "hubi-session-id";
+// The conversation is kept in this browser for a while (lib/runtime/conversationStore.ts) so a reload does not lose it.
+// Storage can be unavailable (private mode, blocked site data): then the conversation simply is not kept.
+const NO_STORE: KeyValueStore = { getItem: () => null, setItem: () => undefined, removeItem: () => undefined };
 
-function getOrCreateBrowserSessionId(): string {
-  const existing = sessionStorage.getItem(SESSION_STORAGE_KEY);
-  if (existing) return existing;
-  const fresh = crypto.randomUUID();
-  sessionStorage.setItem(SESSION_STORAGE_KEY, fresh);
-  return fresh;
+function browserStore(): KeyValueStore {
+  try {
+    return window.localStorage;
+  } catch {
+    return NO_STORE;
+  }
 }
+
+const TTL_HOURS = Math.round(CONVERSATION_TTL_MS / 3_600_000);
 
 function turnKindClassName(turnKind: TurnKind | undefined): string {
   if (turnKind === "clarifying-question") return "clarifying-question";
@@ -171,21 +176,38 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [restored, setRestored] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // On open: restore the stored conversation if it is still inside its window, otherwise start a new one.
   useEffect(() => {
-    setSessionId(getOrCreateBrowserSessionId());
+    const stored = loadConversation<ChatMessage>(browserStore(), Date.now());
+    if (stored) {
+      setSessionId(stored.id);
+      setMessages(stored.messages);
+      setRestored(true);
+    } else {
+      setSessionId(crypto.randomUUID());
+    }
+    setHydrated(true);
   }, []);
+
+  // Keep the stored copy current; each save pushes the inactivity window out. A half-written answer is never stored.
+  useEffect(() => {
+    if (hydrated && sessionId) saveConversation(browserStore(), sessionId, messages, Date.now());
+  }, [hydrated, sessionId, messages]);
 
   useEffect(() => {
     if (messages.length > 0) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  function handleNewSession() {
-    const fresh = crypto.randomUUID();
-    sessionStorage.setItem(SESSION_STORAGE_KEY, fresh);
-    setSessionId(fresh);
+  // The only deliberate way to lose context before the window expires.
+  function handleNewConversation() {
+    clearConversation(browserStore());
+    setSessionId(crypto.randomUUID());
     setMessages([]);
+    setRestored(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -202,6 +224,7 @@ export default function ChatPage() {
     const pinned = [...messages].reverse().find((m) => m.role === "assistant" && !m.error && m.pinned)?.pinned;
 
     setInput("");
+    setRestored(false);
     setIsStreaming(true);
     setMessages((prev) => [...prev, { role: "user", text: question }, { role: "assistant", text: "", isStreaming: true, sentAt: performance.now() }]);
 
@@ -323,12 +346,17 @@ export default function ChatPage() {
             </ul>
           </details>
         </div>
-        <button className="new-session-button" onClick={handleNewSession}>
-          New session
+        <button className="new-session-button" onClick={handleNewConversation}>
+          New conversation
         </button>
       </div>
 
       <div className="messages">
+        {restored && messages.length > 0 && (
+          <div className="history-notice">
+            Continuing your conversation from earlier. It is kept for {TTL_HOURS} hours after your last message; choose New conversation to start fresh.
+          </div>
+        )}
         {messages.length === 0 && (
           <div className="empty-state">Ask a Revenue question to get started.</div>
         )}
