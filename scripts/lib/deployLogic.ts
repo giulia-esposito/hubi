@@ -76,6 +76,15 @@ export function parseEnvironmentConfig(raw: unknown): { ok: true; config: Enviro
 }
 
 /** The exact `gcloud` arguments for a deploy of an exported commit. */
+/**
+ * Arguments for extracting the exported commit. Names are relative and the caller runs tar inside the export folder:
+ * GNU tar (the one Git for Windows puts on the PATH) reads an absolute Windows path such as C:\temp\source.tar as
+ * host:path (a remote file) and fails with "Cannot connect to C".
+ */
+export function extractTarArgs(): string[] {
+  return ["-xf", "source.tar", "-C", "src"];
+}
+
 export function buildDeployArgs(config: EnvironmentConfig, sourceDir: string): string[] {
   return ["run", "deploy", config.service, "--source", sourceDir, "--region", config.region, "--project", config.project, ...config.deployFlags];
 }

@@ -1,12 +1,16 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import os from "node:os";
+import path from "node:path";
 import {
   buildDeployArgs,
   buildInfoFile,
   confirmationMatches,
   diffProtected,
   expectedChanges,
+  extractTarArgs,
   formatCommand,
   parseEnvironmentConfig,
   pickRollbackTarget,
@@ -225,5 +229,30 @@ describe("preflight", () => {
   test("build-info records the exact commit, branch and time", () => {
     const info = buildInfoFile(good, new Date("2026-10-29T12:00:00Z"));
     assert.deepEqual(info, { commit: good.commit, branch: "develop", builtAt: "2026-10-29T12:00:00.000Z" });
+  });
+});
+
+describe("extracting the exported commit", () => {
+  test("uses relative names only, so a Windows drive letter is never passed to tar", () => {
+    const args = extractTarArgs();
+    assert.deepEqual(args, ["-xf", "source.tar", "-C", "src"]);
+    assert.ok(args.every((a) => !/^[A-Za-z]:|[\/]/.test(a)), "no drive letter, no path separators");
+  });
+
+  test("really extracts with the system tar when run from the export folder", () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "hubi-tar-test-"));
+    try {
+      mkdirSync(path.join(dir, "payload"));
+      writeFileSync(path.join(dir, "payload", "hello.txt"), "hi");
+      // Build the archive the way the script receives it (inside the folder, relative names), then extract it with the real arguments.
+      const make = spawnSync("tar", ["-cf", "source.tar", "-C", "payload", "hello.txt"], { cwd: dir, encoding: "utf8" });
+      assert.equal(make.status, 0, make.stderr);
+      mkdirSync(path.join(dir, "src"));
+      const extract = spawnSync("tar", extractTarArgs(), { cwd: dir, encoding: "utf8" });
+      assert.equal(extract.status, 0, extract.stderr);
+      assert.ok(existsSync(path.join(dir, "src", "hello.txt")));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

@@ -30,6 +30,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   buildDeployArgs,
+  extractTarArgs,
   buildInfoFile,
   confirmationMatches,
   diffProtected,
@@ -162,7 +163,7 @@ function exportCommit(commit: string, dir: string) {
   mkdirSync(target, { recursive: true });
   const a = run("git", ["archive", "--format=tar", "-o", tarFile, commit]);
   if (a.status !== 0) fail(`git archive failed: ${a.stderr.trim()}`);
-  const t = run("tar", ["-xf", tarFile, "-C", target]);
+  const t = run("tar", extractTarArgs(), { cwd: dir });
   if (t.status !== 0) fail(`tar failed: ${t.stderr.trim()}`);
   rmSync(tarFile, { force: true });
   return target;
