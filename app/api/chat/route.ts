@@ -15,6 +15,7 @@ import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtim
 import { generateWithVerification, ledgerEnabled, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
 import { logInteraction, logInteractionError, type ApplicabilityLog, type ContinuityLog, type RetrievalLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
 import { sourceFactsLog } from "../../../lib/governance/sourceFacts.ts";
+import { detectSourceGovernance } from "../../../lib/governance/sourceGovernance.ts";
 
 // Route Handler must run in the Node.js runtime, not Edge. The Claude Code
 // adapter spawns the `claude` CLI via child_process (Edge cannot do that);
@@ -97,6 +98,7 @@ export async function POST(req: Request): Promise<Response> {
     expansion: expansion?.terms ? expansion : undefined,
   });
   const results = decision.eligible;
+  const sourceSignal = detectSourceGovernance(results);
   const sources: SourceRef[] = results.map((r, i) => ({
     documentTitle: r.chunk.documentTitle,
     heading: r.chunk.heading,
@@ -303,6 +305,7 @@ export async function POST(req: Request): Promise<Response> {
         applicability,
         retrieval,
         continuity,
+        sourceGovernance: sourceSignal ?? undefined,
         buffered: verification.buffered,
         modelMs: response.durationMs,
         verification: verification.buffered ? verification : undefined,

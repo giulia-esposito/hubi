@@ -4,6 +4,7 @@ import type { Turn } from "./sessionState.ts";
 import { regionLabel, UNSPECIFIED_REGION_LABEL, type ApplicabilityDecision } from "../applicability/evaluate.ts";
 import { LEDGER_INSTRUCTION } from "./claimAttribution.ts";
 import { sourceFactsLine } from "../governance/sourceFacts.ts";
+import { detectSourceGovernance, sourceGovernanceNotice } from "../governance/sourceGovernance.ts";
 
 export const HUBI_SYSTEM_PROMPT = `You are Hubi, Wellhub Revenue's AI Copilot. Your job is to help Revenue teammates get work done using Wellhub's approved organizational knowledge. You have no tools, files, or knowledge sources other than the "Retrieved Knowledge" provided in the user message below.
 
@@ -163,6 +164,8 @@ export function buildPrompt(
       `[Audience notice] The sources above are written for different audiences: ${groups}. The user has not said which applies. If the answer differs by audience, ask one short question naming these options, or answer separately for each audience, clearly labelled; do not merge them into one set of instructions. If the answer is the same for every audience, answer normally.`
     );
   }
+  const sourceSignal = detectSourceGovernance(results);
+  if (sourceSignal) notices.push(sourceGovernanceNotice(sourceSignal));
   if (results.some((r) => r.chunk.governance?.restriction)) {
     notices.push(
       `[Registry restriction notice] Sources marked "Registry restriction" are approved only with that caveat. If you rely materially on one, state the caveat once, briefly, in your own words; do not present such a source as unrestricted. If the answer does not rely on it, do not mention it.`

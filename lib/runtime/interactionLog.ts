@@ -90,6 +90,8 @@ export interface InteractionRecord {
   applicability?: ApplicabilityLog;
   retrieval?: RetrievalLog;
   continuity?: ContinuityLog;
+  /** Set when the source-governance notice was added to the prompt (update and process sources mixed, or one family on different dates). */
+  sourceGovernance?: { reason: string; sources: number[] };
   /** The answer was buffered for the pilot claim check: nothing streamed until it was complete. */
   buffered?: boolean;
   /** Milliseconds spent in the reasoning provider (all calls, including a revision). */
