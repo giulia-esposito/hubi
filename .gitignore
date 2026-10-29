@@ -52,3 +52,6 @@ build-info.json
 
 # Local SAST bundle for the Linux Semgrep run (generated)
 sast-bundle/
+
+# TypeScript incremental build cache (generated)
+tsconfig.tsbuildinfo
