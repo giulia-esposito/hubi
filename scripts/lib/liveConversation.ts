@@ -8,6 +8,7 @@
 import { ingestContentRepository } from "../../lib/ingestion/ingest.ts";
 import { buildGovernedIndex } from "../../lib/runtime/governedIndex.ts";
 import { retrieveApplicable } from "../../lib/runtime/retrieveApplicable.ts";
+import { expandQuery, expansionEnabled } from "../../lib/retrieval/queryExpansion.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../lib/runtime/promptBuilder.ts";
 import { getReasoningEngine, type ReasoningEngine } from "../../lib/runtime/reasoningEngine.ts";
 import { generateWithVerification, ledgerEnabled, shouldVerify, type VerificationInfo } from "../../lib/runtime/verifiedGeneration.ts";
@@ -84,7 +85,9 @@ export async function converse(corpus: LiveCorpus, userMessages: string[]): Prom
   for (const question of userMessages) {
     const turnStart = performance.now();
     asked.push(question);
-    const { raw, decision, factPass, retrievalMs } = retrieveApplicable(corpus.index, asked.join(" "), asked, { lastPlanningMode });
+    // Same as the web route: a non-English or weakly matched question gets cross-language search terms first.
+    const expansion = expansionEnabled() ? await expandQuery({ engine: retryingEngine, index: corpus.index, query: asked.join(" "), latestMessage: question }) : undefined;
+    const { raw, decision, factPass, retrievalMs } = retrieveApplicable(corpus.index, asked.join(" "), asked, { lastPlanningMode, expansion: expansion?.terms ? expansion : undefined });
 
     let text: string;
     let turnKind = "unknown";

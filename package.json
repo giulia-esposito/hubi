@@ -18,6 +18,7 @@
     "deploy:status": "node --experimental-strip-types scripts/deploy.ts status",
     "deploy:verify": "node --experimental-strip-types scripts/deploy.ts verify",
     "eval:claim-fidelity": "node --experimental-strip-types scripts/eval-claim-fidelity.ts",
+    "eval:context-asking": "node --experimental-strip-types scripts/eval-context-asking.ts",
     "eval:retrieval": "node --experimental-strip-types scripts/eval-retrieval.ts",
     "registry:sync": "node --experimental-strip-types scripts/sync-registry.ts",
     "registry:check": "node --experimental-strip-types scripts/sync-registry.ts --check",

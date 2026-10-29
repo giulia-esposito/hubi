@@ -30,6 +30,8 @@ None of the five is triggered today:
 
 **2.5 User-entered data.** The data table in the submission listed knowledge sources only. User questions are an input we did not describe. They are free text about internal processes; we classify them Internal and treat logs as Confidential until the scrubbing in 2.2 is in place. If you or Legal read "client data" to include prospect business details typed by accident, tell us and we will involve Legal Privacy on the DPIA question.
 
+**2.6 Conversation history in the browser.** So that a page reload does not lose context, the web app keeps the conversation (questions, answers, sources) in the browser's local storage on the user's own device for up to 24 hours after the last message. The server stores nothing new. Cleared by the "New conversation" button or on expiry. It is client-side persistence, which is longer than a browser session, so please tell us whether it stays within "per-session" memory for trigger (d).
+
 ## 3. The submission's open items: where they landed
 
 | Open item | Now |

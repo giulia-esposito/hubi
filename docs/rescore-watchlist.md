@@ -20,6 +20,7 @@ Flag before any of these changes behaviour in production.
 | Log acting user and source IP | **Adds employee identifiers** to logs. Required by ISSTD28 `§5.6`, not in the approved design | **Off** (`HUBI_LOG_ACTOR=1` enables) | **Yes, before turning it on in production** |
 | Provider circuit breaker | None on data; a short refusal when the provider is down | On | No |
 | "Usage guidelines" disclosure in the header (do not enter personal data); AI-draft label (tool and date) on Business Assistance answers | None on data; user-visible wording. The persistent notice under the input was removed by decision; contextual warnings can be revisited | On | No |
+| Conversation text kept in the browser's local storage for 24 hours of inactivity (`lib/runtime/conversationStore.ts`) | **New client-side data handling:** conversation text now outlives the tab and the browser session, on the user's device only; nothing new on the server. Cleared by New conversation or on expiry | On | **Yes**: mention in the delta note and ask InfoSec whether it is within "per-session" for trigger (d) |
 | Content bucket versioning | Retains older copies of content that is already Internal | Not done (a GCP change) | Mention |
 
 Nothing in Phase 1 adds a tool, a connector, a data source, persistent agent memory or users outside Revenue.
