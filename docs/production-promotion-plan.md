@@ -14,7 +14,7 @@ Status: plan only, 2026-10-29 (revised the same day with the owner's decisions a
 | Decision | What you said | What ISSTD28 requires | Status |
 |---|---|---|---|
 | **Project Owner (R)** | Marina Michel, G6+, your leader and senior owner of the Revenue Strategy & Operations structure where Hubi sits. You remain product and operational owner | One named individual, **job grade G6 or above**, explicitly identified by the respective LT or ELT (`§4`, `§5.1`, `§5.4`). R owns design, secure configuration, upkeep and 24x7 operation of the project and its AI agents (`§6.1`). The grade cannot be verified from here: recorded as asserted | Matches the registry, which already lists Marina Michel as GCP Project Owner of `wh-revenue-prd-corp`. Needs her own agreement to the RASCI and her typed acknowledgment (`§6.5`) |
-| **Accountable (A)** | Revenue Strategy & Operations leadership, Fabio Lima, as sponsor | **A must be an LT member** (a named person, not an organisation or function): owns budget, risk acceptance and policy compliance for the domain, and escalates exceptions to the ELT (`§5.1`, `§6.1`). The LT approval in the chain is also an LT decision (`§5.1`) | **Open:** I cannot tell from the standard or the registry whether Fabio Lima's role counts as "LT". The standard says "LT" and "ELT" are defined in `§4` but the canonical copy does not restate the definition. Confirm with InfoSec GRC (the standard's author) that his role qualifies; if not, the Accountable is the LT member above him. A sponsor who is not an LT member can be a Consulted party, not the A |
+| **Accountable (A)** | Fabio Lima is the A (confirmed by the owner, 2026-10-29) | **A must be an LT member** (a named person, not an organisation or function): owns budget, risk acceptance and policy compliance for the domain, and escalates exceptions to the ELT (`§5.1`, `§6.1`). The LT approval in the chain is also an LT decision (`§5.1`) | Recorded as A. The standard requires the A to be an LT member and I cannot verify his membership from the standard or the registry (`§4` defines LT but the canonical copy does not restate it). InfoSec and the LT confirm the role during the approval chain, so this resolves itself there; if his role does not qualify, the A becomes the LT member above him and nothing else in the plan changes |
 | **On-call** | You as primary product/business owner, Marina as escalation; you do not want to invent a technical on-call model | See 2.1 | **Open, needs a decision before assigning** |
 | **Data** | Conservatively assume prospect and client business details may count as customer data; users are not expected to enter names, emails or other identifiable personal data; questions are about internal processes | Customer data or sensitive PII triggers the DPIA gate: DPIA completed and Legal Privacy approval **before** processing starts, reconfirmed at go-live (`§5.9`). Internal data, including employee records, has no extra gate | See 2.2 |
 
@@ -46,56 +46,63 @@ Your assumption (treat prospect and client details as potentially customer data,
 
 ## 3. The existing InfoSec approval: baseline, documentation, new, and changed
 
-**What I know and do not know.** You told me Hubi was reviewed and approved by InfoSec before ISSTD28 existed. Nothing in this repository records that approval: no ticket, date, scope or conditions. I will not guess what it covered. To do this properly I need the approval artifact (ticket or email, date, the version or description of what was reviewed, any conditions). Until then I use the **last deployed revision as a proxy baseline**: `hubi-pilot-00005-s6p`, built from commit `bb23f3c` (2026-10-16), which is what is running in the Sandbox and what was most plausibly reviewed. If the review was earlier or covered less, the "changed" list below is larger.
+**What I read.** The intake document you linked ("AI Assessment & Use Case Intake Template", title "Hubi AI", dated May 28, 2026, submission type C: internally built AI product) and I tried the Jira ticket ISSD-51294. **The Jira ticket is not readable from here** (the Atlassian connector returned 403 "app not installed on this instance"). The intake document is the **submission**, not the decision: its Review Status Log, Reviewed by, CBRA scoring and Decision record are all blank, and its status says "In progress". So I know exactly what InfoSec was *asked* to approve on 2026-05-28, but not what they decided, the CBRA risk tier, or any conditions. Those live in the ticket. **I need you to paste the decision comment, the tier and any conditions or follow-up tickets.** Everything below that depends on them is marked.
 
-**How the standard treats it (`§5.1`, plugin reading for the effort point).** ISSTD28 requires approvals from LT, InfoSec and Infrastructure & Data for every Corporate Production project, and the Sandbox attestation does not carry over. So the previous approval **cannot replace** the InfoSec decision in the chain. It can legitimately be evidence that shortens the review, and it makes this a delta review for InfoSec rather than a first look.
+**How the standard treats the approval (`§5.1`; the effort point is plugin reading).** ISSTD28 requires LT, InfoSec and Infrastructure & Data approval for every Corporate Production project, and a Sandbox attestation does not carry over. The earlier approval therefore cannot replace the InfoSec decision in the promotion chain. It is evidence that makes it a delta review.
 
-### 3.1 Already in place and approved (documentation only, no new work)
+### 3.1 What was submitted, and where Hubi still matches it
 
-By my reading of the repository at the baseline commit. These ISSTD28 fields simply record facts the earlier review would have seen:
+| Submitted on 2026-05-28 | Hubi today | Verdict |
+|---|---|---|
+| Internal knowledge assistant for Revenue (about 700 users), retrieval from approved Revenue knowledge sources, source references on answers | Same | Matches |
+| Advisory only: no autonomous actions, no tool calling or MCP, no writes to any Wellhub system, cannot send communications, single agent, human owns every decision | Same. No MCP, no tools, no write access | Matches |
+| Human oversight level 1 (a person checks every output before it is used); worst case rated 2 (a few people, caught quickly) | Same design; the worst-case rating is challenged below | Matches, see 3.3 |
+| Session memory: per session only, no persistent memory | The browser holds the conversation in memory for the tab and sends it with each request; only a session id sits in `sessionStorage`. The agent remembers nothing across sessions | Matches |
+| Secrets in an approved vault, none in code, prompts or logs | Stricter: no keys and no secrets at all (Application Default Credentials) | Matches, better |
+| Data: Revenue enablement material, playbooks, PMM material, all classified Internal; no PII intended in the knowledge base | Same content families, governed by the Content Registry | Matches |
+| Read-only access to Revenue repositories; WorkRamp and others "under evaluation" | GCS copy of the Revenue Knowledge Center only; no WorkRamp | Matches |
+| Interim web application "for architecture validation and pilot testing", Google Chat as the long-term interface | Web app behind IAP; no Google Chat | Matches |
+| Monitoring planned: availability, API failures, retrieval failures, usage, cost, user feedback | Telemetry, feedback and error events exist; availability and cost alerting do not | Partly |
+| "AI functionality can be disabled without impacting operational systems; access can be restricted or suspended" | True and scriptable (scale to zero, rollback) | Matches. Useful for the on-call answer (2.1): the approval already commits to a kill switch |
 
-| ISSTD28 field / control | Fact at baseline |
-|---|---|
-| Workload name, project, deployment model, invoker | Cloud Run service `hubi-pilot`, browser users, behind IAP and internal ingress |
-| Authenticated invocation, no public exposure (`§5.5`) | IAP plus internal ingress, no `allUsers` |
-| No keys, no secrets (`§5.4`, org rule) | Runtime service identity through Application Default Credentials |
-| Model path (`§5.3`) | Gemini 2.5 Flash through Vertex AI in the company's own project; no third-party AI vendor |
-| Content source | Read-only copy of the Revenue Knowledge Center in GCS; no write access to any Wellhub system |
-| Connectors list | Vertex AI and GCS only |
-| Content governance | AI Eligibility gate (RKC-000021 excluded) |
-| Labels, project ownership | Present on the Sandbox service (registry lists Marina Michel as owner of the production project) |
+### 3.2 Changed since the submission: needs InfoSec re-validation
 
-### 3.2 Genuinely new in ISSTD28 (needs implementation or additional review, not covered by a Sandbox-era review)
+| Change | Submitted | Now | Why it matters |
+|---|---|---|---|
+| **Primary model and provider** | "Anthropic Claude as the primary LLM through approved enterprise access"; external dependencies "Anthropic Claude API, Google Cloud Platform"; Gemini "may also be evaluated" | **Gemini 2.5 Flash on Vertex AI**, in the company's GCP project, no Anthropic dependency | Gemini was left open, so it is within the submission's wording, but the review was framed around Claude. Vertex AI keeps prompts inside Wellhub's GCP, which is arguably a better data story. InfoSec should confirm it explicitly. Also the model-training prohibition (`§5.3`) must be confirmed for this configuration |
+| **Logging and storage of user text** | "Logging and retention policies will be defined in partnership with InfoSec during implementation. **No final storage architecture has been approved yet.**" Logged: retrieval requests, AI requests and responses, errors, access events | Every question, answer, history digest, verification draft and claim-ledger quote goes to **Cloud Logging** as structured JSON. The submission anticipated the logging but left the storage architecture and retention **unapproved**. The form's own minimum for AI action logs is 12 months, ISSTD28 says 365 days centrally | The most important item. The approval did not settle this; InfoSec was to define it. This is also where an accidental prospect name would be stored |
+| **Declared purposes** | Ticked: research and analysis, summarisation, communication and writing assistance (editing, translating, tone), automated decision support, assistant with tool access. **Not ticked: "Document creation and review (writing emails, reports, presentations)"** | **Business Assistance generates pitches, emails and talk tracks**, which is document creation | Likely outside the declared purposes. It also moves the output from internal guidance to drafts that reps may send to prospects |
+| **Worst-case self-assessment** | Level 2: "a small number of people inside Wellhub... caught and fixed quickly"; "minor delays or rework" | With customer-facing drafts and an open claim-fidelity finding (#005: the model can overstate a claim or drop its scope), a plausible worst case is a misleading statement reaching a prospect | The self-assessment should be redone honestly; it probably rises to level 3 (a meaningful problem for a team or process). This feeds InfoSec's CBRA impact score |
+| **Data entered by users** | The data table lists knowledge sources only. User questions as input were **not assessed** | Users type free text, which may include prospect or client details by accident | The form's classification guidance says to include everything and flag it. This is the gap behind the DPIA question (2.2) |
+| **Calls that carry user text to the model** | One call per question | Up to three: query expansion, generation, and a revision call; the prompt carries a claims-ledger instruction | Same provider and identity, so no new vendor, but more calls per turn and more tokens of user text |
+| **Network path to the model** | "Connectivity pattern still under review and aligned with IT"; the form requires calls to external AI APIs to go through an approved gateway (TC3 Agent Gateway or Apigee) | Direct calls to Vertex AI from Cloud Run with the service identity | Open in the original. Ask InfoSec whether Vertex AI inside the company's own project counts as an "external AI API" needing the gateway |
+| **Corpus** | PMM materials, playbooks, enablement content as of May | Now includes the 704-chunk PMM Slide Library (ROI statistics, persona stories) and four other files with no registry record | Confirm all of it is within "PMM materials"; register the unregistered files |
+| **Hosting history** | A new GCP project was requested (HDT-108552) and "cancelled due to AI Tool approval" | Sandbox project now, `wh-revenue-prd-corp` for production | Close the loop with the platform team: the production project exists in the registry |
 
-- Publication behind the **corporate load balancer and Zscaler** in the production network, and egress only through the allowlisted proxy (`§5.5`).
-- Deployment through the **standard CI/CD pipeline** or documented equivalent with security validation; no manual deploy (`§5.1`).
+**Unchanged:** advisory-only design, no tools or MCP, no write access, human review of outputs, per-session memory, ingress and authentication posture, no secrets.
+
+### 3.3 Already approved, so only documentation in ISSTD28 terms
+
+Workload name, project, invoker (people in a browser), deployment model, AI agent (single, advisory), connectors (Vertex AI and GCS, both read), no MCP, no write access, data classification of the knowledge content (Internal), per-session memory, secrets handling, human oversight, the kill-switch statement. These map directly onto manifest fields; the manifest records them with the intake document as the reference.
+
+### 3.4 Genuinely new in ISSTD28 (not covered by the submission)
+
+- Publication behind the **corporate load balancer and Zscaler** in the production network, egress only through the allowlisted proxy (`§5.5`).
+- Deployment through the **standard CI/CD pipeline** or a documented equivalent (`§5.1`).
 - **Availability monitoring** with alert routing into the company stack, as a go-live prerequisite (`§5.1`, `§5.6`).
-- **24x7 operation model, RASCI with an LT Accountable, Catalog entry**, support coverage (section 2.1).
+- **24x7 operation model, RASCI with an LT Accountable, Catalog entry**, support coverage (2.1).
 - **Production access model**: Viewer by default, per-request write, no human `actAs`, semi-annual access review (`§5.4`).
-- **Mandatory log fields** (acting user, source IP), 365-day central retention, **AI decision trace**, **circuit breaker** on the agent (`§5.2`, `§5.6`).
-- **Registry entries** in the Authorized AI Tools and Connectors Registry for Vertex AI and GCS (`§5.3`). If the earlier InfoSec review already produced a registry entry, point to it.
+- **Mandatory log fields** (acting user, source IP), 365-day central retention, **AI decision trace**, **circuit breaker** (`§5.2`, `§5.6`).
+- **Registry entries** in the Authorized AI Tools and Connectors Registry. The submission answered "Is this tool in the registry?" without ticking Yes or No; check whether an entry exists.
 - **FinOps budget and cost center**, 50/80/100 percent alerts (`§5.8`).
-- **Training** (AI Security and Secure SDLC, recertified every 6 months) for everyone authorised to touch the production project (`§3`).
+- **Training** (AI Security and Secure SDLC, recertified every 6 months) for everyone authorised on the production project (`§3`).
 - **Backup/DR justification**, **lifecycle and decommission sign-off** (`§5.7`, `§5.10`).
-- **DPIA determination** by Legal Privacy (`§5.9`), per section 2.2.
+- **DPIA determination** by Legal Privacy (`§5.9`).
 - **AI-output labelling and human sign-off** for artifacts used in corporate decisions (`§5.3`, `§5.10`).
 
-### 3.3 Changed since the baseline: flag for InfoSec re-validation
+### 3.5 Recommendation for the InfoSec conversation
 
-Diff of `bb23f3c` to the current tree: 59 files, about 6,900 lines added, **no new npm dependency** (only scripts added to `package.json`), **no new external service or egress**: every model call still goes to Vertex AI through the same identity. What did change, by importance:
-
-| Change | Why it matters | Needs |
-|---|---|---|
-| **Persistent storage of user text.** At the baseline, interaction logs were written to a local file on the container (ephemeral, effectively lost on restart). Now every question and answer, the conversation history digest, verification drafts and claim ledger quotes go to **Cloud Logging** as structured JSON, retained by log policy and central sinks | The biggest change in data handling. It is exactly what turns an accidental pasted prospect name into stored data. Also the likeliest first question from InfoSec | Re-validation. Mitigation work in Phase 1 (scrubber, minimisation, retention decision) |
-| **Business Assistance: Hubi now drafts customer-facing artifacts** (pitches, emails, talk tracks), not only answers. Finding #005 (claim fidelity) is open and release-blocking for wider rollout | A change in what the system does with its output: content risk and AI-output labelling (`§5.3`), not infrastructure risk | Re-validation of intended use; AI-draft label and sign-off |
-| **More model calls carrying user text**: a second call to revise drafts, a claim-ledger in the prompt, and a query-expansion call that sends the user's question to the model | Same provider and identity, but more calls and more tokens of user text per turn | Mention in the delta; no new vendor |
-| **Browser-carried conversation state**: the browser sends prior turns and context on every request, validated and capped server-side | Changes where conversation state lives (client, not instance memory); trust boundary is unchanged because the same user supplies it | Document |
-| **New HTTP surface**: `/api/health`, 429 rate-limit responses keyed in memory on the IAP user header; feedback tags and free-text comments in `/api/feedback` | Small. The health endpoint exposes only commit and revision. The limiter keeps the user header in memory only and logs just the scope. The free-text feedback comment is a further place for accidental PII | Document |
-| **Registry-driven governance**: AI Eligibility and restrictions come from a compiled snapshot of the Content Registry (internal IDs, eligibility, region, risk flags; no titles, no personal data) | Strengthens the control the earlier review saw; restrictions are now shown to users | Document as an improvement |
-| **Deployment path**: a deploy script and CI exist, but production deploys still run from a developer machine; the repository is on a personal GitHub account | Not a data issue; the standard prohibits unvalidated manual production deploys | Pipeline and organisation repository (section 5) |
-| **Corpus**: the Content Repository and the AI Eligibility picture can have changed since the review (it includes unregistered PMM files with ROI figures that have no registry record) | I cannot see what content was in scope at approval | Compare with the approval's content scope; register the unregistered files |
-
-**Unchanged:** model and provider, identity and secrets model, ingress and authentication posture, content source and read-only access, no write access to other systems.
+Do not present this as a new request. Send InfoSec a **delta note** against ISSD-51294 covering the five rows that matter (model and provider, logging and retention, document creation, the redone worst-case assessment, user-entered data) and ask them to either extend the existing approval or tell you what they need re-reviewed. Ask in the same message for the CBRA tier and conditions, whether Vertex AI needs the gateway, and whether the production promotion can reference the earlier approval as the InfoSec step's starting point. I can draft that note when you have the decision details.
 
 ## 4. Readiness against the seven promotion criteria (`§5.1`)
 
@@ -143,8 +150,8 @@ Hubi has no database and no user store. State is: the Content Repository copy in
 ## 6. Plan
 
 **Phase 0: decisions and intake (Giulia, Marina, LT, Legal, InfoSec).**
-1. Send me the **InfoSec approval artifact** (ticket or email, date, reviewed scope, conditions). I will redo the section 3 diff against what was actually reviewed.
-2. Confirm that Fabio Lima's role is an **LT member** for the Accountable role (or name the right one).
+1. Paste the **decision, CBRA tier and conditions from ISSD-51294** (the ticket is not readable from here). Section 3 is written against the submission only.
+2. Fabio Lima is recorded as the Accountable; LT membership is confirmed by InfoSec and the LT in the chain.
 3. Decide the **coverage model** and **named technical maintainer** (section 2.1).
 4. Put the data question to **Legal Privacy**, with the mitigations in 2.2. I can draft the message.
 5. Enter the standard prioritization process for promotion.
@@ -162,7 +169,8 @@ Hubi has no database and no user store. State is: the Content Repository copy in
 - **Finding #005 is the content risk, not an infrastructure one.** The claim guardrail is a pilot mitigation and the ledger is observe-only by default. Wider rollout stays gated on it independent of this standard.
 - **Persistent user text in logs** is the most likely thing InfoSec questions first, and it is a change from what was reviewed.
 - **No technical responder today.** The standard assigns 24x7 operation to the owner; nobody currently holds the pipeline and rollback role in production terms.
-- **LT eligibility of the Accountable** is unverified and gates the RASCI and the Catalog row.
+- **LT eligibility of the Accountable** (Fabio Lima) is asserted, not verified; InfoSec and the LT confirm it in the chain.
+- **The earlier approval left logging and retention open** and was framed around Claude, not Gemini. Treat both as unresolved until the decision comment says otherwise.
 - **Region:** the production network is `us-east4`; Vertex AI model availability and latency there are unverified.
 - **Ownership concentration:** product, engineering and the repository sit with one person today. The standard's "no single-person dependency" expectation needs a team behind the name.
 - **Ambiguities in the standard itself** (raised by the compliance plugin): the training course names, the load balancer and pipeline specifics, "where applicable" for backup, and the definition of LT.

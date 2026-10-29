@@ -16,13 +16,13 @@ workload:
 classification:
   proposed_by_owner: true
   confirmed_by:
-    infosec: pending                    # an earlier InfoSec review of Hubi exists (artifact reference [pending]); it is evidence, not this decision
+    infosec: pending                    # earlier InfoSec approval: Jira ISSD-51294, intake doc 'Hubi AI' 2026-05-28 (decision, tier and conditions not yet seen); evidence, not this decision
     lt: pending
     legal: pending                      # becomes n/a only if Legal confirms no personal or regulated data
 ownership:
   project_owner: "Marina Michel <[confirm email]>"   # decision 2026-10-29 (Giulia Esposito); matches the registry's GCP Project Owner for wh-revenue-prd-corp
   project_owner_grade_g6_plus: asserted # asserted by the product owner, not verified; Marina must agree to the RASCI herself
-  accountable_lt: "Fabio Lima <[confirm email]>"    # [confirm] his role is an LT member (ISSTD28 5.1: A must be an LT member); otherwise the LT member above him
+  accountable_lt: "Fabio Lima <[confirm email]>"    # stated by the product owner 2026-10-29; ISSTD28 5.1 requires the A to be an LT member: InfoSec and the LT confirm in the approval chain
   rasci_doc: "[pending]"
   catalog_entry: "[pending]"            # row for wh-revenue-prd-corp in the Corporate Production Catalog is empty
   support_sla: none                     # strongly recommended, not a gate
@@ -88,5 +88,6 @@ status:
     reaffirm_due: null
     access_review_due: null
 notes:
+  - "2026-10-29: Fabio Lima confirmed as Accountable by the product owner. Earlier InfoSec approval reference: Jira ISSD-51294 (not readable from the build environment). Submission left logging storage and retention to be defined with InfoSec and named Claude as the primary model; both need re-validation (plan section 3.2)."
   - "2026-10-29: owner decisions recorded: Project Owner Marina Michel (G6+ asserted), Accountable Fabio Lima (LT membership to confirm), Giulia Esposito product and operational owner with Marina as escalation. Coverage model and named technical maintainer still open (plan section 2.1)."
   - "2026-10-29: plan-only draft. See docs/production-promotion-plan.md. No GCP resource created or changed."
