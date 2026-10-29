@@ -49,3 +49,6 @@ data/region-membership.local.json
 
 # Written by scripts/deploy.ts into the exported commit; never committed.
 build-info.json
+
+# Local SAST bundle for the Linux Semgrep run (generated)
+sast-bundle/
