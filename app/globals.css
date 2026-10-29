@@ -432,10 +432,19 @@ body {
   border-radius: 6px;
 }
 
-.composer-note {
-  max-width: 760px;
-  margin: 6px auto 0;
-  padding: 0 4px;
-  font-size: 0.72rem;
+.guidelines {
+  margin-top: 6px;
+  font-size: 0.78rem;
   color: var(--text-muted);
+}
+
+.guidelines summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.guidelines ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  line-height: 1.5;
 }

@@ -314,6 +314,14 @@ export default function ChatPage() {
         <div>
           <h1>Hubi</h1>
           <p>Wellhub Revenue's AI Copilot -- internal prototype</p>
+          <details className="guidelines">
+            <summary>Usage guidelines</summary>
+            <ul>
+              <li>Ask about Revenue processes, tools and playbooks.</li>
+              <li>Do not enter personal data (names, emails, phone numbers) or confidential client information.</li>
+              <li>Pitches and emails are AI-generated drafts: review figures and claims against the cited sources before using or sharing them.</li>
+            </ul>
+          </details>
         </div>
         <button className="new-session-button" onClick={handleNewSession}>
           New session
@@ -338,7 +346,7 @@ export default function ChatPage() {
             )}
             {m.role === "assistant" && !m.isStreaming && !m.error && m.planningMode === "business-assistance" && m.finishedAt && (
               <div className="ai-draft-label">
-                AI-generated draft by Hubi, {new Date(m.finishedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}. Check the figures and claims against the sources before you use or send it.
+                AI-generated draft by Hubi · {new Date(m.finishedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}. Review figures and claims against the cited sources before using or sharing.
               </div>
             )}
             {m.role === "assistant" && m.error && <div className="error-banner">{m.error}</div>}
@@ -375,9 +383,6 @@ export default function ChatPage() {
             Send
           </button>
         </form>
-        <p className="composer-note">
-          Ask about Revenue processes. Please do not enter personal data (names, emails, phone numbers) or confidential client information.
-        </p>
       </div>
     </main>
   );

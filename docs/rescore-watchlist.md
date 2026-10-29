@@ -19,7 +19,7 @@ Flag before any of these changes behaviour in production.
 | Scrub emails and phone-like numbers from logged text | **Reduces** what is stored | On (`HUBI_LOG_SCRUB=0` disables) | No, it narrows the approved handling; mention in the delta note |
 | Log acting user and source IP | **Adds employee identifiers** to logs. Required by ISSTD28 `§5.6`, not in the approved design | **Off** (`HUBI_LOG_ACTOR=1` enables) | **Yes, before turning it on in production** |
 | Provider circuit breaker | None on data; a short refusal when the provider is down | On | No |
-| UI notice not to enter personal data; AI-draft label (tool and date) on Business Assistance answers | None on data; user-visible wording. Proposed copy is in `app/page.tsx` and is yours to edit | On | Product owner reviews the wording |
+| "Usage guidelines" disclosure in the header (do not enter personal data); AI-draft label (tool and date) on Business Assistance answers | None on data; user-visible wording. The persistent notice under the input was removed by decision; contextual warnings can be revisited | On | No |
 | Content bucket versioning | Retains older copies of content that is already Internal | Not done (a GCP change) | Mention |
 
 Nothing in Phase 1 adds a tool, a connector, a data source, persistent agent memory or users outside Revenue.
