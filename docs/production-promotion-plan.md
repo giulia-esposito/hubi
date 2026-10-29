@@ -46,9 +46,34 @@ Your assumption (treat prospect and client details as potentially customer data,
 
 ## 3. The existing InfoSec approval: baseline, documentation, new, and changed
 
-**What I read.** The intake document you linked ("AI Assessment & Use Case Intake Template", title "Hubi AI", dated May 28, 2026, submission type C: internally built AI product) and I tried the Jira ticket ISSD-51294. **The Jira ticket is not readable from here** (the Atlassian connector returned 403 "app not installed on this instance"). The intake document is the **submission**, not the decision: its Review Status Log, Reviewed by, CBRA scoring and Decision record are all blank, and its status says "In progress". So I know exactly what InfoSec was *asked* to approve on 2026-05-28, but not what they decided, the CBRA risk tier, or any conditions. Those live in the ticket. **I need you to paste the decision comment, the tier and any conditions or follow-up tickets.** Everything below that depends on them is marked.
+**What I read.** The intake submission ("Hubi AI", dated May 28, 2026, type C), the Jira activity you pasted for ISSD-51294 (the ticket itself is not readable from here: the Atlassian connector returns 403), and the InfoSec risk assessment document attached to the ticket on 2026-06-16, which carries the CBRA scoring and the decision. Hubi was **Approved on 2026-06-09, CBRA 4 (Low)**.
 
 **How the standard treats the approval (`§5.1`; the effort point is plugin reading).** ISSTD28 requires LT, InfoSec and Infrastructure & Data approval for every Corporate Production project, and a Sandbox attestation does not carry over. The earlier approval therefore cannot replace the InfoSec decision in the promotion chain. It is evidence that makes it a delta review.
+
+### 3.0 The decision (ISSD-51294, read from the Jira activity you pasted and the risk assessment document attached on 2026-06-16)
+
+| | |
+|---|---|
+| Submitted | 2026-05-28, type C (internally built AI product), author Giulia Esposito (Revenue Strategy and Enablement) |
+| Decision | **Approved**, 2026-06-09, by Guilherme Crucillo (InfoSec). Ticket resolved Done the same day; the risk assessment document was attached on 2026-06-16 |
+| CBRA score | **4, Low** (Criticality 2 x Autonomy 1 x Permissions 2 x Impact 1). "Approve, standard baseline controls apply"; required approvals: InfoSec review only. DPO/Legal review was not triggered |
+| Basis | Advisory only, Internal-classified data, no write access, no MCP or tool calling, no autonomous action. InfoSec calls these design choices "the primary risk mitigants" that "must be preserved as the architecture evolves" |
+| Condition stated | **Re-score trigger.** The approval covers: Internal-data RAG, no MCP servers, no write access, single agent, about 700 Revenue users. A **new assessment submission** is required for any of: (a) Confidential or client data in the knowledge base, (b) MCP servers or tool calling, (c) WorkRamp or any system involving personal data, (d) persistent memory, (e) expansion beyond the Revenue organisation. "Do not proceed with these changes under this approval." |
+| Also said | The approval "is conditional on the architectural commitments stated in the form being honoured", several open items "represent material unknowns", and "**the conditions below must be closed before production go-live**". Only the re-score condition is written below that sentence in the document I read, so the other open items are implied rather than listed: the API gateway approach (TBD), the LLM provider's DPA status, the final architecture and secrets approach, and the retention architecture. Worth asking Guilherme whether any other condition exists |
+
+**Two things in the assessment worth raising with InfoSec.**
+1. **The Impact Radius row is internally inconsistent.** It shows a score of 1 (and the total of 4 uses 1), but the rationale says "Scored conservatively at 2 given deployment breadth". With Impact at 2 the total is 8, which is **Medium** ("approve with conditions, InfoSec + CISO awareness"), not Low. This matters because ISSTD28's InfoSec step will likely start from this tier. Ask Guilherme which is right.
+2. **The score rests on assumptions that have since moved**: "Anthropic Claude via GCP" as the external LLM, a worst case of "minor rework", and "future versions may log interactions". See 3.2.
+
+**Re-score triggers checked against Hubi today**
+
+| Trigger | Hubi | Status |
+|---|---|---|
+| (a) Confidential or client data in the knowledge base | Knowledge content is Internal (the Content Registry holds "Client-shareable: No" on every row). The risk is **user-typed** prospect details, which are not the knowledge base | Not triggered, but see 3.2 (user input was never assessed) |
+| (b) MCP servers or tool calling | None | Not triggered. **Keep it that way: Phase 1 must not add tools** |
+| (c) WorkRamp or any system involving personal data | No integration; the content is a file export | Not triggered. A future WorkRamp sync would trigger a new assessment |
+| (d) Persistent memory | The agent has none; each session starts empty. Conversation text is persisted in Cloud Logging for monitoring, which is not memory the agent reads | Not literally triggered; a judgment call InfoSec should confirm, because it is the same retention question |
+| (e) Expansion beyond the Revenue organisation | Revenue only | Not triggered. Promoting to Corporate Production under `wh-revenue-prd-corp` does not widen the audience |
 
 ### 3.1 What was submitted, and where Hubi still matches it
 
@@ -69,8 +94,8 @@ Your assumption (treat prospect and client details as potentially customer data,
 
 | Change | Submitted | Now | Why it matters |
 |---|---|---|---|
-| **Primary model and provider** | "Anthropic Claude as the primary LLM through approved enterprise access"; external dependencies "Anthropic Claude API, Google Cloud Platform"; Gemini "may also be evaluated" | **Gemini 2.5 Flash on Vertex AI**, in the company's GCP project, no Anthropic dependency | Gemini was left open, so it is within the submission's wording, but the review was framed around Claude. Vertex AI keeps prompts inside Wellhub's GCP, which is arguably a better data story. InfoSec should confirm it explicitly. Also the model-training prohibition (`§5.3`) must be confirmed for this configuration |
-| **Logging and storage of user text** | "Logging and retention policies will be defined in partnership with InfoSec during implementation. **No final storage architecture has been approved yet.**" Logged: retrieval requests, AI requests and responses, errors, access events | Every question, answer, history digest, verification draft and claim-ledger quote goes to **Cloud Logging** as structured JSON. The submission anticipated the logging but left the storage architecture and retention **unapproved**. The form's own minimum for AI action logs is 12 months, ISSTD28 says 365 days centrally | The most important item. The approval did not settle this; InfoSec was to define it. This is also where an accidental prospect name would be stored |
+| **Primary model and provider** | "Anthropic Claude as the primary LLM through approved enterprise access"; external dependencies "Anthropic Claude API, Google Cloud Platform"; Gemini "may also be evaluated". InfoSec's Permissions score of 2 rested on data flowing "to an external LLM API (Anthropic Claude via GCP)" | **Gemini 2.5 Flash on Vertex AI**, in the company's GCP project, no Anthropic dependency | Gemini was left open, so it is within the submission's wording, but the review was framed around Claude. Vertex AI keeps prompts inside Wellhub's GCP, which is arguably a better data story. InfoSec should confirm it explicitly. Also the model-training prohibition (`§5.3`) must be confirmed for this configuration |
+| **Logging and storage of user text** | "Logging and retention policies will be defined in partnership with InfoSec during implementation. **No final storage architecture has been approved yet.**" InfoSec flagged "retention architecture undefined" as residual exposure and the open items as conditions to close before go-live. Logged: retrieval requests, AI requests and responses, errors, access events | Every question, answer, history digest, verification draft and claim-ledger quote goes to **Cloud Logging** as structured JSON. The submission anticipated the logging but left the storage architecture and retention **unapproved**. The form's own minimum for AI action logs is 12 months, ISSTD28 says 365 days centrally | The most important item. The approval did not settle this; InfoSec was to define it. This is also where an accidental prospect name would be stored |
 | **Declared purposes** | Ticked: research and analysis, summarisation, communication and writing assistance (editing, translating, tone), automated decision support, assistant with tool access. **Not ticked: "Document creation and review (writing emails, reports, presentations)"** | **Business Assistance generates pitches, emails and talk tracks**, which is document creation | Likely outside the declared purposes. It also moves the output from internal guidance to drafts that reps may send to prospects |
 | **Worst-case self-assessment** | Level 2: "a small number of people inside Wellhub... caught and fixed quickly"; "minor delays or rework" | With customer-facing drafts and an open claim-fidelity finding (#005: the model can overstate a claim or drop its scope), a plausible worst case is a misleading statement reaching a prospect | The self-assessment should be redone honestly; it probably rises to level 3 (a meaningful problem for a team or process). This feeds InfoSec's CBRA impact score |
 | **Data entered by users** | The data table lists knowledge sources only. User questions as input were **not assessed** | Users type free text, which may include prospect or client details by accident | The form's classification guidance says to include everything and flag it. This is the gap behind the DPIA question (2.2) |
@@ -102,7 +127,7 @@ Workload name, project, invoker (people in a browser), deployment model, AI agen
 
 ### 3.5 Recommendation for the InfoSec conversation
 
-Do not present this as a new request. Send InfoSec a **delta note** against ISSD-51294 covering the five rows that matter (model and provider, logging and retention, document creation, the redone worst-case assessment, user-entered data) and ask them to either extend the existing approval or tell you what they need re-reviewed. Ask in the same message for the CBRA tier and conditions, whether Vertex AI needs the gateway, and whether the production promotion can reference the earlier approval as the InfoSec step's starting point. I can draft that note when you have the decision details.
+Do not present this as a new request. Hubi sits inside the approved scope on every re-score trigger, and the approval already says the open items close before go-live, so the honest framing is a **delta note against ISSD-51294**: here is what the open items resolved to, and here are the five things that moved. A draft is in `docs/infosec-delta-note-ISSD-51294.md`. The questions to put to Guilherme in it: the Impact Radius inconsistency (Low versus Medium), whether any other condition exists, whether Gemini on Vertex AI inside the company project is covered, whether Vertex needs the gateway, whether the earlier approval can be the starting point for the ISSTD28 InfoSec step, and who defines log retention.
 
 ## 4. Readiness against the seven promotion criteria (`§5.1`)
 
@@ -111,7 +136,7 @@ All seven must be evidenced. The Project Owner assembles and attests; the approv
 | | Criterion | State | Who closes it |
 |---|---|---|---|
 | (a) | Classification confirmed (InfoSec + LT, Legal if personal data) | **Pending.** Proposed as Corporate Production; InfoSec confirmation can reference the earlier review; LT and Legal still to confirm | Owner proposes; InfoSec, LT, Legal confirm |
-| (b) | Unified approvals: LT, InfoSec, Infrastructure & Data (+ Legal, + CorpTech only if its support is requested) | **Pending, by design.** The earlier InfoSec approval is evidence for the InfoSec step, not the decision | Other people only |
+| (b) | Unified approvals: LT, InfoSec, Infrastructure & Data (+ Legal, + CorpTech only if its support is requested) | **Pending, by design.** The 2026-06-09 InfoSec approval (CBRA 4, Low) is evidence for the InfoSec step, not the decision | Other people only |
 | (c) | RASCI with a named Responsible and an Accountable **LT** member | **Partly.** R: Marina Michel (asserted G6+); A: Fabio Lima if his role counts as LT. Needs agreement from both, and the coverage model in 2.1 | Owner drafts; A and R agree |
 | (d) | Catalog entry: accountable owner, responsible lead, direct contact channel | **Missing.** Row for `wh-revenue-prd-corp` is empty. Proposed: accountable owner Fabio Lima, responsible lead Marina Michel, contact channel a Revenue Strategy & Operations team channel `[confirm]` | Owner writes the row |
 | (e) | Production readiness: source control, validated deployment, availability monitoring | **Partly.** See 4.1 | Engineering + Platform Engineering |
@@ -150,7 +175,7 @@ Hubi has no database and no user store. State is: the Content Repository copy in
 ## 6. Plan
 
 **Phase 0: decisions and intake (Giulia, Marina, LT, Legal, InfoSec).**
-1. Paste the **decision, CBRA tier and conditions from ISSD-51294** (the ticket is not readable from here). Section 3 is written against the submission only.
+1. Send the **delta note** (`docs/infosec-delta-note-ISSD-51294.md`) to Guilherme Crucillo after you have read it. Decision, tier and conditions are now in section 3.0.
 2. Fabio Lima is recorded as the Accountable; LT membership is confirmed by InfoSec and the LT in the chain.
 3. Decide the **coverage model** and **named technical maintainer** (section 2.1).
 4. Put the data question to **Legal Privacy**, with the mitigations in 2.2. I can draft the message.
@@ -170,7 +195,7 @@ Hubi has no database and no user store. State is: the Content Repository copy in
 - **Persistent user text in logs** is the most likely thing InfoSec questions first, and it is a change from what was reviewed.
 - **No technical responder today.** The standard assigns 24x7 operation to the owner; nobody currently holds the pipeline and rollback role in production terms.
 - **LT eligibility of the Accountable** (Fabio Lima) is asserted, not verified; InfoSec and the LT confirm it in the chain.
-- **The earlier approval left logging and retention open** and was framed around Claude, not Gemini. Treat both as unresolved until the decision comment says otherwise.
+- **The earlier approval left logging and retention open** (a condition to close before go-live) and was framed around Claude, not Gemini. Its Impact Radius row says 1 while its rationale says 2: Low or Medium is unresolved.
 - **Region:** the production network is `us-east4`; Vertex AI model availability and latency there are unverified.
 - **Ownership concentration:** product, engineering and the repository sit with one person today. The standard's "no single-person dependency" expectation needs a team behind the name.
 - **Ambiguities in the standard itself** (raised by the compliance plugin): the training course names, the load balancer and pipeline specifics, "where applicable" for backup, and the definition of LT.

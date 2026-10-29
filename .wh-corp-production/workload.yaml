@@ -16,7 +16,7 @@ workload:
 classification:
   proposed_by_owner: true
   confirmed_by:
-    infosec: pending                    # earlier InfoSec approval: Jira ISSD-51294, intake doc 'Hubi AI' 2026-05-28 (decision, tier and conditions not yet seen); evidence, not this decision
+    infosec: pending                    # earlier InfoSec approval: Jira ISSD-51294, approved 2026-06-09 by Guilherme Crucillo, CBRA 4 Low (Impact Radius row inconsistent, may be 8 Medium); evidence, not this decision
     lt: pending
     legal: pending                      # becomes n/a only if Legal confirms no personal or regulated data
 ownership:
@@ -88,6 +88,6 @@ status:
     reaffirm_due: null
     access_review_due: null
 notes:
-  - "2026-10-29: Fabio Lima confirmed as Accountable by the product owner. Earlier InfoSec approval reference: Jira ISSD-51294 (not readable from the build environment). Submission left logging storage and retention to be defined with InfoSec and named Claude as the primary model; both need re-validation (plan section 3.2)."
+  - "2026-10-29: Fabio Lima confirmed as Accountable by the product owner. Earlier InfoSec approval: Jira ISSD-51294, Approved 2026-06-09, CBRA 4 Low, condition: re-score triggers (a)-(e), open items to close before go-live. Logging storage and retention were left to define with InfoSec and the primary model was named as Claude; both need re-validation (plan section 3.2)."
   - "2026-10-29: owner decisions recorded: Project Owner Marina Michel (G6+ asserted), Accountable Fabio Lima (LT membership to confirm), Giulia Esposito product and operational owner with Marina as escalation. Coverage model and named technical maintainer still open (plan section 2.1)."
   - "2026-10-29: plan-only draft. See docs/production-promotion-plan.md. No GCP resource created or changed."
