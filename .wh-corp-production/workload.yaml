@@ -16,13 +16,13 @@ workload:
 classification:
   proposed_by_owner: true
   confirmed_by:
-    infosec: pending
+    infosec: pending                    # an earlier InfoSec review of Hubi exists (artifact reference [pending]); it is evidence, not this decision
     lt: pending
     legal: pending                      # becomes n/a only if Legal confirms no personal or regulated data
 ownership:
-  project_owner: "[confirm]"            # must be job grade G6+; the registry lists a GCP Project Owner for wh-revenue-prd-corp but no confirmed owner for Hubi
-  project_owner_grade_g6_plus: unknown
-  accountable_lt: "[confirm]"
+  project_owner: "Marina Michel <[confirm email]>"   # decision 2026-10-29 (Giulia Esposito); matches the registry's GCP Project Owner for wh-revenue-prd-corp
+  project_owner_grade_g6_plus: asserted # asserted by the product owner, not verified; Marina must agree to the RASCI herself
+  accountable_lt: "Fabio Lima <[confirm email]>"    # [confirm] his role is an LT member (ISSTD28 5.1: A must be an LT member); otherwise the LT member above him
   rasci_doc: "[pending]"
   catalog_entry: "[pending]"            # row for wh-revenue-prd-corp in the Corporate Production Catalog is empty
   support_sla: none                     # strongly recommended, not a gate
@@ -31,9 +31,9 @@ ownership:
   training_recert_due: null
 data:
   classification: "[confirm]"           # ISSTD06 level
-  contains_personal_or_regulated_data: false    # [confirm] with Legal: users type prospect and client details; pilot logs questions and answers
-  contains_customer_data_or_sensitive_pii: false # [confirm] with Legal Privacy; true triggers the DPIA gate
-  dpia: n/a                             # revisit after Legal answers
+  contains_personal_or_regulated_data: false    # users are told not to enter personal data; Legal confirms
+  contains_customer_data_or_sensitive_pii: true # conservative assumption (2026-10-29): prospect/client business details may be entered by accident; Legal Privacy decides
+  dpia: required                        # conservative until Legal Privacy determines otherwise; processing must not begin before DPIA and Legal approval (5.9)
   legal_go_live_reconfirmation: n/a
 connectors:
   - system: Vertex AI (Gemini)
@@ -88,4 +88,5 @@ status:
     reaffirm_due: null
     access_review_due: null
 notes:
+  - "2026-10-29: owner decisions recorded: Project Owner Marina Michel (G6+ asserted), Accountable Fabio Lima (LT membership to confirm), Giulia Esposito product and operational owner with Marina as escalation. Coverage model and named technical maintainer still open (plan section 2.1)."
   - "2026-10-29: plan-only draft. See docs/production-promotion-plan.md. No GCP resource created or changed."
