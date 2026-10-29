@@ -7,7 +7,7 @@ workload:
   project: wh-revenue-prd-corp          # registry: ACTIVE; staging pair wh-revenue-stg-corp. Not created or touched by this draft
   area: revenue
   deployment_model: cloud-run-service
-  invoker: human                        # Revenue employees in a browser, behind the corporate network
+  invoker: human                        # Revenue employees; V1 interface is Google Chat (web app behind IAP is the pilot interface)
   is_ai_agent: true
   promoted_from:
     sandbox_project: wh-revenue-sandbox
@@ -88,6 +88,7 @@ status:
     reaffirm_due: null
     access_review_due: null
 notes:
+  - "2026-10-29: V1 scope decision: Hubi V1 is a Google Chat app for a controlled Revenue audience; Workspace/Chat access boundary, no custom auth or user-level authorization, actor logging off and non-blocking, contextual applicability is the product control. Chat integration pattern (Pub/Sub, no public endpoint) and conversation state need Platform Engineering and InfoSec confirmation (plan section 0)."
   - "2026-10-29: Fabio Lima confirmed as Accountable by the product owner. Earlier InfoSec approval: Jira ISSD-51294, Approved 2026-06-09, CBRA 4 Low, condition: re-score triggers (a)-(e), open items to close before go-live. Logging storage and retention were left to define with InfoSec and the primary model was named as Claude; both need re-validation (plan section 3.2)."
   - "2026-10-29: owner decisions recorded: Project Owner Marina Michel (G6+ asserted), Accountable Fabio Lima (LT membership to confirm), Giulia Esposito product and operational owner with Marina as escalation. Coverage model and named technical maintainer still open (plan section 2.1)."
   - "2026-10-29: plan-only draft. See docs/production-promotion-plan.md. No GCP resource created or changed."
