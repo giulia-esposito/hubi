@@ -37,3 +37,9 @@ The Content Registry ("RKC | Revenue Knowledge Center - Content Registry") is th
 - No runtime read of the sheet, no automatic sync.
 - Only the governance columns are carried. Audience, Client-shareable, Language and the review dates are not used (Client-shareable is "No" on nearly every row and would matter for what Hubi may draft for external use; not wired).
 - Titles and personal data in the registry are deliberately not copied into the repository.
+
+## Source facts and the V1 access-level policy (2026-10-29)
+
+The export and snapshot now also carry **Content Type, Collection, Access Level and Source Platform Modified Date** (`config/governance/registry-export.csv`; `npm run registry:sync` regenerates the snapshot). Served chunks carry them in `chunk.governance`. Design and status: `docs/source-selection-design.md`.
+
+**Access-level policy.** `PILOT_GOVERNANCE_POLICY.servedAccessLevels` is `Revenue – All` and `Revenue – Specific Function`; any other or blank level is excluded, because Hubi does not know who is asking and cannot honour a restriction on who may read a document. On the deployed corpus this excludes RKC-000001 and RKC-000017 (the two Leaders Only documents). This replaces the earlier decision that "the corpus is the access boundary", which assumed no restricted document was in the bucket. It is policy, not file removal: reversible, auditable in the governance report, and lifted by widening the list once identity-aware access is approved.

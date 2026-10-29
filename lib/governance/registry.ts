@@ -26,6 +26,14 @@ export interface RegistryEntry {
   risks: string[];
   /** The registry note, kept only for Eligible with Restrictions entries: it is the caveat users must see. */
   restriction?: string;
+  /** Training, Wiki Page, Newsletter, Coaching Session, Deck, Challenge...: what kind of source it is ("" when blank). */
+  contentType: string;
+  /** The registry's Collection (for example "Trending This Week"), which identifies a source family more reliably than the type. */
+  collection: string;
+  /** Who the registry says may see it: "Revenue – All", "Revenue – Specific Function", "Revenue – Leaders Only"... ("" when blank). */
+  accessLevel: string;
+  /** Source Platform Modified Date, raw as the sheet writes it (day/month/year, 2- or 4-digit year); "" when blank. */
+  sourceModified: string;
 }
 
 export interface RegistrySnapshot {
@@ -171,6 +179,10 @@ export function parseRegistryCsv(text: string): ParsedRegistry {
       contentStatus: col(row, "content status"),
       region: col(row, "region / country") || col(row, "region"),
       risks,
+      contentType: col(row, "content type"),
+      collection: col(row, "collection"),
+      accessLevel: col(row, "access level"),
+      sourceModified: col(row, "source platform modified date"),
       ...(aiEligibility === "Eligible with Restrictions" && note ? { restriction: note } : {}),
     });
   }

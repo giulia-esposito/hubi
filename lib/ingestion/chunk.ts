@@ -38,6 +38,11 @@ export interface ChunkGovernance {
   /** The registry's caveat for an Eligible with Restrictions document; shown with the source. */
   restriction?: string;
   risks?: string[];
+  /** Source facts from the registry, used to label sources and to choose between them (docs/source-selection-design.md). */
+  contentType?: string;
+  collection?: string;
+  accessLevel?: string;
+  sourceModified?: string;
 }
 
 // Keeps a chunk small enough to be a tight, specific citation while staying

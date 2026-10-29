@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { ingestContentRepository } from "../lib/ingestion/ingest.ts";
 import type { Chunk } from "../lib/ingestion/chunk.ts";
-import { applyGovernance, describeGovernance, PILOT_GOVERNANCE_POLICY } from "../lib/governance/governance.ts";
+import { applyGovernance, describeGovernance, normalizeAccessLevel, PILOT_GOVERNANCE_POLICY } from "../lib/governance/governance.ts";
 import { decideEntry, normalizeEligibility, parseRegistryCsv, validateSnapshot, type RegistrySnapshot } from "../lib/governance/registry.ts";
 import { REGISTRY_SNAPSHOT } from "../lib/governance/registrySnapshot.ts";
 import { renderSnapshotModule } from "../lib/governance/snapshotModule.ts";
@@ -32,19 +32,19 @@ const REGISTRY: RegistrySnapshot = {
   sourceRevision: "test",
   syncedAt: "2026-01-01",
   entries: [
-    { contentId: "RKC-000001", aiEligibility: "Eligible", contentStatus: "Active", region: "Global", risks: [] },
-    { contentId: "RKC-000002", aiEligibility: "Not Eligible", contentStatus: "Active", region: "Global", risks: [] },
-    { contentId: "RKC-000003", aiEligibility: "Pending Assessment", contentStatus: "Active", region: "Global", risks: [] },
-    { contentId: "RKC-000004", aiEligibility: "Unassessed", contentStatus: "", region: "", risks: [] },
-    { contentId: "RKC-000005", aiEligibility: "Eligible", contentStatus: "Archived", region: "Global", risks: ["Outdated Content"] },
-    { contentId: "RKC-000006", aiEligibility: "Eligible with Restrictions", contentStatus: "Active", region: "Global", risks: ["Incomplete Content"], restriction: "Only released for US" },
+    { contentId: "RKC-000001", aiEligibility: "Eligible", contentStatus: "Active", region: "Global", risks: [], contentType: "Training", collection: "", accessLevel: "Revenue – All", sourceModified: "" },
+    { contentId: "RKC-000002", aiEligibility: "Not Eligible", contentStatus: "Active", region: "Global", risks: [], contentType: "Training", collection: "", accessLevel: "Revenue – All", sourceModified: "" },
+    { contentId: "RKC-000003", aiEligibility: "Pending Assessment", contentStatus: "Active", region: "Global", risks: [], contentType: "Training", collection: "", accessLevel: "Revenue – All", sourceModified: "" },
+    { contentId: "RKC-000004", aiEligibility: "Unassessed", contentStatus: "", region: "", risks: [], contentType: "Training", collection: "", accessLevel: "Revenue – All", sourceModified: "" },
+    { contentId: "RKC-000005", aiEligibility: "Eligible", contentStatus: "Archived", region: "Global", risks: ["Outdated Content"], contentType: "Training", collection: "", accessLevel: "Revenue – All", sourceModified: "" },
+    { contentId: "RKC-000006", aiEligibility: "Eligible with Restrictions", contentStatus: "Active", region: "Global", risks: ["Incomplete Content"], restriction: "Only released for US", contentType: "Training", collection: "", accessLevel: "Revenue – All", sourceModified: "" },
   ],
 };
 
 describe("registry decisions", () => {
   test("only Eligible and Eligible with Restrictions pass, and only while not retired", () => {
     const decide = (aiEligibility: string, contentStatus = "Active") =>
-      decideEntry({ contentId: "RKC-000001", aiEligibility: normalizeEligibility(aiEligibility), contentStatus, region: "", risks: [] }).allowed;
+      decideEntry({ contentId: "RKC-000001", aiEligibility: normalizeEligibility(aiEligibility), contentStatus, region: "", risks: [], contentType: "", collection: "", accessLevel: "", sourceModified: "" }).allowed;
     assert.equal(decide("Eligible"), true);
     assert.equal(decide("Eligible with Restrictions"), true);
     assert.equal(decide("Not Eligible"), false);
@@ -226,5 +226,90 @@ describe("real corpus: Not Eligible content never reaches retrieval or reasoning
     }
     assert.ok(!citations.includes("RKC-000021"));
     assert.ok(!/What is Wellhub"? Elevator Pitch Submission/.test(citations));
+  });
+});
+
+describe("access-level policy (V1: Hubi cannot verify who is asking)", () => {
+  const entry = (contentId: string, accessLevel: string, extra: Partial<RegistrySnapshot["entries"][number]> = {}): RegistrySnapshot["entries"][number] => ({
+    contentId,
+    aiEligibility: "Eligible",
+    contentStatus: "Active",
+    region: "Global",
+    risks: [],
+    contentType: "Training",
+    collection: "Sales Methodology",
+    accessLevel,
+    sourceModified: "27/02/2026",
+    ...extra,
+  });
+  const registry: RegistrySnapshot = {
+    ...REGISTRY,
+    entries: [
+      entry("RKC-000001", "Revenue – All"),
+      entry("RKC-000002", "Revenue – Specific Function"),
+      entry("RKC-000003", "Revenue – Leaders Only"),
+      entry("RKC-000004", ""),
+      entry("RKC-000005", "Restricted – Confidential"),
+      entry("RKC-000006", "revenue - all"),
+    ],
+  };
+  const chunks = ["RKC-000001", "RKC-000002", "RKC-000003", "RKC-000004", "RKC-000005", "RKC-000006"].map((id) => chunk(id, id));
+  const result = applyGovernance(chunks, { registry });
+
+  test("the pilot policy serves Revenue – All and Revenue – Specific Function, and nothing else", () => {
+    assert.deepEqual(ids(result.chunks), ["RKC-000001", "RKC-000002", "RKC-000006"]);
+  });
+
+  test("Leaders Only, restricted and blank levels are excluded with the access-level reason", () => {
+    const reasons = Object.fromEntries(result.excluded.map((e) => [e.contentId, e.reason]));
+    assert.match(reasons["RKC-000003"], /Revenue – Leaders Only.*not served in V1/);
+    assert.match(reasons["RKC-000004"], /blank/);
+    assert.match(reasons["RKC-000005"], /Restricted – Confidential/);
+    assert.ok(describeGovernance(result.report).some((l) => l.includes("excluded RKC-000003")));
+  });
+
+  test("levels compare ignoring case, spacing and the kind of dash", () => {
+    assert.equal(normalizeAccessLevel("Revenue – All"), normalizeAccessLevel("revenue - all"));
+    assert.equal(normalizeAccessLevel("Revenue — All"), normalizeAccessLevel("Revenue  –  All"));
+  });
+
+  test("an excluded document leaves no chunk behind, and an eligibility exclusion still wins over the access rule", () => {
+    assert.ok(!ids(result.chunks).includes("RKC-000003"));
+    const mixed = applyGovernance([chunk("RKC-000007", "x")], { registry: { ...registry, entries: [entry("RKC-000007", "Revenue – All", { aiEligibility: "Not Eligible" })] } });
+    assert.match(mixed.excluded[0].reason, /AI Eligibility: Not Eligible/);
+  });
+
+  test("with no served-level list there is no access rule, so the policy can be widened or lifted without code", () => {
+    const open = applyGovernance(chunks, { registry, policy: { ...PILOT_GOVERNANCE_POLICY, servedAccessLevels: undefined } });
+    assert.equal(open.chunks.length, 6);
+    const wider = applyGovernance(chunks, { registry, policy: { ...PILOT_GOVERNANCE_POLICY, servedAccessLevels: ["Revenue – All", "Revenue – Specific Function", "Revenue – Leaders Only"] } });
+    assert.ok(ids(wider.chunks).includes("RKC-000003"));
+  });
+
+  test("served chunks carry the registry's source facts for labelling and source selection", () => {
+    const g = result.chunks.find((c) => c.id === "RKC-000002")?.governance;
+    assert.equal(g?.contentType, "Training");
+    assert.equal(g?.collection, "Sales Methodology");
+    assert.equal(g?.accessLevel, "Revenue – Specific Function");
+    assert.equal(g?.sourceModified, "27/02/2026");
+  });
+
+  test("the compiled snapshot carries the four columns, and exactly RKC-000001 and RKC-000017 are Leaders Only", () => {
+    const leaders = REGISTRY_SNAPSHOT.entries.filter((e) => normalizeAccessLevel(e.accessLevel) === normalizeAccessLevel("Revenue – Leaders Only")).map((e) => e.contentId);
+    assert.deepEqual(leaders, ["RKC-000001", "RKC-000017"]);
+    const e41 = REGISTRY_SNAPSHOT.entries.find((e) => e.contentId === "RKC-000041");
+    assert.equal(e41?.contentType, "Newsletter");
+    assert.equal(e41?.collection, "Trending This Week");
+    assert.equal(e41?.sourceModified, "14/7/26");
+    assert.ok(REGISTRY_SNAPSHOT.entries.every((e) => typeof e.contentType === "string" && typeof e.accessLevel === "string"));
+  });
+
+  test("the export parser reads the four columns by their sheet headings", () => {
+    const csv = [
+      "Content ID,Content Type,Collection,Access Level,Source Platform Modified Date,Content Status,AI Eligibility",
+      "RKC-000001,Newsletter,Trending This Week,Revenue – All,14/7/26,Active,Eligible",
+    ].join(String.fromCharCode(10));
+    const [e] = parseRegistryCsv(csv).entries;
+    assert.deepEqual([e.contentType, e.collection, e.accessLevel, e.sourceModified], ["Newsletter", "Trending This Week", "Revenue – All", "14/7/26"]);
   });
 });

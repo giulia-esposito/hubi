@@ -11,21 +11,33 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – Leaders Only",
+      "sourceModified": "27/02/2026"
     },
     {
       "contentId": "RKC-000002",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Revenue Tools",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "27/02/2026"
     },
     {
       "contentId": "RKC-000003",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Revenue Tools",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "16/03/2026"
     },
     {
       "contentId": "RKC-000004",
@@ -34,7 +46,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Other"
-      ]
+      ],
+      "contentType": "Training",
+      "collection": "Superhero Academy",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "25/03/2026"
     },
     {
       "contentId": "RKC-000005",
@@ -43,14 +59,22 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Other"
-      ]
+      ],
+      "contentType": "Training",
+      "collection": "Superhero Academy",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "25/03/2026"
     },
     {
       "contentId": "RKC-000006",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "SS Latam",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "CS Onboarding",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "23/02/2026"
     },
     {
       "contentId": "RKC-000007",
@@ -59,28 +83,44 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "United States",
       "risks": [
         "Other"
-      ]
+      ],
+      "contentType": "Training",
+      "collection": "Metrics",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "25/03/2026"
     },
     {
       "contentId": "RKC-000008",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "16/04/2026"
     },
     {
       "contentId": "RKC-000009",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "16/04/2026"
     },
     {
       "contentId": "RKC-000010",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "16/04/2026"
     },
     {
       "contentId": "RKC-000011",
@@ -90,6 +130,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Incomplete Content"
       ],
+      "contentType": "Training",
+      "collection": "Pricing and Commercial Rules",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "25/03/2026",
       "restriction": "It was only released for US and was not fully implemented"
     },
     {
@@ -100,6 +144,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Incomplete Content"
       ],
+      "contentType": "Training",
+      "collection": "Pricing and Commercial Rules",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "25/03/2026",
       "restriction": "It was only released for US and was not fully implemented"
     },
     {
@@ -110,6 +158,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Incomplete Content"
       ],
+      "contentType": "Training",
+      "collection": "Pricing and Commercial Rules",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "25/03/2026",
       "restriction": "It was only released for US and was not fully implemented"
     },
     {
@@ -117,35 +169,55 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Client Success Processes",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "4/7/26"
     },
     {
       "contentId": "RKC-000015",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "United States, Europe",
-      "risks": []
+      "risks": [],
+      "contentType": "Coaching Session",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "16/04/2026"
     },
     {
       "contentId": "RKC-000016",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "United States, Europe",
-      "risks": []
+      "risks": [],
+      "contentType": "Coaching Session",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "16/04/2026"
     },
     {
       "contentId": "RKC-000017",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – Leaders Only",
+      "sourceModified": "16/04/2026"
     },
     {
       "contentId": "RKC-000018",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Client Success Processes",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "7/4/26"
     },
     {
       "contentId": "RKC-000019",
@@ -155,6 +227,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Training",
+      "collection": "Product Launches",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "7/4/26",
       "restriction": "Content was only shared with US"
     },
     {
@@ -162,56 +238,88 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Contracts",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "16/3/26"
     },
     {
       "contentId": "RKC-000021",
       "aiEligibility": "Not Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Challenge",
+      "collection": "Superhero Academy",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "1/4/26"
     },
     {
       "contentId": "RKC-000022",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Europe",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Competition",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "30/3/26"
     },
     {
       "contentId": "RKC-000023",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "United States, SS Latam",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Competition",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "30/3/26"
     },
     {
       "contentId": "RKC-000024",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Brazil",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Competition",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "30/3/26"
     },
     {
       "contentId": "RKC-000025",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Brazil",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Product Launches",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "10/4/26"
     },
     {
       "contentId": "RKC-000026",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Revenue Tools",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "7/4/26"
     },
     {
       "contentId": "RKC-000027",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Brazil",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Opportunities management",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "28/4/26"
     },
     {
       "contentId": "RKC-000028",
@@ -221,6 +329,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Training",
+      "collection": "Opportunities management",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "12/5/26",
       "restriction": "Content is mixed in portuguese and english. Recommend review and standardization"
     },
     {
@@ -230,7 +342,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "RKO",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "16/1/26"
     },
     {
       "contentId": "RKC-000030",
@@ -239,7 +355,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "RKO",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "16/1/26"
     },
     {
       "contentId": "RKC-000031",
@@ -248,7 +368,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "RKO",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "29/6/23"
     },
     {
       "contentId": "RKC-000032",
@@ -257,7 +381,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Revenue Tools",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "10/1/23"
     },
     {
       "contentId": "RKC-000033",
@@ -267,7 +395,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Outdated Content",
         "Broken Link"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Marketing and Branding",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "24/3/24"
     },
     {
       "contentId": "RKC-000034",
@@ -277,7 +409,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Outdated Content",
         "Broken Link"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Marketing and Branding",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "22/3/24"
     },
     {
       "contentId": "RKC-000035",
@@ -287,7 +423,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Outdated Content",
         "Broken Link"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Marketing and Branding",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "30/8/24"
     },
     {
       "contentId": "RKC-000036",
@@ -296,7 +436,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "People topics",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "22/1/25"
     },
     {
       "contentId": "RKC-000037",
@@ -305,21 +449,33 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Product Launches",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "29/5/25"
     },
     {
       "contentId": "RKC-000038",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Wiki Page",
+      "collection": "Product Launches",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "12/6/26"
     },
     {
       "contentId": "RKC-000039",
       "aiEligibility": "Not Eligible",
       "contentStatus": "Archived",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Wiki Page",
+      "collection": "People topics",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "10/6/25"
     },
     {
       "contentId": "RKC-000040",
@@ -328,7 +484,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Broken Link"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "People topics",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "24/4/24"
     },
     {
       "contentId": "RKC-000041",
@@ -338,6 +498,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Newsletter",
+      "collection": "Trending This Week",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "14/7/26",
       "restriction": "Newsletter that consolidates different topics. Always prefer the original source"
     },
     {
@@ -348,6 +512,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Newsletter",
+      "collection": "Trending This Week",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "7/7/26",
       "restriction": "Newsletter that consolidates different topics. Always prefer the original source"
     },
     {
@@ -358,6 +526,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Newsletter",
+      "collection": "Trending This Week",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "29/6/26",
       "restriction": "Newsletter that consolidates different topics. Always prefer the original source"
     },
     {
@@ -368,6 +540,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Newsletter",
+      "collection": "Trending This Week",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "22/6/26",
       "restriction": "Newsletter that consolidates different topics. Always prefer the original source"
     },
     {
@@ -378,6 +554,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Newsletter",
+      "collection": "Trending This Week",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "15/6/26",
       "restriction": "Newsletter that consolidates different topics. Always prefer the original source"
     },
     {
@@ -388,6 +568,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Newsletter",
+      "collection": "Trending This Week",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "7/6/26",
       "restriction": "Newsletter that consolidates different topics. Always prefer the original source"
     },
     {
@@ -398,6 +582,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Newsletter",
+      "collection": "Trending This Week",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "1/6/26",
       "restriction": "Newsletter that consolidates different topics. Always prefer the original source"
     },
     {
@@ -408,6 +596,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Newsletter",
+      "collection": "Trending This Week",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "22/5/26",
       "restriction": "Newsletter that consolidates different topics. Always prefer the original source"
     },
     {
@@ -417,7 +609,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Events",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "15/9/22"
     },
     {
       "contentId": "RKC-000050",
@@ -426,7 +622,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Events",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "15/9/22"
     },
     {
       "contentId": "RKC-000051",
@@ -435,7 +635,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Events",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "15/9/22"
     },
     {
       "contentId": "RKC-000052",
@@ -444,7 +648,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Events",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "15/9/22"
     },
     {
       "contentId": "RKC-000053",
@@ -453,7 +661,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Events",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "1/11/22"
     },
     {
       "contentId": "RKC-000054",
@@ -462,7 +674,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Events",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "13/1/23"
     },
     {
       "contentId": "RKC-000055",
@@ -471,7 +687,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Events",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "13/1/23"
     },
     {
       "contentId": "RKC-000056",
@@ -480,7 +700,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Events",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "8/3/23"
     },
     {
       "contentId": "RKC-000057",
@@ -490,7 +714,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Source Unavailable",
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "RKO",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "9/3/23"
     },
     {
       "contentId": "RKC-000058",
@@ -500,7 +728,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Source Unavailable",
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "RKO",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "9/3/23"
     },
     {
       "contentId": "RKC-000059",
@@ -510,7 +742,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Source Unavailable",
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Events",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "26/6/24"
     },
     {
       "contentId": "RKC-000060",
@@ -520,6 +756,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Outdated Content"
       ],
+      "contentType": "Wiki Page",
+      "collection": "Revenue Tools",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "4/7/24",
       "restriction": "Relevant content that should be updated."
     },
     {
@@ -529,7 +769,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "region": "Global",
       "risks": [
         "Outdated Content"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Platform Experience",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "23/7/24"
     },
     {
       "contentId": "RKC-000062",
@@ -539,6 +783,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Wiki Page",
+      "collection": "Trending This Week",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "20/7/26",
       "restriction": "Newsletter that consolidates different topics. Always prefer the original source"
     },
     {
@@ -546,14 +794,22 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Wiki Page",
+      "collection": "RKO",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "20/7/26"
     },
     {
       "contentId": "RKC-000064",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Brazil",
-      "risks": []
+      "risks": [],
+      "contentType": "Wiki Page",
+      "collection": "Revenue Tools",
+      "accessLevel": "Revenue – Specific Function",
+      "sourceModified": "20/7/26"
     },
     {
       "contentId": "RKC-000065",
@@ -563,6 +819,10 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Other"
       ],
+      "contentType": "Wiki Page",
+      "collection": "Trending This Week",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "27/7/26",
       "restriction": "Newsletter that consolidates different topics. Always prefer the original source"
     },
     {
@@ -573,14 +833,22 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "risks": [
         "Outdated Content",
         "Broken Link"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Product Launches",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "4/10/24"
     },
     {
       "contentId": "RKC-000067",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Wiki Page",
+      "collection": "RKO",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "12/3/26"
     },
     {
       "contentId": "RKC-000068",
@@ -591,7 +859,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
         "Broken Link",
         "Outdated Content",
         "Source Unavailable"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Product Launches",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "10/11/23"
     },
     {
       "contentId": "RKC-000069",
@@ -602,7 +874,11 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
         "Broken Link",
         "Outdated Content",
         "Source Unavailable"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Product Launches",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "23/11/23"
     },
     {
       "contentId": "RKC-000070",
@@ -613,49 +889,77 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
         "Broken Link",
         "Outdated Content",
         "Source Unavailable"
-      ]
+      ],
+      "contentType": "Wiki Page",
+      "collection": "Product Launches",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "8/12/23"
     },
     {
       "contentId": "RKC-000071",
       "aiEligibility": "Unassessed",
       "contentStatus": "",
       "region": "",
-      "risks": []
+      "risks": [],
+      "contentType": "Deck",
+      "collection": "Product Launches",
+      "accessLevel": "",
+      "sourceModified": ""
     },
     {
       "contentId": "RKC-000072",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "9/6/26"
     },
     {
       "contentId": "RKC-000073",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "9/6/26"
     },
     {
       "contentId": "RKC-000074",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "9/6/26"
     },
     {
       "contentId": "RKC-000075",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "9/6/26"
     },
     {
       "contentId": "RKC-000076",
       "aiEligibility": "Eligible",
       "contentStatus": "Active",
       "region": "Global",
-      "risks": []
+      "risks": [],
+      "contentType": "Training",
+      "collection": "Sales Methodology",
+      "accessLevel": "Revenue – All",
+      "sourceModified": "9/6/26"
     }
   ]
 };

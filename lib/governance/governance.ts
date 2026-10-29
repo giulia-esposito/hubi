@@ -30,10 +30,25 @@ export interface GovernancePolicy {
   unregistered: "allow" | "exclude";
   /** What to do with a registry-format identifier the registry does not list. */
   unknownRegistryId: "allow" | "exclude";
+  /**
+   * The registry Access Levels Hubi may serve. Anything else (for example "Revenue – Leaders Only", or a blank level) is
+   * excluded: Hubi does not know who is asking, so it cannot honour a restriction on who may read a document. Widen this
+   * when identity-aware access exists. Undefined means no access-level rule.
+   */
+  servedAccessLevels?: readonly string[];
 }
 
 /** Pilot policy: unregistered files stay (excluding them would remove the golden pitch and playbooks), unknown RKC identifiers do not. */
-export const PILOT_GOVERNANCE_POLICY: GovernancePolicy = { unregistered: "allow", unknownRegistryId: "exclude" };
+export const PILOT_GOVERNANCE_POLICY: GovernancePolicy = {
+  unregistered: "allow",
+  unknownRegistryId: "exclude",
+  servedAccessLevels: ["Revenue – All", "Revenue – Specific Function"],
+};
+
+/** Access Levels are compared ignoring case, spacing and the kind of dash the sheet uses. */
+export function normalizeAccessLevel(raw: string): string {
+  return raw.toLowerCase().replace(/[\u2012-\u2015\u2212-]/g, "-").replace(/\s+/g, " ").trim();
+}
 
 export interface ExcludedContent {
   contentId: string;
@@ -116,9 +131,22 @@ export function applyGovernance(
         exclude(chunk, entry.aiEligibility, decision.reason);
         continue;
       }
+      if (policy.servedAccessLevels && !policy.servedAccessLevels.some((l) => normalizeAccessLevel(l) === normalizeAccessLevel(entry.accessLevel))) {
+        exclude(chunk, "Access level not served", `Access Level: ${entry.accessLevel || "blank"} (not served in V1: Hubi cannot verify who is asking)`);
+        continue;
+      }
       kept.push({
         ...chunk,
-        governance: { status: "registered", aiEligibility: entry.aiEligibility, restriction: entry.restriction, risks: entry.risks.length ? entry.risks : undefined },
+        governance: {
+          status: "registered",
+          aiEligibility: entry.aiEligibility,
+          restriction: entry.restriction,
+          risks: entry.risks.length ? entry.risks : undefined,
+          contentType: entry.contentType || undefined,
+          collection: entry.collection || undefined,
+          accessLevel: entry.accessLevel || undefined,
+          sourceModified: entry.sourceModified || undefined,
+        },
       });
       if (entry.restriction) {
         const r = restrictedCounts.get(entry.contentId);

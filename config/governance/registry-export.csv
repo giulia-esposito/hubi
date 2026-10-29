@@ -1,77 +1,77 @@
-Content ID,Region / Country,Content Status,AI Eligibility,Issues / Risks,Notes
-RKC-000001,Global,Active,Eligible,,
-RKC-000002,Global,Active,Eligible,,
-RKC-000003,Global,Active,Eligible,,
-RKC-000004,Global,Active,Eligible,Other,
-RKC-000005,Global,Active,Eligible,Other,
-RKC-000006,SS Latam,Active,Eligible,,
-RKC-000007,United States,Active,Eligible,Other,
-RKC-000008,Global,Active,Eligible,,
-RKC-000009,Global,Active,Eligible,,
-RKC-000010,Global,Active,Eligible,,
-RKC-000011,Global,Active,Eligible with Restrictions,Incomplete Content,It was only released for US and was not fully implemented
-RKC-000012,Global,Active,Eligible with Restrictions,Incomplete Content,It was only released for US and was not fully implemented
-RKC-000013,Global,Active,Eligible with Restrictions,Incomplete Content,It was only released for US and was not fully implemented
-RKC-000014,Global,Active,Eligible,,
-RKC-000015,"United States, Europe",Active,Eligible,,
-RKC-000016,"United States, Europe",Active,Eligible,,
-RKC-000017,Global,Active,Eligible,,
-RKC-000018,Global,Active,Eligible,,
-RKC-000019,United States,Active,Eligible with Restrictions,Other,Content was only shared with US
-RKC-000020,Global,Active,Eligible,,
-RKC-000021,Global,Active,Not Eligible,,
-RKC-000022,Europe,Active,Eligible,,
-RKC-000023,"United States, SS Latam",Active,Eligible,,
-RKC-000024,Brazil,Active,Eligible,,
-RKC-000025,Brazil,Active,Eligible,,
-RKC-000026,Global,Active,Eligible,,
-RKC-000027,Brazil,Active,Eligible,,
-RKC-000028,Brazil,Active,Eligible with Restrictions,Other,Content is mixed in portuguese and english. Recommend review and standardization
-RKC-000029,Global,Archived,Not Eligible,Outdated Content,
-RKC-000030,Global,Archived,Not Eligible,Outdated Content,
-RKC-000031,Global,Archived,Not Eligible,Outdated Content,
-RKC-000032,Global,Archived,Not Eligible,Outdated Content,
-RKC-000033,Global,Archived,Not Eligible,"Outdated Content, Broken Link",
-RKC-000034,Global,Archived,Not Eligible,"Outdated Content, Broken Link",
-RKC-000035,Global,Archived,Not Eligible,"Outdated Content, Broken Link",
-RKC-000036,Global,Deprecated,Not Eligible,Outdated Content,
-RKC-000037,Global,Deprecated,Not Eligible,Outdated Content,
-RKC-000038,Global,Active,Eligible,,
-RKC-000039,Global,Archived,Not Eligible,,
-RKC-000040,Global,Archived,Not Eligible,Broken Link,
-RKC-000041,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source
-RKC-000042,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source
-RKC-000043,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source
-RKC-000044,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source
-RKC-000045,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source
-RKC-000046,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source
-RKC-000047,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source
-RKC-000048,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source
-RKC-000049,Global,Archived,Not Eligible,Outdated Content,
-RKC-000050,Global,Archived,Not Eligible,Outdated Content,
-RKC-000051,Global,Archived,Not Eligible,Outdated Content,
-RKC-000052,Global,Archived,Not Eligible,Outdated Content,
-RKC-000053,Global,Archived,Not Eligible,Outdated Content,
-RKC-000054,Global,Archived,Not Eligible,Outdated Content,
-RKC-000055,Global,Archived,Not Eligible,Outdated Content,
-RKC-000056,Global,Archived,Not Eligible,Outdated Content,
-RKC-000057,Global,Active,Not Eligible,"Source Unavailable, Outdated Content",
-RKC-000058,Global,Active,Not Eligible,"Source Unavailable, Outdated Content",
-RKC-000059,Global,Archived,Not Eligible,"Source Unavailable, Outdated Content",
-RKC-000060,Global,Archived,Eligible with Restrictions,Outdated Content,Relevant content that should be updated.
-RKC-000061,Global,Archived,Pending Assessment,Outdated Content,
-RKC-000062,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source
-RKC-000063,Global,Active,Eligible,,
-RKC-000064,Brazil,Active,Eligible,,
-RKC-000065,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source
-RKC-000066,Global,Archived,Not Eligible,"Outdated Content, Broken Link",
-RKC-000067,Global,Active,Eligible,,
-RKC-000068,Global,Archived,Not Eligible,"Broken Link, Outdated Content, Source Unavailable",
-RKC-000069,Global,Archived,Not Eligible,"Broken Link, Outdated Content, Source Unavailable",
-RKC-000070,Global,Archived,Not Eligible,"Broken Link, Outdated Content, Source Unavailable",
-RKC-000071,,,,,
-RKC-000072,Global,Active,Eligible,,
-RKC-000073,Global,Active,Eligible,,
-RKC-000074,Global,Active,Eligible,,
-RKC-000075,Global,Active,Eligible,,
-RKC-000076,Global,Active,Eligible,,
+Content ID,Region / Country,Content Status,AI Eligibility,Issues / Risks,Notes,Content Type,Collection,Access Level,Source Platform Modified Date
+RKC-000001,Global,Active,Eligible,,,Training,Sales Methodology,Revenue – Leaders Only,27/02/2026
+RKC-000002,Global,Active,Eligible,,,Training,Revenue Tools,Revenue – Specific Function,27/02/2026
+RKC-000003,Global,Active,Eligible,,,Training,Revenue Tools,Revenue – Specific Function,16/03/2026
+RKC-000004,Global,Active,Eligible,Other,,Training,Superhero Academy,Revenue – All,25/03/2026
+RKC-000005,Global,Active,Eligible,Other,,Training,Superhero Academy,Revenue – All,25/03/2026
+RKC-000006,SS Latam,Active,Eligible,,,Training,CS Onboarding,Revenue – Specific Function,23/02/2026
+RKC-000007,United States,Active,Eligible,Other,,Training,Metrics,Revenue – Specific Function,25/03/2026
+RKC-000008,Global,Active,Eligible,,,Training,Sales Methodology,Revenue – All,16/04/2026
+RKC-000009,Global,Active,Eligible,,,Training,Sales Methodology,Revenue – All,16/04/2026
+RKC-000010,Global,Active,Eligible,,,Training,Sales Methodology,Revenue – All,16/04/2026
+RKC-000011,Global,Active,Eligible with Restrictions,Incomplete Content,It was only released for US and was not fully implemented,Training,Pricing and Commercial Rules,Revenue – All,25/03/2026
+RKC-000012,Global,Active,Eligible with Restrictions,Incomplete Content,It was only released for US and was not fully implemented,Training,Pricing and Commercial Rules,Revenue – Specific Function,25/03/2026
+RKC-000013,Global,Active,Eligible with Restrictions,Incomplete Content,It was only released for US and was not fully implemented,Training,Pricing and Commercial Rules,Revenue – Specific Function,25/03/2026
+RKC-000014,Global,Active,Eligible,,,Training,Client Success Processes,Revenue – Specific Function,4/7/26
+RKC-000015,"United States, Europe",Active,Eligible,,,Coaching Session,Sales Methodology,Revenue – Specific Function,16/04/2026
+RKC-000016,"United States, Europe",Active,Eligible,,,Coaching Session,Sales Methodology,Revenue – Specific Function,16/04/2026
+RKC-000017,Global,Active,Eligible,,,Training,Sales Methodology,Revenue – Leaders Only,16/04/2026
+RKC-000018,Global,Active,Eligible,,,Training,Client Success Processes,Revenue – Specific Function,7/4/26
+RKC-000019,United States,Active,Eligible with Restrictions,Other,Content was only shared with US,Training,Product Launches,Revenue – Specific Function,7/4/26
+RKC-000020,Global,Active,Eligible,,,Training,Contracts,Revenue – Specific Function,16/3/26
+RKC-000021,Global,Active,Not Eligible,,,Challenge,Superhero Academy,Revenue – All,1/4/26
+RKC-000022,Europe,Active,Eligible,,,Training,Competition,Revenue – Specific Function,30/3/26
+RKC-000023,"United States, SS Latam",Active,Eligible,,,Training,Competition,Revenue – Specific Function,30/3/26
+RKC-000024,Brazil,Active,Eligible,,,Training,Competition,Revenue – Specific Function,30/3/26
+RKC-000025,Brazil,Active,Eligible,,,Training,Product Launches,Revenue – Specific Function,10/4/26
+RKC-000026,Global,Active,Eligible,,,Training,Revenue Tools,Revenue – All,7/4/26
+RKC-000027,Brazil,Active,Eligible,,,Training,Opportunities management,Revenue – Specific Function,28/4/26
+RKC-000028,Brazil,Active,Eligible with Restrictions,Other,Content is mixed in portuguese and english. Recommend review and standardization,Training,Opportunities management,Revenue – Specific Function,12/5/26
+RKC-000029,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,RKO,Revenue – All,16/1/26
+RKC-000030,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,RKO,Revenue – All,16/1/26
+RKC-000031,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,RKO,Revenue – All,29/6/23
+RKC-000032,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,Revenue Tools,Revenue – Specific Function,10/1/23
+RKC-000033,Global,Archived,Not Eligible,"Outdated Content, Broken Link",,Wiki Page,Marketing and Branding,Revenue – Specific Function,24/3/24
+RKC-000034,Global,Archived,Not Eligible,"Outdated Content, Broken Link",,Wiki Page,Marketing and Branding,Revenue – Specific Function,22/3/24
+RKC-000035,Global,Archived,Not Eligible,"Outdated Content, Broken Link",,Wiki Page,Marketing and Branding,Revenue – All,30/8/24
+RKC-000036,Global,Deprecated,Not Eligible,Outdated Content,,Wiki Page,People topics,Revenue – All,22/1/25
+RKC-000037,Global,Deprecated,Not Eligible,Outdated Content,,Wiki Page,Product Launches,Revenue – All,29/5/25
+RKC-000038,Global,Active,Eligible,,,Wiki Page,Product Launches,Revenue – All,12/6/26
+RKC-000039,Global,Archived,Not Eligible,,,Wiki Page,People topics,Revenue – All,10/6/25
+RKC-000040,Global,Archived,Not Eligible,Broken Link,,Wiki Page,People topics,Revenue – All,24/4/24
+RKC-000041,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source,Newsletter,Trending This Week,Revenue – All,14/7/26
+RKC-000042,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source,Newsletter,Trending This Week,Revenue – All,7/7/26
+RKC-000043,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source,Newsletter,Trending This Week,Revenue – All,29/6/26
+RKC-000044,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source,Newsletter,Trending This Week,Revenue – All,22/6/26
+RKC-000045,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source,Newsletter,Trending This Week,Revenue – All,15/6/26
+RKC-000046,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source,Newsletter,Trending This Week,Revenue – All,7/6/26
+RKC-000047,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source,Newsletter,Trending This Week,Revenue – All,1/6/26
+RKC-000048,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source,Newsletter,Trending This Week,Revenue – All,22/5/26
+RKC-000049,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,Events,Revenue – All,15/9/22
+RKC-000050,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,Events,Revenue – All,15/9/22
+RKC-000051,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,Events,Revenue – All,15/9/22
+RKC-000052,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,Events,Revenue – All,15/9/22
+RKC-000053,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,Events,Revenue – All,1/11/22
+RKC-000054,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,Events,Revenue – All,13/1/23
+RKC-000055,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,Events,Revenue – All,13/1/23
+RKC-000056,Global,Archived,Not Eligible,Outdated Content,,Wiki Page,Events,Revenue – All,8/3/23
+RKC-000057,Global,Active,Not Eligible,"Source Unavailable, Outdated Content",,Wiki Page,RKO,Revenue – All,9/3/23
+RKC-000058,Global,Active,Not Eligible,"Source Unavailable, Outdated Content",,Wiki Page,RKO,Revenue – All,9/3/23
+RKC-000059,Global,Archived,Not Eligible,"Source Unavailable, Outdated Content",,Wiki Page,Events,Revenue – All,26/6/24
+RKC-000060,Global,Archived,Eligible with Restrictions,Outdated Content,Relevant content that should be updated.,Wiki Page,Revenue Tools,Revenue – All,4/7/24
+RKC-000061,Global,Archived,Pending Assessment,Outdated Content,,Wiki Page,Platform Experience,Revenue – All,23/7/24
+RKC-000062,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source,Wiki Page,Trending This Week,Revenue – All,20/7/26
+RKC-000063,Global,Active,Eligible,,,Wiki Page,RKO,Revenue – All,20/7/26
+RKC-000064,Brazil,Active,Eligible,,,Wiki Page,Revenue Tools,Revenue – Specific Function,20/7/26
+RKC-000065,Global,Active,Eligible with Restrictions,Other,Newsletter that consolidates different topics. Always prefer the original source,Wiki Page,Trending This Week,Revenue – All,27/7/26
+RKC-000066,Global,Archived,Not Eligible,"Outdated Content, Broken Link",,Wiki Page,Product Launches,Revenue – All,4/10/24
+RKC-000067,Global,Active,Eligible,,,Wiki Page,RKO,Revenue – All,12/3/26
+RKC-000068,Global,Archived,Not Eligible,"Broken Link, Outdated Content, Source Unavailable",,Wiki Page,Product Launches,Revenue – All,10/11/23
+RKC-000069,Global,Archived,Not Eligible,"Broken Link, Outdated Content, Source Unavailable",,Wiki Page,Product Launches,Revenue – All,23/11/23
+RKC-000070,Global,Archived,Not Eligible,"Broken Link, Outdated Content, Source Unavailable",,Wiki Page,Product Launches,Revenue – All,8/12/23
+RKC-000071,,,,,,Deck,Product Launches,,
+RKC-000072,Global,Active,Eligible,,,Training,Sales Methodology,Revenue – All,9/6/26
+RKC-000073,Global,Active,Eligible,,,Training,Sales Methodology,Revenue – All,9/6/26
+RKC-000074,Global,Active,Eligible,,,Training,Sales Methodology,Revenue – All,9/6/26
+RKC-000075,Global,Active,Eligible,,,Training,Sales Methodology,Revenue – All,9/6/26
+RKC-000076,Global,Active,Eligible,,,Training,Sales Methodology,Revenue – All,9/6/26
