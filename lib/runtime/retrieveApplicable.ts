@@ -2,6 +2,7 @@ import { applyApplicability, mergeSupplementalDecision, type ApplicabilityDecisi
 import { detectTaskContext, getRegionVocabulary, refersToOwnRegion, type RegionVocabulary } from "../applicability/regions.ts";
 import { search, type RetrievalIndex, type ScoredChunk } from "../retrieval/index.ts";
 import { searchWithExpansion, type ExpansionInfo } from "../retrieval/queryExpansion.ts";
+import { detectAudienceConflict } from "../applicability/audience.ts";
 import {
   FACT_K,
   buildFactQuery,
@@ -86,6 +87,12 @@ export function retrieveApplicable(
         factPass = { triggered: true, reason: "triggered", query, factChunksInPassOne: factChunks, added: decision.eligible.length - before };
       }
     }
+  }
+
+  // Sources written for different audiences, with the user's own audience unstated: the prompt says so.
+  if (decision.mode !== "must-clarify" && decision.mode !== "no-applicable-content") {
+    const conflict = detectAudienceConflict(decision.eligible, userMessages);
+    if (conflict) decision = { ...decision, audienceConflict: conflict };
   }
 
   return { raw, decision, factPass, retrievalMs: performance.now() - start, regionSource };

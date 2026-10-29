@@ -151,6 +151,14 @@ export function buildPrompt(
         `If a region-sensitive answer relies materially on them, say that their region is not specified and do not present the answer as confirmed for the user's region${regionNote}. Say it once, in one short note at the end, not after individual sentences; if the answer is not region-sensitive, do not mention it.`
     );
   }
+  if (decision?.audienceConflict) {
+    const groups = decision.audienceConflict.groups
+      .map((g) => `${g.audience.join(", ")} (Source ${g.sources.join(", ")})`)
+      .join(" versus ");
+    notices.push(
+      `[Audience notice] The sources above are written for different audiences: ${groups}. The user has not said which applies. If the answer differs by audience, ask one short question naming these options, or answer separately for each audience, clearly labelled; do not merge them into one set of instructions. If the answer is the same for every audience, answer normally.`
+    );
+  }
   if (results.some((r) => r.chunk.governance?.restriction)) {
     notices.push(
       `[Registry restriction notice] Sources marked "Registry restriction" are approved only with that caveat. If you rely materially on one, state the caveat once, briefly, in your own words; do not present such a source as unrestricted. If the answer does not rely on it, do not mention it.`

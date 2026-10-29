@@ -1,0 +1,533 @@
+{
+  "runs": 3,
+  "results": [
+    {
+      "id": "ask-tier-service-level",
+      "kind": "must-ask",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "The service level a client receives depends on their assigned tier, which is based on their annual total revenue (combining ACV plus subscriber revenue). Once a client's final tier is defined, the service level must align with it to ensure consistency and avoi"
+    },
+    {
+      "id": "ask-tier-service-level",
+      "kind": "must-ask",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "The service level a client receives depends on their tier classification: * **Tier 0 (Brazil & US only):** These are the largest and most influential clients, requiring a highly customized level of service and strategic collaboration due to their substantial r"
+    },
+    {
+      "id": "ask-tier-service-level",
+      "kind": "must-ask",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "The service level a client receives depends on their final tier classification. The tiers are broadly categorized into Enterprise (T0, T1, T2) and SMB (T3, T4) models, with distinct service expectations for each. Here's a breakdown of the service levels by tie"
+    },
+    {
+      "id": "ask-tier-contract",
+      "kind": "must-ask",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "The contract differences you need to know depend on whether your client is classified as Enterprise (Tier 0, 1, 2) or SMB (Tier 3, 4). The key is to always align the contract model, billing, and service level to the client's final tier, which is determined in "
+    },
+    {
+      "id": "ask-tier-contract",
+      "kind": "must-ask",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "The contract differences you need to know for your client depend on their assigned tier in Salesforce. Wellhub categorizes clients into Enterprise (Tier 0, 1, and 2) and SMB (Tier 3 and Tier 4), and each category has distinct contract models, billing structure"
+    },
+    {
+      "id": "ask-tier-contract",
+      "kind": "must-ask",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "The contract differences you need to know depend on your client's segment, specifically whether they are an Enterprise client (Tier 0, 1, or 2) or an SMB client (Tier 3 or 4). The final tier calculated in Salesforce determines the correct contract model to use"
+    },
+    {
+      "id": "ask-tier-onboarding",
+      "kind": "must-ask",
+      "dimension": "tier",
+      "ok": false,
+      "outcome": "answered-generic",
+      "firstReply": "The provided knowledge describes steps for specific onboarding scenarios rather than a general client onboarding process: * **Reseller Model Onboarding**: If you are a reseller and need to query and launch multiple companies, you should use the onboarding temp"
+    },
+    {
+      "id": "ask-tier-onboarding",
+      "kind": "must-ask",
+      "dimension": "tier",
+      "ok": false,
+      "outcome": "answered-generic",
+      "firstReply": "The retrieved knowledge does not describe the general steps of the client onboarding process. Some sources mention specific types of onboarding, such as for resellers, or touch on onboarding in the context of invoice adjustments or existing clients in new mark"
+    },
+    {
+      "id": "ask-tier-onboarding",
+      "kind": "must-ask",
+      "dimension": "tier",
+      "ok": false,
+      "outcome": "answered-generic",
+      "firstReply": "The provided knowledge does not detail the general steps of the client onboarding process. While \"onboarding\" is mentioned in a few contexts (invoice adjustments, reseller model, and best practices), none of the sources outline the specific steps involved in c"
+    },
+    {
+      "id": "ask-segment-pps",
+      "kind": "must-ask",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "A PPS+ proposal for your client would describe a pricing model where the client pays only for employees who subscribe to a plan. Here's what it entails: * **Payment Structure**: The client pays a single monthly fee. This fee depends on the plan they choose to "
+    },
+    {
+      "id": "ask-segment-pps",
+      "kind": "must-ask",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "While the retrieved knowledge doesn't contain a specific \"PPS+ proposal\" document or template, it outlines key information and best practices that would be part of presenting PPS+ to a client. A PPS+ proposal for your client would likely cover these points: **"
+    },
+    {
+      "id": "ask-segment-pps",
+      "kind": "must-ask",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "Based on the retrieved knowledge, a PPS+ proposal would articulate the following key points: **What PPS+ Is:** * **Pricing Model:** PPS+ is a pricing model where the client pays only for employees who subscribe to a plan. * **Access and Cost:** The client pays"
+    },
+    {
+      "id": "ask-segment-contract",
+      "kind": "must-ask",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "To put together the contract and the order form for clients, especially for those classified as T3 or T4, you will primarily use one of two methods: the Magic Link or the SMB Order Form. The goal is to ensure the contract aligns with SMB standards for these cl"
+    },
+    {
+      "id": "ask-segment-contract",
+      "kind": "must-ask",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "For clients classified as T3 or T4, you will need to put together the contract and order form following the SMB contract framework. This ensures compliance and simplifies client operations. Here’s how to proceed: 1. **Identify the Client Tier**: If the client "
+    },
+    {
+      "id": "ask-segment-contract",
+      "kind": "must-ask",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "To put together the contract and order form, especially for T3/T4 clients, follow these guidelines: 1. **Identify the Client Tier**: If the client is classified as T3 or T4 in Salesforce, the deal must follow the SMB contract framework, which includes SMB Term"
+    },
+    {
+      "id": "ask-role-coaching",
+      "kind": "must-ask",
+      "dimension": "role",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "\"Work the Deal\" coaching sessions are run as \"Field Agent Debriefs,\" which are 30-minute, high-energy coaching sessions designed to solidify skills learned in the \"Work the Deal\" training. Here’s how you should run them: 1. **Purpose:** Focus on practical appl"
+    },
+    {
+      "id": "ask-role-coaching",
+      "kind": "must-ask",
+      "dimension": "role",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "Here's how to run a \"Work the Deal\" coaching session, based on the provided materials: **\"Work the Deal\" Coaching Session: Field Agent Debrief Guide** These 30-minute, high-energy \"Field Agent Debriefs\" are designed to solidify the skills learned in the \"Work "
+    },
+    {
+      "id": "ask-role-coaching",
+      "kind": "must-ask",
+      "dimension": "role",
+      "ok": true,
+      "outcome": "answered-all",
+      "firstReply": "To run a \"Work the Deal\" coaching session, which are referred to as Field Agent Debriefs, here's how you should approach it: **Work the Deal Coaching Session Guide** These are 30-minute, high-energy coaching sessions designed to solidify the skills learned in "
+    },
+    {
+      "id": "ask-region-competition",
+      "kind": "must-ask",
+      "dimension": "region",
+      "ok": true,
+      "outcome": "asked",
+      "firstReply": "Which region applies to your client conversation: United States or SS Latam?"
+    },
+    {
+      "id": "ask-region-competition",
+      "kind": "must-ask",
+      "dimension": "region",
+      "ok": true,
+      "outcome": "asked",
+      "firstReply": "To provide you with the correct information on competition law, could you please specify which region applies to your client conversation: United States or SS Latam?"
+    },
+    {
+      "id": "ask-region-competition",
+      "kind": "must-ask",
+      "dimension": "region",
+      "ok": true,
+      "outcome": "asked",
+      "firstReply": "Which region applies to your situation: United States or SS Latam?"
+    },
+    {
+      "id": "no-ask-pps",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Per Subscriber (PPS) pricing is a flexible fee model where the client's payment is based solely on the number of paid subscribers. Here's how it works: * **Payment Basis:** The client pays a variable amount calculated based on the number of members who are act"
+    },
+    {
+      "id": "no-ask-pps",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Per Subscriber (PPS) pricing is a flexible fee model where the client's payment is based only on the number of paid subscribers. This means that only members on a plan involving recurring charges are counted for cost calculation, while unpaid subscribers (e.g."
+    },
+    {
+      "id": "no-ask-pps",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Per Subscriber (PPS) pricing is a flexible Wellhub pricing model where the client's payment is based solely on the number of paid subscribers. Key characteristics of PPS pricing: * **Payment Calculation**: Costs are calculated based on the number of active, pa"
+    },
+    {
+      "id": "no-ask-flat-fee",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The Flat Fee pricing model is one of Wellhub’s core approaches designed to offer clients predictable budgeting and simplified administration. Here's how it works: * **Fixed Prepaid Fee**: Clients pay a fixed, prepaid fee, typically calculated by multiplying th"
+    },
+    {
+      "id": "no-ask-flat-fee",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The Flat Fee pricing model is one of Wellhub’s core approaches, designed to offer clients predictable budgeting and simplified administration. Here’s a breakdown of how it works: * **Core Principle**: It involves a fixed, prepaid fee based on the total number "
+    },
+    {
+      "id": "no-ask-flat-fee",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The Flat Fee pricing model is one of Wellhub’s core pricing approaches, designed to offer clients cost predictability and simplified administration. Here's a breakdown of the Flat Fee model: * **How it works:** * The client pays a fixed, prepaid fee at a chose"
+    },
+    {
+      "id": "no-ask-cadences",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "To create effective cadences in Salesloft, focus on leveraging the platform's features for structured, consistent, and impactful outreach. Salesloft aims to provide an easier system for reps to interact with prospects and clients, saving time while delivering "
+    },
+    {
+      "id": "no-ask-cadences",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "To create effective cadences in Salesloft, focus on leveraging team-based strategies and the platform's core functionalities to ensure consistent, impactful outreach. Here’s a guide based on Wellhub's knowledge: 1. **Utilize Cadences for Structure and Consiste"
+    },
+    {
+      "id": "no-ask-cadences",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "To create effective cadences in Salesloft, you should leverage the platform's capabilities to ensure consistent, timely, and personalized outreach, while also incorporating best practices and testing. Here's how to approach it: 1. **Understand the Purpose of C"
+    },
+    {
+      "id": "no-ask-mandatory-training",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Mandatory trainings for the Revenue team, based on the provided information, include: * New Funnel * Sales Navigator * Onboarding path * Free Pass * Wellhub+ 2.5 * Selling our Pricing Models * PPS Pricing & Guidelines * Billing day change * Success Funnel * Nu"
+    },
+    {
+      "id": "no-ask-mandatory-training",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The following trainings are mandatory for the Revenue team, broken down by specific team roles: * **Sales Development:** New Funnel, Sales Navigator, Onboarding path, Free Pass, Wellhub+ 2.5, Selling our Pricing Models, PPS Pricing & Guidelines. * **Client Sal"
+    },
+    {
+      "id": "no-ask-mandatory-training",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The mandatory trainings for the Revenue team are listed by sub-team: * **Sales Development:** New Funnel, Sales Navigator, Onboarding path, Free Pass, Wellhub+ 2.5, Selling our Pricing Models, PPS Pricing & Guidelines * **Client Sales SMB:** New Funnel, Sales "
+    },
+    {
+      "id": "no-ask-referral",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Referral deals for revenue credit are handled in two main ways, depending on who closes the deal: 1. **When a Client Success (CS) executive refers a deal and a Sales executive closes it:** * The referring Account Owner (e.g., CS executive) is eligible for a ca"
+    },
+    {
+      "id": "no-ask-referral",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Referral deals occur when an existing client seeks to expand Wellhub services into a different market, with the current account owner facilitating an introduction to a Sales Manager in the target market. Collaboration between Revenue executives (sales reps and"
+    },
+    {
+      "id": "no-ask-referral",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Referral deals occur when an existing client expands Wellhub services into a different market, with the current account owner facilitating the introduction to a new Sales Manager in the target market (Source 2). Collaboration between Revenue executives in diff"
+    },
+    {
+      "id": "no-ask-wellhubverse",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The Wellhubverse is a concept that encompasses Wellhub's teams, allies, and core concepts. It's designed to help Revenue teams understand how different parts of the organization connect and contribute to the company's mission. Specifically, the Wellhubverse in"
+    },
+    {
+      "id": "no-ask-wellhubverse",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The Wellhubverse is a conceptual framework or \"map to our universe\" that illustrates Wellhub's internal ecosystem, particularly from the perspective of the Revenue journey. It's designed to help teammates understand: * **Teams and Allies:** The different teams"
+    },
+    {
+      "id": "no-ask-wellhubverse",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The Wellhubverse is a concept introduced in a live session titled \"Wellhubverse: The Map to Our Universe\". It's designed to help Revenue teams understand: * **Teams and Allies:** The different teams within Wellhub, their roles (\"powers\"), and their contributio"
+    },
+    {
+      "id": "no-ask-gmail",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The retrieved knowledge indicates that step-by-step instructions for connecting Salesforce to Gmail and Google Drive exist, as do video guides, but the actual steps are not detailed in the provided snippets. Here's what the knowledge states about why and when "
+    },
+    {
+      "id": "no-ask-gmail",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The retrieved knowledge indicates that step-by-step guides and videos are available for connecting Salesforce to Gmail and Google Drive. Specifically: * There are \"How to connect Salesforce and GDrive - Step by step\" instructions (Source 2). * There are \"How t"
+    },
+    {
+      "id": "no-ask-gmail",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "There are step-by-step guides and short videos available to help you connect Salesforce to both Google Drive and Gmail. Specifically: * **Connecting Salesforce and Google Drive**: You can find a \"How to connect Salesforce and GDrive - Step by step\" guide and a"
+    },
+    {
+      "id": "no-ask-pitch",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Here's an elevator pitch for Wellhub: Many companies struggle to get real engagement from their employee wellbeing programs, with traditional solutions seeing adoption rates below 5%. Wellhub solves this by offering a comprehensive, multi-dimensional platform "
+    },
+    {
+      "id": "no-ask-pitch",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Here is an elevator pitch for Wellhub: \"Many companies struggle with employee wellbeing programs that don't drive real, sustained engagement, with traditional solutions often seeing adoption rates below 5%. At Wellhub, we provide a comprehensive and adaptable "
+    },
+    {
+      "id": "no-ask-pitch",
+      "kind": "must-not-ask",
+      "dimension": "none",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Here's an elevator pitch for Wellhub: \"Many companies find it challenging to achieve real, sustained engagement with their employee wellbeing programs, with traditional solutions often seeing adoption rates below 5%. Wellhub solves this by offering a comprehen"
+    },
+    {
+      "id": "given-tier-onboarding",
+      "kind": "pre-supplied",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "For onboarding a Tier 1 client in Mexico (SS Latam), the following types of meetings are mentioned as part of the onboarding process: * **Technical clarification meetings:** These are necessary to clarify technical doubts regarding the viability and functional"
+    },
+    {
+      "id": "given-tier-onboarding",
+      "kind": "pre-supplied",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "For onboarding a Tier 1 client in Mexico, based on the SS Latam onboarding process, the following types of meetings or discussions are mentioned: * **Technical Doubt Clarification:** It is necessary to clarify technical doubts about the viability and functiona"
+    },
+    {
+      "id": "given-tier-onboarding",
+      "kind": "pre-supplied",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "The retrieved knowledge for onboarding Tier 1 clients in the SS Latam region (which includes Mexico) describes a general onboarding process with milestones, and mentions that the overall flow is similar across Tiers 0, 1, and 2 after the initial Agreement and "
+    },
+    {
+      "id": "given-tier-service-level",
+      "kind": "pre-supplied",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "A Tier 2 client receives higher-touch support and dedicated account management. They have significant revenue and potential for expansion, requiring customized service."
+    },
+    {
+      "id": "given-tier-service-level",
+      "kind": "pre-supplied",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "A Tier 2 client receives higher-touch support and requires dedicated account management and customized service. These clients have significant revenue and potential for expansion. Note: The regional applicability of this information is not specified in the sou"
+    },
+    {
+      "id": "given-tier-service-level",
+      "kind": "pre-supplied",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "Tier 2 clients receive higher-touch support, including dedicated account management and customized service. These clients have significant revenue and potential for expansion. _Note: The regional applicability of the source describing service levels by tier is"
+    },
+    {
+      "id": "given-segment-pps",
+      "kind": "pre-supplied",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "While the retrieved knowledge does not contain a specific PPS+ proposal document template, for an Enterprise client, a PPS+ proposal or presentation would typically cover the following key elements: **1. Introduction to PPS+** * **What it is:** Explain that PP"
+    },
+    {
+      "id": "given-segment-pps",
+      "kind": "pre-supplied",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "While the retrieved knowledge confirms that tailored pitch paths exist for Enterprise clients regarding PPS+, it does not provide a direct description of what the \"PPS+ proposal looks like\" as a specific document or template. However, based on the best practic"
+    },
+    {
+      "id": "given-segment-pps",
+      "kind": "pre-supplied",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "While the retrieved knowledge mentions \"tailored pitch paths\" and specific objection handling for Enterprise clients regarding PPS+, it does not provide a template or description of what a PPS+ proposal document itself \"looks like.\" However, based on the infor"
+    },
+    {
+      "id": "given-region-competition",
+      "kind": "pre-supplied",
+      "dimension": "region",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "When you're interacting with clients in the US, it's crucial to understand Wellhub's stance on competition law. The main principle is to \"win the game by playing by the rules,\" as becoming a larger global company puts Wellhub under more scrutiny regarding thes"
+    },
+    {
+      "id": "given-region-competition",
+      "kind": "pre-supplied",
+      "dimension": "region",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "When discussing with clients, it's crucial to understand competition law to ensure we operate ethically and legally. For those in the US, here's what you should know: **What is Not Allowed (Key Prohibitions):** * **Improperly Obtaining Competitor Information**"
+    },
+    {
+      "id": "given-region-competition",
+      "kind": "pre-supplied",
+      "dimension": "region",
+      "ok": true,
+      "outcome": "answered",
+      "firstReply": "When talking to a client, especially in the US, it's crucial to adhere to competition law. Here’s what you should know: **What you should NOT do regarding competitor information:** * **Do not use someone else's password to access competitor data.** If you can'"
+    },
+    {
+      "id": "follow-tier-onboarding",
+      "kind": "follow-through",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-first then answered",
+      "firstReply": "The retrieved knowledge does not provide a general, step-by-step description of the client onboarding process. However, it does mention a \"Reseller Model Onboarding\" process which involves querying and launching multiple companies, receiving a full report via "
+    },
+    {
+      "id": "follow-tier-onboarding",
+      "kind": "follow-through",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-first then answered",
+      "firstReply": "The provided knowledge does not detail the general steps of the client onboarding process. It mentions \"Reseller Model Onboarding\" in the context of querying and launching companies, and discusses \"onboarding best practices\" for existing clients in other marke"
+    },
+    {
+      "id": "follow-tier-onboarding",
+      "kind": "follow-through",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-first then answered",
+      "firstReply": "The provided knowledge does not outline the general steps for the client onboarding process. It mentions onboarding in specific contexts, such as reseller model onboarding, and that invoice issues can block onboarding, but does not detail the steps involved."
+    },
+    {
+      "id": "follow-tier-service-level",
+      "kind": "follow-through",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-first then answered",
+      "firstReply": "The service level a client receives is determined by their final tier classification. It is crucial that the service level aligns with the client's tier to ensure consistency and a smooth experience. Here are the service levels by tier: * **Tier 0 (Brazil & US"
+    },
+    {
+      "id": "follow-tier-service-level",
+      "kind": "follow-through",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-first then answered",
+      "firstReply": "The service level a client receives depends on their tier classification: * **Tier 0:** (Brazil & US only) These clients are Wellhub's largest and most influential, with substantial revenue and complex needs. They require a highly customized level of service a"
+    },
+    {
+      "id": "follow-tier-service-level",
+      "kind": "follow-through",
+      "dimension": "tier",
+      "ok": true,
+      "outcome": "answered-first then answered",
+      "firstReply": "The service level a client receives depends on their tier classification: * **Tier 0 (Brazil & US only):** These are the largest and most influential clients. They require a highly customized level of service and strategic collaboration due to their substantia"
+    },
+    {
+      "id": "follow-segment-pps",
+      "kind": "follow-through",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered-first then answered",
+      "firstReply": "While the retrieved knowledge doesn't provide a specific proposal template, it outlines the core components and talking points for pitching PPS+ to a client. Based on this, a PPS+ proposal would include: **1. Understanding Your Client's Needs:** The proposal w"
+    },
+    {
+      "id": "follow-segment-pps",
+      "kind": "follow-through",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered-first then answered",
+      "firstReply": "The retrieved knowledge defines what PPS+ is and provides best practices for pitching it to clients, as well as objection handling. However, it does not describe the specific format or content of a document explicitly called a \"PPS+ proposal.\" Based on the pro"
+    },
+    {
+      "id": "follow-segment-pps",
+      "kind": "follow-through",
+      "dimension": "segment",
+      "ok": true,
+      "outcome": "answered-first then answered",
+      "firstReply": "For your client, the PPS+ proposal outlines a pricing model where they pay only for employees who subscribe to a Wellhub plan. Here's what the PPS+ offering entails: * **Client Investment**: Your client pays a single monthly fee. This fee grants them full acce"
+    }
+  ]
+}

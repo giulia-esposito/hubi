@@ -48,3 +48,31 @@ Two harness problems found while reading the results were fixed (measurement onl
 ## Decision for Product
 
 Set the V1 pass bar from these numbers. The questions that decide it: is a silent pick of one role acceptable for a controlled audience (failure 2), is a dead end on onboarding acceptable (failure 1), and does a generic PPS+ answer count as a failure (failure 3).
+
+## After fixes 1 and 2 (same day, same scenarios, 3 runs each)
+
+Product asked for fixes 1 and 2 only. Full re-run (`benchmarks/applicability/after-fixes-2026-10-29.json`, taken with both fixes in place):
+
+| Measure | Baseline | After |
+|---|---|---|
+| Ask-when-needed | 15 of 21 (71%) | 18 of 21 (86%) |
+| Over-ask | 0 of 24 | 0 of 24 |
+| Re-asked when context was given | 0 of 12 | 0 of 12 |
+| Follow-through | 9 of 9 | 9 of 9 |
+| Role | 0 of 3 | **3 of 3** (both audiences answered, labelled; no blending) |
+| Segment | 5 of 6 | 6 of 6 (see below: not caused by a fix) |
+| Tier | 7 of 9 | 6 of 9 (onboarding 0 of 3; run-to-run variation on a scenario that was 1 of 3) |
+| Region | 3 of 3 | 3 of 3 |
+
+**Fix 2 (audience notice) worked and is kept.** When the retrieved documents carry audience labels that share nothing and the user has not named one, the prompt now says so and tells the model to ask one short question or answer each audience separately, labelled. The role scenario went from two silent blends to three labelled per-audience answers, with no change to over-ask or to any other scenario. Code: `lib/applicability/audience.ts`, a notice in `lib/runtime/promptBuilder.ts`, logged as `applicability.audienceConflict`; tests in `tests/contextApplicability.test.ts`.
+
+**Fix 1 (widen the region-notice window) did not fix its scenario and was reverted.** It worked mechanically: the withheld SS Latam onboarding document, at rank 14, now produced a region notice in every run. But the notice is optional by design ("if the answer depends on region, ask; otherwise answer from the sources"), and the model chose to answer from generic sources about reseller onboarding and migration instead, so `ask-tier-onboarding` stayed at 0 of 3 with the fix on. Shipping a prompt change with no measured benefit adds a notice to many unrelated questions, so I removed it. A spot re-run after the revert (role 3 of 3, onboarding 0 of 3, two no-ask scenarios and one context-given scenario all 3 of 3) confirms the final state.
+
+**The segment improvement is not credited to a fix.** The PPS+ proposal scenario answered for both segments in all 3 runs this time, where one run answered generically before. Its sources are the unlabelled Slide Library, so neither fix touches it: treat it as run-to-run variation.
+
+### What remains, and the options
+
+`ask-tier-onboarding` is still a dead end: with no region stated, Hubi sees generic sources and says the knowledge does not describe a general onboarding process. The missing piece is a *decision* rule, not more retrieval: the only strongly relevant source is region-specific and withheld, and a soft notice is not enough. Options, from smallest:
+1. **Escalate to a question** when a region-specific source scores close to the best match, sits within the 15 retrieved, and the top sources do not match the question's own key terms (a stricter, deterministic variant of fix 1). Risk: asks about region more often; needs the must-not-ask scenarios re-run.
+2. **Let the model decide with a stronger instruction** in the existing notice ("if none of the sources above answers the question and region-specific material was withheld, ask for the region instead of saying nothing is available"). Cheaper, but it relies on model judgment, which just ignored the soft version.
+3. **Label the process documents** so the generic Sales Tools Playbook is not the best match for "client onboarding": a Content task, not code.

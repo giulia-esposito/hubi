@@ -1,5 +1,6 @@
 import type { Chunk } from "../ingestion/chunk.ts";
 import type { ScoredChunk } from "../retrieval/index.ts";
+import type { AudienceConflict } from "./audience.ts";
 
 /**
  * Applicability evaluation (Finding #002): a pure, deterministic function
@@ -71,6 +72,8 @@ export interface ApplicabilityDecision {
   factSourceCount?: number;
   /** How many of the eligible chunks have unspecified scope. */
   unspecifiedUsed: number;
+  /** Set when the eligible sources are written for different audiences and the user has not said which applies (lib/applicability/audience.ts). */
+  audienceConflict?: AudienceConflict;
 }
 
 function distinct(values: string[]): string[] {

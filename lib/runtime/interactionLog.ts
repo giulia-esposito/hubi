@@ -48,6 +48,8 @@ export interface ApplicabilityLog {
   /** Countries the user named, kept separate from the operating region. */
   taskCountries?: string[];
   mode: "none" | "notice" | "must-clarify" | "no-applicable-content";
+  /** Audience groups of the eligible sources when they conflict and the user has not said which applies. */
+  audienceConflict?: { audience: string[]; sources: number[] }[];
   /** Region-specific chunks withheld because the user's region was unknown (top-K window). */
   withheldCount: number;
   withheldRegions: string[];
