@@ -100,6 +100,25 @@ Already in place and sufficient for V1: question, answer, sources and retrieval 
 
 **Already done:** log scrubbing, circuit breaker, request guard, retries, AI-draft label, usage guidelines, claim guardrail, governance registry, retrieval benchmark and cross-language expansion.
 
+### 0.8 V1 readiness status (2026-10-29, end of day)
+
+| # | Launch blocker | Status |
+|---|---|---|
+| 1 | Contextual applicability evals, strengthened to a bar | **Closed for the controlled pilot.** Eval: ask-when-needed 21 of 21, over-ask 0 of 24, no re-asks; two deterministic changes kept (audience notice, strong-regional-match rule at 0.7). Product accepted the contract-differences question asking the region first and decided **not to tune the 0.7 threshold or relabel content before launch** (`docs/context-asking-eval.md`) |
+| 2 | Conversation persistence with TTL and New conversation | **Done.** 24 hours of inactivity, in the browser; documented as client-side data handling and flagged for the InfoSec note |
+| 3 | Deploy the current build and verify it | **Next. Ready for approval.** Preflight, type check, tests and production build pass; the plan changes only the container image and creates a new revision (see 0.9) |
+| 4 | Tester access to the Sandbox service | Open. External: Sandbox and IAP owners |
+| 5 | Audience briefed and rollback known | Open. You |
+| 6 | Log retention decided for the pilot logs | Open. You, with platform |
+
+### 0.9 What the first deploy does, and what to watch afterwards
+
+The live revision (`hubi-pilot-00005-s6p`, built from `bb23f3c`) predates everything done since: the claim guardrail and ledger, session hardening, registry-driven governance, query expansion, provider resilience, the audience and strong-regional rules, the browser conversation store, the usage guidelines and AI-draft label, and the `USER node` Dockerfile change. `npm run deploy:plan` is read-only and reports: exact commit, branch develop, clean tree, serving revision and traffic, ingress internal with IAP on, the runtime service account, scaling (min 1, max 20), resources, and the seven existing environment variables. The only flag passed is `--memory 2Gi`. The deploy script compares ingress, IAP, networking, service account, labels, every environment variable, resources and scaling before and after, and flags any change it did not ask for. Rollback is one command (`docs/deployment-runbook.md`).
+
+Two things only the first deploy can show, so check them at once: that the image builds and starts as the unprivileged `node` user (never tested: no Docker locally), and that the new request guard sees the IAP user header in the sandbox (it keys on it; without it every caller shares one bucket).
+
+**Pilot monitoring, as decided:** from real traffic, look for (1) unnecessary clarification, (2) dead ends where relevant content exists, (3) silent context assumptions, (4) follow-through failures after the user gives context. If a pattern appears, revisit the threshold or the metadata then, not before.
+
 ## 1. What Hubi is, in the standard's terms
 
 - **Classification: Corporate Production.** Hubi is an internal tool used by Revenue teams and does not deliver the Wellhub platform to clients (`§4`, `§5.1`). The Project Owner proposes the classification; InfoSec and the LT confirm it, and Legal confirms it too if personal or regulated data is processed.
