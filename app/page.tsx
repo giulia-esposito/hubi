@@ -23,6 +23,8 @@ interface ChatMessage {
   sources?: SourceRef[];
   turnKind?: TurnKind;
   interactionId?: string;
+  /** When the answer finished, for the AI-draft label (tool and date, ISSTD28 5.3). */
+  finishedAt?: string;
   isStreaming?: boolean;
   error?: string;
   feedback?: { helpful: boolean; submitted: boolean };
@@ -266,7 +268,7 @@ export default function ChatPage() {
         updated = { ...last, text: last.text + event.text, waitMs: firstText ? Math.round(performance.now() - (last.sentAt as number)) : last.waitMs };
       } else if (event.type === "done") {
         updated = event.ok
-          ? { ...last, isStreaming: false, turnKind: event.turnKind, planningMode: event.planningMode, pinned: event.pinned, interactionId: event.interactionId }
+          ? { ...last, isStreaming: false, turnKind: event.turnKind, planningMode: event.planningMode, pinned: event.pinned, interactionId: event.interactionId, finishedAt: new Date().toISOString() }
           : { ...last, isStreaming: false, error: "Hubi is currently unavailable -- please retry." };
       } else {
         return prev;
@@ -334,6 +336,11 @@ export default function ChatPage() {
             {m.role === "assistant" && turnKindLabel(m.turnKind) && (
               <span className={`turn-kind-badge ${turnKindClassName(m.turnKind)}`}>{turnKindLabel(m.turnKind)}</span>
             )}
+            {m.role === "assistant" && !m.isStreaming && !m.error && m.planningMode === "business-assistance" && m.finishedAt && (
+              <div className="ai-draft-label">
+                AI-generated draft by Hubi, {new Date(m.finishedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}. Check the figures and claims against the sources before you use or send it.
+              </div>
+            )}
             {m.role === "assistant" && m.error && <div className="error-banner">{m.error}</div>}
             {m.role === "assistant" && m.historyNotice && (
               <div className="history-notice">
@@ -368,6 +375,9 @@ export default function ChatPage() {
             Send
           </button>
         </form>
+        <p className="composer-note">
+          Ask about Revenue processes. Please do not enter personal data (names, emails, phone numbers) or confidential client information.
+        </p>
       </div>
     </main>
   );
