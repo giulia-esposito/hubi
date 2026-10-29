@@ -124,6 +124,7 @@ export async function POST(req: Request): Promise<Response> {
     regionSource,
     mode: decision.mode,
     withheldCount: decision.withheldCount,
+    audienceConflict: decision.audienceConflict?.groups,
     withheldRegions: decision.withheldRegions,
     mismatchCount: decision.mismatchCount,
     mismatchRegions: decision.mismatchRegions,
