@@ -14,6 +14,7 @@ import { emitTelemetry } from "../../../lib/runtime/telemetry.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtime/turnKind.ts";
 import { generateWithVerification, ledgerEnabled, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
 import { logInteraction, logInteractionError, type ApplicabilityLog, type ContinuityLog, type RetrievalLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
+import { sourceFactsLog } from "../../../lib/governance/sourceFacts.ts";
 
 // Route Handler must run in the Node.js runtime, not Edge. The Claude Code
 // adapter spawns the `claude` CLI via child_process (Edge cannot do that);
@@ -108,6 +109,7 @@ export async function POST(req: Request): Promise<Response> {
     pass: i < (decision.factSourceCount ?? 0) ? "facts" : "request-match",
     governance: r.chunk.governance?.status,
     restriction: r.chunk.governance?.restriction,
+    ...sourceFactsLog(r.chunk),
   }));
   const retrieval: RetrievalLog = {
     query: retrievalQuery,

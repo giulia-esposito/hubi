@@ -24,6 +24,8 @@ export interface Chunk {
   unrecognizedRegionTokens?: string[];
   /** Label-only in this slice; not used for gating. */
   audience?: string[];
+  /** The document's own "Last Updated" (else "Creation Date") metadata value, raw: the primary freshness source. */
+  documentDate?: string;
   /**
    * Set by the governance gate (lib/governance/governance.ts), never by ingestion: how the Content
    * Registry classified this document. Absent on chunks that have not passed through the gate.
@@ -86,6 +88,7 @@ export function chunkDocument(doc: NormalizedDocument, vocabulary: RegionVocabul
         regionRaw: doc.metadata.targetRegion,
         unrecognizedRegionTokens: region.unrecognized.length ? region.unrecognized : undefined,
         audience: audience.length ? audience : undefined,
+        documentDate: doc.metadata.lastUpdated ?? doc.metadata.creationDate,
       });
     });
   });

@@ -49,6 +49,6 @@ No rescoring and no penalty. A deterministic lexicon classifies the question: **
 ## Order and status
 
 1. Access-level policy and the four registry columns: **done** (this commit).
-2. Type and date labels on sources, logged for pilot analysis.
+2. Type and date labels on sources, logged for pilot analysis: **done**. Each source header carries `Type: <type> (<collection>) | Updated: <date>` (nothing for unregistered files), and each logged source records `contentType`, `collection`, `updated` and `updatedBasis`. On the deployed corpus all 39 registered served documents have an in-file date (the registry date was never needed); the 4 unregistered files stay unlabelled. Dates in titles are not used: no title in the corpus carries one.
 3. The conflict notice with the synthetic evals.
 4. The intent slots, measured on the production corpus (`scripts/fetch-prod-corpus.ts`).

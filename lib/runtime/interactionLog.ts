@@ -19,6 +19,12 @@ export interface SourceRef {
   governance?: "registered" | "unregistered";
   /** The registry's caveat for an Eligible with Restrictions document, shown with the source. */
   restriction?: string;
+  /** Source facts shown to the model with the source (docs/source-selection-design.md), logged to study source selection in the pilot. */
+  contentType?: string;
+  collection?: string;
+  /** ISO date and where it came from: the document itself or the registry's modified date. */
+  updated?: string;
+  updatedBasis?: "document" | "registry";
 }
 
 /** Where this turn's conversation context came from. */

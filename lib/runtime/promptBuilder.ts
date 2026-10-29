@@ -3,6 +3,7 @@ import type { ScoredChunk } from "../retrieval/index.ts";
 import type { Turn } from "./sessionState.ts";
 import { regionLabel, UNSPECIFIED_REGION_LABEL, type ApplicabilityDecision } from "../applicability/evaluate.ts";
 import { LEDGER_INSTRUCTION } from "./claimAttribution.ts";
+import { sourceFactsLine } from "../governance/sourceFacts.ts";
 
 export const HUBI_SYSTEM_PROMPT = `You are Hubi, Wellhub Revenue's AI Copilot. Your job is to help Revenue teammates get work done using Wellhub's approved organizational knowledge. You have no tools, files, or knowledge sources other than the "Retrieved Knowledge" provided in the user message below.
 
@@ -123,7 +124,8 @@ export function buildPrompt(
     const locator = r.chunk.heading ? `${r.chunk.documentTitle} -> ${r.chunk.heading}` : r.chunk.documentTitle;
     const applicability = decision ? `Applicability: ${applicabilityLine(r.chunk)}\n` : "";
     const restriction = r.chunk.governance?.restriction ? `Registry restriction: ${r.chunk.governance.restriction}\n` : "";
-    return `[Source ${i + 1}] ${locator}\n${applicability}${restriction}${r.chunk.text}`;
+    const facts = sourceFactsLine(r.chunk);
+    return `[Source ${i + 1}] ${locator}\n${facts ? `${facts}\n` : ""}${applicability}${restriction}${r.chunk.text}`;
   };
   const SEPARATOR = "\n\n---\n\n";
   const factCount = decision?.factSourceCount ?? 0;
