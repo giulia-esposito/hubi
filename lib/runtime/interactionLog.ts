@@ -68,6 +68,8 @@ export interface ApplicabilityLog {
   unspecifiedUsed: number;
   /** Conditional fact-retrieval pass (Finding #004). */
   factPass?: { triggered: boolean; reason: string; added: number; query?: string };
+  /** Intent cue and the sources added for it (process or recency); absent when the question carried no cue. */
+  intentPass?: { intents: string[]; added: { intent: string; chunkId: string; documentId: string }[] };
   /** Milliseconds spent in retrieval (both passes plus applicability). */
   retrievalMs?: number;
   /** Where the region in force came from: a message in the window, the pinned context, or nowhere. */

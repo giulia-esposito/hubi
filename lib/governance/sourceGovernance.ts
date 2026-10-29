@@ -22,7 +22,7 @@ export const MIN_DAYS_APART = 30;
 const DAY_MS = 86_400_000;
 
 /** Newsletters and the "Trending This Week" collection carry updates, whatever the registry types a particular page. */
-function isUpdateSource(contentType: string, collection: string): boolean {
+export function isUpdateSource(contentType: string, collection: string): boolean {
   return /newsletter/i.test(contentType) || /trending this week/i.test(collection);
 }
 

@@ -3,6 +3,7 @@ import { detectTaskContext, getRegionVocabulary, refersToOwnRegion, type RegionV
 import { search, tokenize, type RetrievalIndex, type ScoredChunk } from "../retrieval/index.ts";
 import { searchWithExpansion, type ExpansionInfo } from "../retrieval/queryExpansion.ts";
 import { detectAudienceConflict } from "../applicability/audience.ts";
+import { applyIntentSlots, type IntentPassInfo } from "../retrieval/sourceIntent.ts";
 import {
   FACT_K,
   buildFactQuery,
@@ -35,6 +36,8 @@ export interface ApplicableRetrieval {
   decision: ApplicabilityDecision;
   /** What the conditional fact pass did (Finding #004). */
   factPass: FactPassInfo;
+  /** Intent-aware reserved slots (docs/source-selection-design.md): the cue read from the question and any source added for it. */
+  intentPass: IntentPassInfo;
   /** Wall-clock milliseconds spent in retrieval, both passes and applicability included. */
   retrievalMs: number;
   /** Where the user's region came from: a message in the window, the pinned context, or nowhere. */
@@ -96,6 +99,12 @@ export function retrieveApplicable(
   }
 
   const latest = userMessages[userMessages.length - 1] ?? "";
+  let intentPass: IntentPassInfo = { intents: [], added: [] };
+  if (decision.mode !== "must-clarify" && decision.mode !== "no-applicable-content" && raw.length > 0) {
+    const slots = applyIntentSlots(index, retrievalQuery, latest, decision.eligible, decision.eligibleStatuses, context.regions, raw[0].score);
+    decision = { ...decision, eligible: slots.eligible, eligibleStatuses: slots.statuses, unspecifiedUsed: slots.statuses.filter((s) => s === "unspecified").length };
+    intentPass = slots.info;
+  }
   if (isArtifactRequest(latest, options.lastPlanningMode)) {
     if (decision.mode === "must-clarify" || decision.mode === "no-applicable-content") {
       factPass = { triggered: false, reason: "gated", factChunksInPassOne: 0, added: 0 };
@@ -119,5 +128,5 @@ export function retrieveApplicable(
     if (conflict) decision = { ...decision, audienceConflict: conflict };
   }
 
-  return { raw, decision, factPass, retrievalMs: performance.now() - start, regionSource };
+  return { raw, decision, factPass, intentPass, retrievalMs: performance.now() - start, regionSource };
 }

@@ -92,7 +92,7 @@ export async function POST(req: Request): Promise<Response> {
   const expansion = expansionEnabled()
     ? await expandQuery({ engine: getReasoningEngine(), index, query: retrievalQuery, latestMessage: question })
     : undefined;
-  const { raw, decision, factPass, retrievalMs, regionSource } = retrieveApplicable(index, retrievalQuery, userMessages, {
+  const { raw, decision, factPass, intentPass, retrievalMs, regionSource } = retrieveApplicable(index, retrievalQuery, userMessages, {
     lastPlanningMode: session.lastPlanningMode,
     pinned: parsed.value.pinned,
     expansion: expansion?.terms ? expansion : undefined,
@@ -136,6 +136,7 @@ export async function POST(req: Request): Promise<Response> {
     mismatchRegions: decision.mismatchRegions,
     unspecifiedUsed: decision.unspecifiedUsed,
     factPass: { triggered: factPass.triggered, reason: factPass.reason, added: factPass.added, query: factPass.query },
+    intentPass: intentPass.intents.length > 0 ? intentPass : undefined,
     retrievalMs: Math.round(retrievalMs * 10) / 10,
   };
 
