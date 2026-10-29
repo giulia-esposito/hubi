@@ -1,71 +1,104 @@
 # Path to Corporate Production (ISSTD28): readiness picture and promotion plan
 
-> **Read section 0 first.** On 2026-10-29 the V1 scope changed to a Google Chat app for a controlled audience. Section 0 says what is and is not a launch blocker; sections 1 to 8 are the later, fuller Corporate Production plan.
+> **Read section 0 first.** On 2026-10-29 the V1 scope was set as the web app in the Sandbox for a controlled audience, with Google Chat revisited afterwards. Section 0 says what is and is not a launch blocker; sections 1 to 8 are the later, fuller Corporate Production plan.
 
 Status: plan only, 2026-10-29 (revised the same day with the owner's decisions and the existing InfoSec approval). Nothing was deployed, requested or changed in GCP. This maps Hubi against ISSTD28 (GCP Corporate Production Environment Standard, v1.0) using the `wh-gcp-security` canonical copy (`canonical/ISSTD28-canonical.md`). Section references like `§5.1` are the standard's. Statements marked **plugin reading** are the compliance plugin's interpretation, not standard text. Hubi's own facts come from this repository; anything I could not verify is marked `[confirm]`.
 
-## 0. V1 scope (decided 2026-10-29) and the launch gates it implies
+## 0. V1 scope (decided 2026-10-29, revised the same day) and its launch gates
 
-**This section overrides the rest of the document where they disagree.** Sections 1 to 8 were written for a Corporate Production promotion of the current web app. They stay as the later-stage plan; section 0 is what has to be true to put Hubi into Google Chat for a first, controlled audience.
+**This section overrides the rest of the document where they disagree.** Sections 1 to 8 are the later, fuller Corporate Production plan; section 0 is what has to be true to launch V1 to a controlled audience.
 
 ### 0.1 Decisions
 
-- **Hubi V1 is a Google Chat app** inside the company Workspace. Who may reach Hubi is decided by the Chat and Workspace boundary, assuming the knowledge corpus is appropriate for the intended Revenue audience.
-- **No login, custom authentication or user-level authorization work in V1.** The IAP, corporate load balancer and sign-in items in this plan are not V1 work.
-- **Actor logging stays off and non-blocking** (`HUBI_LOG_ACTOR` unset). It is built and dormant.
-- **Contextual applicability is the product control.** Hubi does not need to know who the user is. When an answer depends on context (country or region, segment or tier, role or team, stage of the process), it asks a targeted question first.
+| Topic | Decision |
+|---|---|
+| **Priority** | The reasoning and retrieval product comes first, not the channel |
+| **Channel** | **V1 is the web app in the Sandbox.** Google Chat stays the preferred channel but must not delay Hubi: it goes in only if the Chat-to-backend path needs no significant new infrastructure or platform work; otherwise it is revisited after launch (0.5) |
+| **Environment** | **Sandbox** (`wh-revenue-sandbox`, `hubi-pilot`). Not a blocker. Revisit only on a concrete Sandbox limitation. A later Production move is supported by IT and Platform |
+| **Authentication** | No custom login, authorization or user-level access work. The existing Workspace sign-in in front of the pilot service (IAP) stays as it is; nothing is built on top |
+| **Conversation state** | Temporary history with a time-to-live (TTL), keyed by conversation, with an explicit "New conversation" action. Context is lost only on a deliberate new conversation or when the TTL expires, never because infrastructure restarted (0.2) |
+| **Contextual applicability** | Hubi does not ask for country, tier, segment or role by default. It asks only when that context materially changes the answer. Measure first, strengthen only the dimensions that fail (0.3) |
+| **Content access** | The Hubi corpus is the access boundary. The rule is Hubi eligibility: content the Content Registry says is not to be added to Hubi is excluded; content explicitly approved for Hubi can be retrieved, whether Client Facing or Internal Wellhub. No access-level system (0.4) |
+| **Logging** | Actor logging stays off. Interaction telemetry stays on: questions, outputs, sources and retrieval context, feedback, latency, errors and runtime metadata, with no user identity by default (0.6) |
 
-### 0.2 Things the Chat decision changes that are easy to miss
+### 0.2 Conversation state: the lowest-complexity way to get the behaviour you asked for
 
-1. **Chat has to reach Hubi, and that collides with the ingress rule.** An HTTP-endpoint Chat app is called by Google from outside, which cannot be done under the "internal ingress only, no public exposure" rule (`§5.5`, a "serious violation" in Production, and the Sandbox runs internal ingress too). Google documents a pattern for exactly this case: **Chat publishes events to a Pub/Sub topic and the app picks them up, with no public endpoint** ([Google: Chat app behind a firewall with Pub/Sub](https://developers.google.com/chat/how-tos/pub-sub), [quickstart](https://developers.google.com/workspace/add-ons/chat/quickstart-pubsub)). That quickstart describes a pull subscription; whether a push subscription into an internal-ingress Cloud Run service is allowed, and which of the two Platform Engineering and InfoSec prefer, `[confirm]`. I found no Google source saying internal ingress accepts calls from Chat itself, so I am assuming it does not. Replies go back through the Chat API using the app's service identity (no keys).
-2. **Conversation state has to move.** Today the browser carries the history and the server rebuilds the session each turn. Chat delivers one message at a time. Context across turns now needs thread-keyed state: either a short-lived store keyed by space and thread, or reading the thread back through the Chat API (needs scopes and approval). A store is a persistence component and brushes against InfoSec's re-score trigger (d), "persistent memory". My proposal: store only scrubbed turn text, keyed by thread, with a short time-to-live (hours, not days), no cross-thread reuse, and ask InfoSec to confirm it stays "per-session". This is the largest design decision in V1.
-3. **Chat is not a browser.** No token streaming (a placeholder message that is updated works), a message length limit (4,096 characters, `[verify]`), a Markdown subset, sources as links, feedback as card buttons. Business Assistance turns that take 15 to 30 seconds therefore need the asynchronous reply path, not a synchronous HTTP response.
-4. **Hubi will not know who is asking, so it cannot honour "Leaders only" content.** The registry has an Access Level column (`Revenue – All`, `Revenue – Specific Function`, `Revenue – Leaders Only`, `Restricted – Confidential`, `Internal Wellhub`, `External – Client-facing`). With no identity, a Leaders-only document in the corpus would be readable by everyone. Cheap fix: carry Access Level into the governance snapshot and exclude everything except the first two values. Nothing in today's local corpus is Leaders-only (RKC-000001 and RKC-000017 are not in it), so this is a guard against the corpus growing, not a present leak.
-5. **The controlled audience is controlled by Chat configuration, not by Hubi.** Restrict the app's availability to named people or a group in the Chat API configuration (`[confirm]` the exact setting with the Workspace admin) and restrict where it can be used (direct messages and one named space). Anyone who can message the app can use it.
-6. **Google Chat is already in the approved design**: the intake submission named Chat as the long-term interface, so it is not by itself an InfoSec re-score trigger. Revenue-only audience keeps trigger (e) clear. The conversation store in point 2 is the one new thing to show InfoSec.
-7. **Sandbox or Production for the controlled audience.** The pilot runs in the Sandbox project today. A named, small, supported-by-the-owner group is what the Sandbox standard is for (no production support commitment, Internal data only), and it avoids the full promotion chain. I recommend launching the controlled audience from the Sandbox and promoting when Hubi becomes something Revenue relies on daily or the audience widens. That depends on Platform Engineering confirming the Sandbox allows a Chat app and Pub/Sub topic: `[confirm]`.
+Today the browser already carries the whole conversation with every request and the server rebuilds the session from it. So an instance restart or a redeploy loses **nothing** already. What is lost today is the browser's own copy: a page reload or a closed tab empties the conversation, because the messages live only in the page's memory. That is the only gap between today and your requirement.
 
-### 0.3 Contextual applicability: what exists and what is missing
+| Option | Survives restart / redeploy | Survives reload | Cross-device | New infrastructure | New data-handling | Complexity |
+|---|---|---|---|---|---|---|
+| **A. Persist the conversation in the browser with a TTL** (local storage, one entry per conversation) | Yes (server holds nothing) | Yes | No (per browser) | None | None on the server. Text sits in the user's own browser profile | **Lowest: about a day, no platform work** |
+| B. Server memory (the old fallback) | No: lost on restart, redeploy and scale-out | n/a | Yes | None | In memory only | Already exists; rejected |
+| C. Server store with TTL (Firestore, Memorystore, a bucket) | Yes | Yes | Yes | A database, IAM, a TTL policy | Conversation text stored server-side: touches the InfoSec approval's "persistent memory" re-score trigger | Days, plus platform and InfoSec work |
 
-**Exists.** A region gate (approved region map, pinned context carried across turns, must-clarify when region-specific sources are the only match, no-applicable-content when the region does not match). Guided clarification in Business Assistance. Product principle already written down: "never assume business context".
+**Recommendation: A.** It delivers exactly the behaviour you described with no infrastructure, and it keeps the approved design literally true (per-session context, nothing persistent on the server). Its limits are honest ones: no cross-device continuity, and conversation text sits in the user's own browser profile (on a shared or unmanaged browser another person could read it; on a normal Workspace laptop that is the same exposure as any open tab or browser history). It does not make Google Chat harder later: Chat needs option C or a thread read through the Chat API, and that is a separate decision (0.5).
 
-**Missing.** Segment or tier, role or team, and stage of the process are not first-class. They rely on the model noticing that a question depends on them. Evidence that this matters in the real corpus: Enterprise and SMB variants exist (RKC-000012 is Sales ENT, RKC-000020 is Sales ENT), tiers T0 to T4 are in RKC-000006 and RKC-000020, audiences differ by document (Sales, CS, Sales Dev, WE). The existing architecture note already planned `userRegion`, `roleOrTeam`, `habitualSegment` and an access scope.
+What it means in behaviour:
+- One stored entry per conversation, with the messages, sources, pinned context and feedback state.
+- A TTL on inactivity (I propose 24 hours, a single constant; your call). On open, an expired entry is dropped, and the user sees a fresh conversation.
+- "New session" becomes **"New conversation"**: it clears the stored entry and starts clean.
+- The caps already in the server (24 turns, size limits, the truncation notice) still apply, so a very long conversation never loses context silently.
+- The server-side session fallback stays for older clients and is untouched.
 
-**The bigger gap is metadata, not code.** Five unregistered files carry no audience, region or tier labels: the Slide Library, Sales Tools Playbook, Pricing Playbook, Rules of Engagement and Golden Pitch. They are about 1,500 of the 2,100 chunks (71 percent) and the main source for pitches, pricing and tools. A metadata-driven clarification cannot work on them. Two routes: Content registers and labels them (the real fix, and the same work the governance plan already asks for), or the clarification relies on the sources conflicting in what they say (ENT guidance and SMB guidance both retrieved).
+### 0.3 Contextual applicability: ask only when it changes the answer
 
-**Proposal (to be built, not yet started).** Generalise the Applicability Layer from one dimension (region) to several: region, segment, tier, role or team, stage. Each dimension is detected from what the user wrote and the pinned context, compared with source labels, and produces the same outcomes the region gate has today. Ask when (a) the only matching sources are labelled for one value of a dimension the user has not stated, or (b) the retrieved sources disagree across a dimension. Options offered in the question come from the retrieved sources' own labels, so the question is targeted ("Enterprise or SMB?"), never a generic form. Measure with the applicability eval extended with scenarios for each dimension. The pass bar is a Product decision; I will not invent one.
+**What exists.** A region gate (approved region map, pinned context, must-clarify when the only matching sources are region-specific, no-applicable-content when the region does not match) and guided clarification in Business Assistance.
 
-### 0.4 What is a launch blocker, and what is not
+**What is not measured.** Whether Hubi asks about segment, tier, role or stage when it should, and, just as important, whether it stays quiet when it should. Asking by default adds friction; failing to ask where the answer differs gives a confident wrong answer. Both are failures.
 
-For a **first controlled audience in Google Chat**:
+**The evals (start now).** Extend the applicability eval with two kinds of scenario, built on the real corpus:
+1. **Must ask**: questions where the answer materially depends on a dimension, for example client onboarding (tier 0, 1, 2 in the Spanish SSL process), contract adherence (T3/T4), Enterprise versus SMB pricing narrative, service level by tier, region-specific processes, role-specific coaching. Pass: Hubi asks a short targeted question naming the choices before giving process content, and does not answer for the wrong value.
+2. **Must not ask**: general questions where context does not change the answer (what is Per Subscriber pricing, how cadences work, what is the Golden Pitch). Pass: Hubi answers without a clarifying question.
+Report, per dimension: ask-when-needed rate, over-ask rate, and the answers given before asking. Then strengthen only what fails, using the mechanism that fits: label-driven (when sources carry audience, tier or region labels) or conflict-driven (when the retrieved sources disagree). **The pass bar is for Product to set once the first numbers exist;** I will not invent one.
 
-| # | Launch blocker | Why | Who |
+**Known limit that shapes the result.** About 71 percent of the chunks come from five files that carry no audience, region or tier labels (Slide Library, Sales Tools Playbook, Pricing Playbook, Rules of Engagement, Golden Pitch). Where a dimension is not labelled, only the conflict-driven route and the model's own judgment are available. If the evals show failures concentrated in those files, labelling them (a Content task) is the highest-yield fix, ahead of more code.
+
+### 0.4 Content access: eligibility is the rule
+
+This is what the governance gate already does, so nothing needs to be built:
+- **Excluded:** anything the registry marks `Not Eligible`, `Pending Assessment`, blank (Unassessed), or Archived/Deprecated, and any `RKC-` identifier the registry does not list.
+- **Retrievable:** `Eligible` and `Eligible with Restrictions` (with the restriction caveat shown), regardless of Access Level or Client-shareable. Client Facing and Internal Wellhub content that Content has approved for Hubi is in scope.
+- **The access-level guard I proposed earlier is dropped.**
+
+One residual risk to accept in writing, since Hubi will not know who asks: if Content ever marks a Leaders-only or otherwise restricted document `Eligible`, Hubi will serve it to every user. The control is Content's discipline in setting AI Eligibility, which is the same control the original Finding #002 decision already relies on. A short note to the Content owners ("Eligible means anyone using Hubi can read it") is worth sending.
+
+### 0.5 Google Chat: revisit after launch, with a decision rule
+
+Chat goes into V1 only if it is cheap. My reading, which I could not fully confirm from Google's documentation:
+- An HTTP-endpoint Chat app is called by Google from outside, which cannot reach an internal-ingress service. Google's documented pattern for this is the **Pub/Sub connection** (Chat publishes events to a topic; the app picks them up; replies go through the Chat API with the app's service identity): [Chat app behind a firewall with Pub/Sub](https://developers.google.com/chat/how-tos/pub-sub), [quickstart](https://developers.google.com/workspace/add-ons/chat/quickstart-pubsub).
+- Chat delivers one message at a time, so continuity needs **server-side thread state** (option C above, or reading the thread through the Chat API). That conflicts with the no-silent-loss requirement unless there is a durable store.
+- So Chat means a Pub/Sub topic and subscription, a Chat app configuration and Workspace admin approval, an always-on receiver, and a durable TTL store. That is **more than "no significant infrastructure"**, so under your rule the default is **web app first, Chat afterwards**.
+
+**Decision rule, in one question for Platform Engineering:** "Can I, in `wh-revenue-sandbox`, create a Pub/Sub topic and subscription for a Google Chat app, run an always-on receiver, and use a managed store with a TTL, without a ticket queue?" If all three are self-service, a Chat spike is a few days and can run in parallel. If any needs a queue, defer Chat. Nothing in the web launch depends on the answer. Preparatory refactoring of the turn pipeline for Chat (a shared `runTurn` core) is not started and is no longer on the V1 path.
+
+### 0.6 Logging and telemetry for evaluation
+
+Already in place and sufficient for V1: question, answer, sources and retrieval context (raw top results, applicability decision, fact pass, query expansion), verification and attribution results, planning mode and turn kind, latency (total and model), engine attempts, errors, feedback with tags, and the build that produced each turn. Identity is not logged: `sessionId` is a random browser-generated id, and actor logging (`HUBI_LOG_ACTOR`) is off. Emails and phone-like numbers are scrubbed from the text fields. The persisted conversation in 0.2 keeps that id across a reload, which links a person's turns to each other but not to the person.
+
+### 0.7 Launch gates for a controlled audience, web app in the Sandbox
+
+**Launch blockers**
+
+| # | Item | Type | Who |
 |---|---|---|---|
-| L1 | **Chat connection built the compliant way** (Pub/Sub path or an approved alternative) with the app's own identity | Without it Chat cannot reach Hubi, and an exposed endpoint is a policy violation | Platform Engineering and InfoSec confirm the pattern; engineering builds it |
-| L2 | **Thread-keyed conversation state** designed and accepted (short TTL, scrubbed, per thread) | Multi-turn is core to Hubi; it is also the one new data-handling element | Engineering proposes; InfoSec confirms "per-session" |
-| L3 | **Contextual applicability to the V1 bar**: region (done), plus the dimensions Product picks as essential, verified by an eval; the largest unregistered files labelled or the gap accepted in writing | This is the product's own safety control now that identity is not available | Product sets the bar; engineering builds and measures; Content labels |
-| L4 | **Access-level guard**: exclude Leaders-only, Restricted and Internal-Wellhub content from the index | Hubi cannot check who is asking | Engineering (small) |
-| L5 | **Deploy the current build** by the approved route and verify it (the live revision predates all of this work). Includes the Dockerfile `USER node` build check | The running service is old | You approve the deploy; the runbook already exists |
-| L6 | **Chat app configuration**: availability restricted to the named audience, direct messages and one space, Workspace admin approval | It is the access boundary V1 relies on | You and a Workspace admin |
-| L7 | **Feedback and telemetry work in Chat** (thumbs and tags as card buttons, joined to the answer) | A controlled audience exists to produce evidence | Engineering |
-| L8 | **Log retention decided and set** for Hubi's logs (they hold question and answer text, scrubbed of emails and phone numbers) | The approval left retention open; this is data already being stored | You decide with InfoSec; platform sets it |
-| L9 | **Audience briefed**: AI drafts must be checked, do not enter personal data, how to report a problem; owner knows the rollback command | Finding #005 is release-blocking for wider rollout, not for moderated testing | You |
+| 1 | **Contextual applicability evals run, and the dimensions that fail are strengthened to a bar Product sets** | Build | Engineering builds and measures; Product sets the bar |
+| 2 | **Conversation persistence with TTL and "New conversation"** (option A) | Build | Engineering; you pick the TTL (proposed 24 hours) |
+| 3 | **Deploy the current build** by the runbook route and verify it (the live revision predates all of this work). Includes the first build with `USER node` | Approval and verification | You approve; the runbook exists |
+| 4 | **Tester access to the Sandbox service**: how the named audience reaches the URL and gets through the existing sign-in (the service is internal-ingress and IAP-protected) | External | Sandbox and IAP owners; I have not verified how access is granted today |
+| 5 | **Audience briefed and rollback known**: AI drafts must be checked, how to give feedback, and who rolls back and how | Owner | You |
+| 6 | **Log retention decided** for the pilot's logs (they hold scrubbed question and answer text) | Decision | You, with InfoSec if you want their view |
 
-**Not launch blockers for the controlled audience** (tagged with when they come back):
+**No longer launch blockers**
 
-- *Before widening the audience or promoting to Corporate Production:* the full ISSTD28 chain (LT, InfoSec and Infrastructure and Data approvals, RASCI sign-off, Catalog entry, pipeline deployment, availability monitoring into the company stack, FinOps budget and cost centre, training, on-call and coverage model), the DPIA determination by Legal Privacy, the InfoSec delta note and re-validation, the repository moved to the company organisation, registry entries for Vertex AI and the content bucket, Finding #005 closure, the full SAST pass.
-- *Post-V1 hardening:* **custom authentication and user-level authorization**, **actor logging** (note: `§5.6` lists the acting user among mandatory log fields for Corporate Production, so it comes back as a promotion item or an InfoSec exception, but it does not block V1), AI decision-trace logging, content bucket versioning, structured model outputs, telemetry analytics, WorkRamp and other sources (a new InfoSec assessment).
-- *Already done:* log scrubbing, circuit breaker, request guard, retries, AI-draft label, usage guidelines, claim guardrail, governance registry, retrieval benchmark and cross-language expansion.
+- Google Chat integration, the Pub/Sub path, thread-keyed server-side state, the Chat app configuration and Chat feedback cards (all move to the post-launch Chat revisit, 0.5).
+- Sandbox versus Production (decided: Sandbox).
+- The access-level guard (dropped: eligibility is the rule).
+- Custom authentication, authorization and actor logging (off, non-blocking; `§5.6` lists the acting user for Corporate Production, so it returns as a promotion item or an InfoSec exception).
+- The InfoSec delta note, the DPIA determination and the full ISSTD28 chain (LT, InfoSec and Infrastructure and Data approval, RASCI sign-off, Catalog, pipeline, monitoring integration, FinOps, training, coverage model): needed before Production or widening, not for a controlled Sandbox audience. I keep one caveat: the InfoSec approval says its open items close before production go-live. Treating a controlled Sandbox pilot as not "production go-live" is my reading; if InfoSec reads it differently, the delta note moves back onto this list.
+- Finding #005 (claim fidelity): remains release-blocking for wider rollout only, as decided earlier; the AI-draft label is in.
+- Repository move to the company organisation, SAST pass, bucket versioning, decision-trace logging: before Production.
 
-### 0.5 What has to happen, in order
-
-1. **Two conversations that cannot be skipped** (this week, no code): Platform Engineering and InfoSec on L1 and L2 (Pub/Sub pattern, Sandbox versus Production for the controlled audience, conversation store), and Product on L3 (which context dimensions are essential and the pass bar).
-2. **Engineering, in parallel with those answers:** refactor the turn pipeline out of the web route so web and Chat share one core (`runTurn`); the access-level guard (L4); the Chat adapter (events in, async replies out, message formatting, card buttons) against a stub so it is testable without Google; thread-keyed state behind an interface with an in-memory implementation first; the generalised applicability layer and its eval (L3).
-3. **Content:** register and label the five unregistered files, or accept the gap in writing.
-4. **You:** decide log retention (L8), choose the audience, brief them (L9), approve the deploy (L5) and the Chat configuration (L6).
-5. **Go:** deploy, verify, add the audience, watch the telemetry daily for the first week. Widening the audience or promoting to Corporate Production restarts at the "before widening" list.
-
-**What I would do first, without waiting:** the `runTurn` refactor, the access-level guard, and the applicability eval scenarios for segment, tier and role. They are needed whatever the Chat connection pattern turns out to be.
+**Already done:** log scrubbing, circuit breaker, request guard, retries, AI-draft label, usage guidelines, claim guardrail, governance registry, retrieval benchmark and cross-language expansion.
 
 ## 1. What Hubi is, in the standard's terms
 
