@@ -17,6 +17,10 @@ export const TOP_K = 5;
 // not starve the answer set: fetch more, filter, then keep the best TOP_K.
 export const OVER_FETCH_K = 15;
 
+// A region-specific chunk this close to the best match (and the region unknown) means the question is about regional material:
+// ask for the region rather than answer from weaker generic sources. Calibrated on the 60 known questions (docs/context-asking-eval.md).
+export const STRONG_REGIONAL_RATIO = 0.7;
+
 export interface ApplicableRetrieval {
   /** The raw ranked results of pass 1, before applicability filtering (empty means retrieval found nothing at all). */
   raw: ScoredChunk[];
@@ -68,7 +72,7 @@ export function retrieveApplicable(
   }
 
   const raw = searchWithExpansion(index, retrievalQuery, options.expansion, OVER_FETCH_K);
-  let decision: ApplicabilityDecision = { ...applyApplicability(context.regions, raw, TOP_K, { regionCue: userMessages.some(refersToOwnRegion) }), taskCountries: context.countries };
+  let decision: ApplicabilityDecision = { ...applyApplicability(context.regions, raw, TOP_K, { regionCue: userMessages.some(refersToOwnRegion), strongRegionalRatio: STRONG_REGIONAL_RATIO }), taskCountries: context.countries };
   let factPass: FactPassInfo = { triggered: false, reason: "not-artifact-request", factChunksInPassOne: 0, added: 0 };
 
   const latest = userMessages[userMessages.length - 1] ?? "";

@@ -72,6 +72,12 @@ export interface ApplicabilityDecision {
   factSourceCount?: number;
   /** How many of the eligible chunks have unspecified scope. */
   unspecifiedUsed: number;
+  /**
+   * Why the turn was gated when the cause is not the top-ranked chunk being unresolved: "strong-regional-match" means
+   * region-specific material is a close match for the question while the user's region is unknown, and the only other
+   * sources are weaker, so answering from them would be a dead end or the wrong process.
+   */
+  clarifyReason?: "strong-regional-match";
   /** Set when the eligible sources are written for different audiences and the user has not said which applies (lib/applicability/audience.ts). */
   audienceConflict?: AudienceConflict;
 }
@@ -99,7 +105,15 @@ export function applyApplicability(
   taskRegions: string[],
   ranked: ScoredChunk[],
   topK: number,
-  options: { gate?: boolean; regionCue?: boolean } = {}
+  options: {
+    gate?: boolean;
+    regionCue?: boolean;
+    /**
+     * When the user's region is unknown and a region-specific chunk anywhere in `ranked` scores at least this share of
+     * the best chunk, ask for the region instead of answering from weaker generic sources. Off when undefined.
+     */
+    strongRegionalRatio?: number;
+  } = {}
 ): ApplicabilityDecision {
   const statuses = ranked.map((r) => classifyChunk(r.chunk, taskRegions));
 
@@ -128,6 +142,20 @@ export function applyApplicability(
     else if (withheldInWindow.length > 0) mode = "notice";
   }
 
+  // A region-specific source is nearly as good a match as the best chunk, and the region is unknown: ask first.
+  let clarifyReason: ApplicabilityDecision["clarifyReason"];
+  let strongRegions: string[] = [];
+  if ((mode === "none" || mode === "notice") && options.strongRegionalRatio && taskRegions.length === 0 && ranked.length > 0) {
+    const floor = ranked[0].score * options.strongRegionalRatio;
+    const strong = ranked.filter((r, i) => statuses[i] === "unresolved" && r.score >= floor).map((r) => r.chunk);
+    if (strong.length > 0) {
+      mode = "must-clarify";
+      clarifyReason = "strong-regional-match";
+      strongRegions = distinct(strong.flatMap((c) => c.regions ?? []));
+      withheldInWindow.push(...strong.filter((c) => !withheldInWindow.includes(c)));
+    }
+  }
+
   // The user said the answer depends on their own region and did not state it:
   // if region-specific material was withheld, asking is mandatory, even when
   // better-ranked Global or unspecified content exists.
@@ -149,9 +177,10 @@ export function applyApplicability(
     mode,
     eligible: kept.map((i) => ranked[i]),
     eligibleStatuses: kept.map((i) => statuses[i]),
-    withheldRegions,
+    withheldRegions: distinct([...withheldRegions, ...strongRegions]),
     mismatchRegions,
     withheldCount: withheldInWindow.length,
+    clarifyReason,
     mismatchCount: mismatchInWindow.length,
     unspecifiedUsed: kept.filter((i) => statuses[i] === "unspecified").length,
   };

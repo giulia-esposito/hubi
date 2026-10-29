@@ -76,3 +76,28 @@ Product asked for fixes 1 and 2 only. Full re-run (`benchmarks/applicability/aft
 1. **Escalate to a question** when a region-specific source scores close to the best match, sits within the 15 retrieved, and the top sources do not match the question's own key terms (a stricter, deterministic variant of fix 1). Risk: asks about region more often; needs the must-not-ask scenarios re-run.
 2. **Let the model decide with a stronger instruction** in the existing notice ("if none of the sources above answers the question and region-specific material was withheld, ask for the region instead of saying nothing is available"). Cheaper, but it relies on model judgment, which just ignored the soft version.
 3. **Label the process documents** so the generic Sales Tools Playbook is not the best match for "client onboarding": a Content task, not code.
+
+## After the strong-regional-match rule (same day; full re-run, 3 runs per scenario)
+
+Product asked for the smallest deterministic change that turns the onboarding dead end into a region question. The rule (`applyApplicability`, option `strongRegionalRatio`, constant `STRONG_REGIONAL_RATIO = 0.7` in `lib/runtime/retrieveApplicable.ts`): when the user's region is unknown and any region-specific chunk among the 15 retrieved scores at least 70 percent of the best chunk, the turn is gated and Hubi asks which region applies, naming the region of the withheld material. It uses the existing must-clarify path (no content is sent to the model; one short question in the user's language) with accurate wording ("the best approved material for this question is specific to SS Latam"). It is logged as `applicability.clarifyReason`. Once the region is stated, the regional source is eligible and the answer follows. Full results: `benchmarks/applicability/after-strong-regional-2026-10-29.json`.
+
+| Measure | Baseline | After audience notice | **After this rule** |
+|---|---|---|---|
+| Ask-when-needed | 15 of 21 (71%) | 18 of 21 (86%) | **21 of 21 (100%)** |
+| **Over-ask** | 0 of 24 | 0 of 24 | **0 of 24 (0%)** |
+| Re-asked when context was given | 0 of 12 | 0 of 12 | 0 of 12 |
+| Follow-through | 9 of 9 | 9 of 9 | 8 of 9 (see below) |
+| Tier | 7 of 9 | 6 of 9 | 9 of 9 |
+| Segment | 5 of 6 | 6 of 6 | 6 of 6 |
+| Role | 0 of 3 | 3 of 3 | 3 of 3 |
+| Region | 3 of 3 | 3 of 3 | 3 of 3 |
+
+`ask-tier-onboarding` now asks for the region in 3 of 3 runs, and once the user says "Tier 1 in Mexico" the SS Latam onboarding process answers (5 of 5 in a separate check).
+
+**How narrow the rule is, measured before the eval.** Over 64 known questions (the 45 retrieval-benchmark questions with their region context and recorded expansions, plus the eval's general and context-supplied questions) it fires on exactly two: the onboarding question and the vague "contract differences" question. It fires on none of the general-knowledge questions and none where the region or other context was already given. A test pins this (`tests/contextApplicability.test.ts`), so a later change that makes it fire more widely fails the suite.
+
+**Side effect to be aware of.** The second question it fires on, "What are the contract differences I need to know for my client?", used to be answered across all tiers from the Global contract-adherence document. It now asks the region first, because US and SS Latam material is a close match. That counts as an acceptable outcome in the eval (it is a tier-dependent question), but it is a behaviour change and arguably an extra step for a question a Global source could answer. The ratio is one constant; raising it to 0.75 turns the rule off on both known cases, so it cannot be tuned finer on this corpus. If Product prefers the old behaviour for that question, the lever is the labelling of the contract document, not the ratio.
+
+**One follow-through run was thin.** In the onboarding follow-through scenario, 1 of 3 runs produced a second answer that was too short to count as answering. A separate 5-run check of the same conversation answered substantively every time (5 of 5), so this is most likely run-to-run variation, but it is not proven; one more look is worth taking if it recurs in the pilot.
+
+**Limits.** The ratio was calibrated on one example plus a guard set; 0.7 is not a derived constant. It relies on BM25 scores, which shift if the corpus, chunking or tokenisation changes: the retrieval benchmark and the pinned test are the early warning. The two known firing cases are still only 2 of 64 questions, so the real firing rate on pilot traffic is unknown. Switch it off by removing `strongRegionalRatio` from the call in `retrieveApplicable`.

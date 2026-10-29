@@ -91,7 +91,9 @@ export function buildPrompt(
     return (
       `${historyBlock}User question: ${question}\n\n` +
       `[Applicability gate -- mandatory]\n` +
-      `Approved material for this question exists only as region-specific content (${regionList}), and the user's region is not known. ` +
+      (decision.clarifyReason === "strong-regional-match"
+        ? `The best approved material for this question is specific to ${regionList}, and the user's region is not known, so the other material found is too weak to answer from. `
+        : `Approved material for this question exists only as region-specific content (${regionList}), and the user's region is not known. `) +
       `That material is withheld and is NOT shown to you: do not describe, summarize or guess any regional process, and do not answer from general knowledge. ` +
       `Respond with ONLY one short clarifying question asking which region applies to the user's situation` +
       `${regions.length > 0 ? `, naming these options: ${regions.join(", ")}` : ""}. ` +
