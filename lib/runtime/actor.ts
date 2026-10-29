@@ -37,6 +37,17 @@ export function userFromHeaders(headers: { get(name: string): string | null }): 
   return clean(at >= 0 ? raw.slice(at + 1) : raw);
 }
 
+/**
+ * Whether the request came through IAP: true when the proxy's authenticated-user header is present. It records only that
+ * fact, never the user, so it is safe to log with actor logging off. It answers "does the request guard see the user?":
+ * the guard keys its per-user limit on the same header and falls back to one shared bucket when it is absent.
+ */
+export type CallerKind = "iap" | "anonymous";
+
+export function callerKindFromHeaders(headers: { get(name: string): string | null }): CallerKind {
+  return clean(headers.get("x-goog-authenticated-user-email")) ? "iap" : "anonymous";
+}
+
 /** The original client address: the first entry of X-Forwarded-For, which the platform sets. */
 export function ipFromHeaders(headers: { get(name: string): string | null }): string | undefined {
   const forwarded = clean(headers.get("x-forwarded-for"));

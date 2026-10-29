@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { scrubText, scrubEntry, scrubEnabled } from "../lib/runtime/redact.ts";
-import { actorForLog, ipFromHeaders, userFromHeaders, actorLoggingEnabled } from "../lib/runtime/actor.ts";
+import { actorForLog, ipFromHeaders, userFromHeaders, actorLoggingEnabled, callerKindFromHeaders } from "../lib/runtime/actor.ts";
 import { CircuitBreaker, breakerConfig, DEFAULT_BREAKER } from "../lib/runtime/circuitBreaker.ts";
 import { buildTelemetryEntry } from "../lib/runtime/telemetry.ts";
 import { withResilience, type ResilienceConfig } from "../lib/runtime/resilience.ts";
@@ -75,6 +75,23 @@ describe("actor logging", () => {
   test("missing headers give no actor; values are bounded", () => {
     assert.equal(actorForLog(headers({}), { HUBI_LOG_ACTOR: "1" }), undefined);
     assert.equal(userFromHeaders(headers({ "x-goog-authenticated-user-email": "x".repeat(5000) }))?.length, 200);
+  });
+});
+
+describe("caller kind (does the request guard see the IAP user?)", () => {
+  const headers = (h: Record<string, string>) => ({ get: (name: string) => h[name.toLowerCase()] ?? null });
+
+  test("iap when the proxy's user header is present, anonymous when it is not or is blank", () => {
+    assert.equal(callerKindFromHeaders(headers({ "x-goog-authenticated-user-email": "accounts.google.com:ana@corp.com" })), "iap");
+    assert.equal(callerKindFromHeaders(headers({})), "anonymous");
+    assert.equal(callerKindFromHeaders(headers({ "x-goog-authenticated-user-email": "   " })), "anonymous");
+  });
+
+  test("it reveals nothing about the user, and works with actor logging off", () => {
+    const h = headers({ "x-goog-authenticated-user-email": "accounts.google.com:ana@corp.com", "x-forwarded-for": "10.1.2.3" });
+    assert.equal(actorForLog(h, {}), undefined);
+    const kind = callerKindFromHeaders(h);
+    assert.ok(!kind.includes("ana") && !kind.includes("10.1"));
   });
 });
 

@@ -49,6 +49,8 @@ The service is behind IAP with internal ingress, so it cannot be reached from ou
 - `deploy:verify` reads the latest `startup` events (`jsonPayload.event="startup"`), which carry `revision`, `commit`, `claimVerifierEnabled`, `provider` and the log target.
 - Every `interaction` and `feedback` entry carries `commit` and `revision`, so a tester's feedback maps to an exact build.
 - `GET /api/health` returns the same identity from inside the network.
+- `build-info.json` reaches the build only because `.gcloudignore` exists: without it `gcloud run deploy --source` falls back to `.gitignore`, which excludes that file, and every startup event reports `commit: unknown` (found on the first deploy, 2026-10-29).
+- Every `interaction` entry carries `callerKind` (`iap` when the proxy's user header was present, `anonymous` otherwise; never the user). After a deploy, one real request through IAP should log `iap`; `anonymous` means the request guard is sharing one bucket across everyone.
 
 ## Pilot environment
 

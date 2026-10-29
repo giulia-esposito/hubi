@@ -256,3 +256,17 @@ describe("extracting the exported commit", () => {
     }
   });
 });
+
+describe(".gcloudignore", () => {
+  const lines = readFileSync(".gcloudignore", "utf8").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+
+  test("does not exclude build-info.json: gcloud would otherwise drop the file the deploy script writes, and every startup event says unknown", () => {
+    assert.ok(!lines.some((l) => /build-info/.test(l)));
+    // The reason the file is needed at all: without a .gcloudignore, gcloud falls back to .gitignore, which excludes it.
+    assert.ok(readFileSync(".gitignore", "utf8").split("\n").some((l) => l.trim() === "build-info.json"));
+  });
+
+  test("still keeps secrets, dependencies, build output, logs and the content repository out of the upload", () => {
+    for (const must of [".env", ".env.*", "node_modules", ".next", "logs", "Content Repository", ".git"]) assert.ok(lines.includes(must), must);
+  });
+});

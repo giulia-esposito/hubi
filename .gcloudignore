@@ -1,0 +1,22 @@
+# Files gcloud must NOT upload when building the container with `gcloud run deploy --source`.
+#
+# This file exists because, without it, gcloud falls back to .gitignore, and .gitignore lists
+# build-info.json. scripts/deploy.ts writes that file into the exported commit so the build
+# can bake the commit, branch and time into the app (lib/runtime/buildInfo.ts); with the
+# fallback it was silently dropped and every startup event reported "unknown".
+# build-info.json is deliberately NOT listed here.
+#
+# The deploy script exports with `git archive`, so only tracked files are ever present; this
+# list is a second guard for anything that should never leave the machine.
+
+.git
+.gitignore
+.claude
+.env
+.env.*
+node_modules
+.next
+logs
+Content Repository
+sast-bundle
+tsconfig.tsbuildinfo

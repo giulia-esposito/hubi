@@ -107,6 +107,8 @@ export interface InteractionRecord {
   latencyMs: number;
   /** Who made the request (user, IP); present only when HUBI_LOG_ACTOR=1. */
   actor?: { user?: string; ip?: string };
+  /** Whether the request carried the IAP user header (never the user itself): the request guard's identity input. */
+  callerKind?: "iap" | "anonymous";
   /** Model calls made for the final response and time spent waiting between retries (provider resilience). */
   engineAttempts?: number;
   engineRetryWaitMs?: number;
@@ -125,6 +127,7 @@ export interface InteractionErrorRecord {
   engineAttempts?: number;
   engineRetryWaitMs?: number;
   actor?: { user?: string; ip?: string };
+  callerKind?: "iap" | "anonymous";
   applicability?: ApplicabilityLog;
   retrieval?: RetrievalLog;
   continuity?: ContinuityLog;
