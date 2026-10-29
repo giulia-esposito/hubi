@@ -47,4 +47,11 @@ COPY --from=builder /app/.next/static ./.next/static
 ENV HOSTNAME=0.0.0.0
 EXPOSE 8080
 
+# Run as the unprivileged `node` user that ships with the base image, not root.
+# The app only writes to the OS temp directory (the GCS content download) and
+# stdout, so it needs no extra permissions. The structural fix is a minimal
+# non-root base image (for example Chainguard's node image), which is a
+# separate decision; this is the interim step.
+USER node
+
 CMD ["node", "server.js"]
