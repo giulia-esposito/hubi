@@ -1,0 +1,91 @@
+# Draft production manifest for Hubi (ISSTD28). Written by hand from docs/production-promotion-plan.md.
+# Metadata and decisions only, never secrets. Every unknown is [confirm]; approvals are other people's
+# decisions and stay pending. Not an attestation and not a promotion decision.
+schema_version: 1
+workload:
+  name: hubi
+  project: wh-revenue-prd-corp          # registry: ACTIVE; staging pair wh-revenue-stg-corp. Not created or touched by this draft
+  area: revenue
+  deployment_model: cloud-run-service
+  invoker: human                        # Revenue employees in a browser, behind the corporate network
+  is_ai_agent: true
+  promoted_from:
+    sandbox_project: wh-revenue-sandbox
+    sandbox_workload: hubi-pilot
+    sandbox_manifest_found: false       # no .wh-sandbox/workload.yaml in this repository; the Sandbox attestation does not carry over anyway
+classification:
+  proposed_by_owner: true
+  confirmed_by:
+    infosec: pending
+    lt: pending
+    legal: pending                      # becomes n/a only if Legal confirms no personal or regulated data
+ownership:
+  project_owner: "[confirm]"            # must be job grade G6+; the registry lists a GCP Project Owner for wh-revenue-prd-corp but no confirmed owner for Hubi
+  project_owner_grade_g6_plus: unknown
+  accountable_lt: "[confirm]"
+  rasci_doc: "[pending]"
+  catalog_entry: "[pending]"            # row for wh-revenue-prd-corp in the Corporate Production Catalog is empty
+  support_sla: none                     # strongly recommended, not a gate
+  corptech_support: not-requested
+  training_confirmed: unknown           # AI Security + Secure SDLC, 6-month recertification
+  training_recert_due: null
+data:
+  classification: "[confirm]"           # ISSTD06 level
+  contains_personal_or_regulated_data: false    # [confirm] with Legal: users type prospect and client details; pilot logs questions and answers
+  contains_customer_data_or_sensitive_pii: false # [confirm] with Legal Privacy; true triggers the DPIA gate
+  dpia: n/a                             # revisit after Legal answers
+  legal_go_live_reconfirmation: n/a
+connectors:
+  - system: Vertex AI (Gemini)
+    path: alternative
+    registry_entry: pending             # Authorized AI Tools and Connectors Registry
+    access: read
+    owner_approval: n/a
+  - system: Google Cloud Storage (content bucket)
+    path: alternative
+    registry_entry: pending
+    access: read
+    owner_approval: n/a
+deployment:
+  mechanism: "[confirm]"                # standard-cicd once Platform Engineering names the pipeline; today deploys run from a developer machine, which is not acceptable in production
+  alternative_validation_doc: null
+  source_control: github                # on a personal account today; must move to the Wellhub organization
+  source_url: null
+  staging_environment: none
+readiness:
+  availability_monitoring: pending      # /api/health exists; uptime check and alert routing into the company stack are missing
+  backup_dr:
+    state: pending                      # expected: not-applicable, with the owner's written justification (stateless service, content re-importable, redeploy previous revision)
+    rpo: null
+    rto: null
+    not_applicable_justification: null
+    exception_ref: null
+environment:
+  region: us-east4
+  shared_vpc: corporate-production-iac-management
+  egress_subnet: projects/networking-500210/regions/us-east4/subnetworks/prd-corp-workload-subnet
+  cost_center: "[confirm]"
+  environment_label_value: "[confirm]"
+  values_last_verified: "2026-10-02"    # from canonical environments-production.yaml; stale after 90 days
+approvals:
+  lt: pending
+  lt_ref: null
+  infosec: pending
+  infosec_ref: null
+  id: pending
+  id_ref: null
+  legal: pending
+  legal_ref: null
+  corptech: n/a
+  corptech_ref: null
+  exceptions: []
+status:
+  onboarded_at: "2026-10-29T00:00:00Z"
+  deployed: false
+  promotion:
+    state: none
+    ledger_ref: null
+    reaffirm_due: null
+    access_review_due: null
+notes:
+  - "2026-10-29: plan-only draft. See docs/production-promotion-plan.md. No GCP resource created or changed."
