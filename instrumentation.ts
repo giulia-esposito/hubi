@@ -12,6 +12,9 @@ export async function register(): Promise<void> {
   const { verificationEnabled } = await import("./lib/runtime/verifiedGeneration.ts");
   const { getRegionVocabulary } = await import("./lib/applicability/regions.ts");
   const { REGISTRY_SNAPSHOT } = await import("./lib/governance/registrySnapshot.ts");
+  const { scrubEnabled } = await import("./lib/runtime/redact.ts");
+  const { actorLoggingEnabled } = await import("./lib/runtime/actor.ts");
+  const { breakerConfig } = await import("./lib/runtime/circuitBreaker.ts");
   emitTelemetry("startup", {
     type: "startup",
     timestamp: new Date().toISOString(),
@@ -23,6 +26,9 @@ export async function register(): Promise<void> {
     regionConfigWarnings: getRegionVocabulary().warnings.length,
     registrySyncedAt: REGISTRY_SNAPSHOT.syncedAt,
     registryEntries: REGISTRY_SNAPSHOT.entries.length,
+    logScrub: scrubEnabled(),
+    logActor: actorLoggingEnabled(),
+    breaker: breakerConfig(),
     registryAgeDays: Math.floor((Date.now() - Date.parse(REGISTRY_SNAPSHOT.syncedAt)) / 86_400_000),
   });
 }

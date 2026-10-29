@@ -16,11 +16,14 @@
  * Cloud Run service and revision, so feedback maps to a deployed build.
  *
  * Privacy: entries contain the tester's question and Hubi's answer, as the
- * local log always did. No user identity is added (no IAP email), and chunk
+ * local log always did, with emails and phone-like numbers scrubbed from the
+ * free-text fields (lib/runtime/redact.ts, HUBI_LOG_SCRUB=0 disables). No user
+ * identity is added unless HUBI_LOG_ACTOR=1 (lib/runtime/actor.ts), and chunk
  * text is never logged, only chunk ids.
  */
 import { appendFileSync, mkdirSync } from "node:fs";
 import { BUILD_INFO } from "./buildInfo.ts";
+import { scrubEnabled, scrubEntry } from "./redact.ts";
 import path from "node:path";
 
 export type TelemetryEvent = "interaction" | "feedback" | "interaction_error" | "startup" | "governance";
@@ -88,7 +91,7 @@ export function buildTelemetryEntry(
     commit: BUILD_INFO.commit,
     provider: env.HUBI_REASONING_PROVIDER || "claude-code",
     model: env.HUBI_REASONING_PROVIDER === "gemini" ? env.HUBI_GEMINI_MODEL || "gemini-2.5-flash" : undefined,
-    ...record,
+    ...(scrubEnabled(env) ? scrubEntry(record) : record),
   };
   if (typeof entry.timestamp !== "string") entry.timestamp = now.toISOString();
 

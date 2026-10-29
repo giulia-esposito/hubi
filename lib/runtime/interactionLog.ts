@@ -101,6 +101,8 @@ export interface InteractionRecord {
     ledger?: { claim: string; source: number; quote: string }[];
   };
   latencyMs: number;
+  /** Who made the request (user, IP); present only when HUBI_LOG_ACTOR=1. */
+  actor?: { user?: string; ip?: string };
   /** Model calls made for the final response and time spent waiting between retries (provider resilience). */
   engineAttempts?: number;
   engineRetryWaitMs?: number;
@@ -118,6 +120,7 @@ export interface InteractionErrorRecord {
   latencyMs: number;
   engineAttempts?: number;
   engineRetryWaitMs?: number;
+  actor?: { user?: string; ip?: string };
   applicability?: ApplicabilityLog;
   retrieval?: RetrievalLog;
   continuity?: ContinuityLog;
@@ -130,6 +133,7 @@ export interface FeedbackRecord {
   sessionId: string;
   interactionId: string;
   helpful: boolean;
+  actor?: { user?: string; ip?: string };
   comment?: string;
   /** Pilot issue tags chosen by the tester (see lib/runtime/feedbackTags.ts). */
   tags?: string[];

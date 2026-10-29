@@ -1,5 +1,6 @@
 import type { ReasoningEngine } from "./reasoningEngine.ts";
 import type { ReasoningOptions, ReasoningResult } from "./reasoningEngine.claudeCode.ts";
+import { CircuitBreaker } from "./circuitBreaker.ts";
 
 /**
  * Provider resilience and protection, applied around any Reasoning Engine
@@ -124,8 +125,18 @@ export interface ResilienceHooks {
 
 const realSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-/** Wraps an engine with the retry policy and the concurrency cap. */
-export function withResilience(engine: ReasoningEngine, config: ResilienceConfig = resilienceConfig(), hooks: ResilienceHooks = {}): ReasoningEngine {
+/** A failure that says the provider is unhealthy: transient errors and timeouts. Auth and bad-request errors are ours to fix, not an outage. */
+function signalsOutage(error: string | undefined): boolean {
+  return error === "timeout" || isRetryable(error);
+}
+
+/** Wraps an engine with the retry policy, the concurrency cap and a circuit breaker. */
+export function withResilience(
+  engine: ReasoningEngine,
+  config: ResilienceConfig = resilienceConfig(),
+  hooks: ResilienceHooks = {},
+  breaker: CircuitBreaker = new CircuitBreaker()
+): ReasoningEngine {
   const sleep = hooks.sleep ?? realSleep;
   const now = hooks.now ?? Date.now;
   const limiter = new Limiter(config.maxConcurrent);
@@ -145,10 +156,20 @@ export function withResilience(engine: ReasoningEngine, config: ResilienceConfig
     const maxAttempts = opts.fast ? 1 : config.maxAttempts;
     let attempts = 0;
     let waited = 0;
+    let last: ReasoningResult | null = null;
     try {
       for (;;) {
+        // An open breaker fails fast; on a retry it ends the loop with the real error already seen.
+        if (!breaker.allow()) {
+          if (last) return { ...last, attempts, retryWaitMs: waited };
+          const seconds = Math.ceil(breaker.retryAfterMs() / 1000);
+          return { ok: false, text: "", mode: "stream", durationMs: now() - started, error: `circuit-open: the model provider is paused after repeated failures; retry in about ${seconds}s`, attempts: 0, retryWaitMs: 0 };
+        }
         attempts++;
         const result = await engine(prompt, system, guarded);
+        last = result;
+        if (result.ok) breaker.recordSuccess();
+        else breaker.recordFailure(signalsOutage(result.error));
         const base = { ...result, attempts, retryWaitMs: waited };
         if (result.ok || delivered || result.text !== "" || attempts >= maxAttempts || !isRetryable(result.error)) return base;
 

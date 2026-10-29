@@ -9,6 +9,7 @@ import { regionLabel } from "../../../lib/applicability/evaluate.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../../lib/runtime/promptBuilder.ts";
 import { getReasoningEngine } from "../../../lib/runtime/reasoningEngine.ts";
 import { createRequestGuard } from "../../../lib/runtime/resilience.ts";
+import { actorForLog } from "../../../lib/runtime/actor.ts";
 import { emitTelemetry } from "../../../lib/runtime/telemetry.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtime/turnKind.ts";
 import { generateWithVerification, ledgerEnabled, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
@@ -32,6 +33,8 @@ const requestGuard = createRequestGuard();
 export async function POST(req: Request): Promise<Response> {
   // Behind IAP the caller is the authenticated user; locally every caller shares one bucket.
   const callerKey = req.headers.get("x-goog-authenticated-user-email") ?? "anonymous";
+  // Written to the audit log only when HUBI_LOG_ACTOR=1 (lib/runtime/actor.ts).
+  const actor = actorForLog(req.headers);
   const verdict = requestGuard.check(callerKey);
   if (!verdict.allowed) {
     const retryAfterSec = Math.max(1, Math.ceil(verdict.retryAfterMs / 1000));
@@ -183,6 +186,7 @@ export async function POST(req: Request): Promise<Response> {
           retrieval,
           continuity,
           latencyMs: durationMs,
+          actor,
           ok: true,
         });
 
@@ -229,6 +233,7 @@ export async function POST(req: Request): Promise<Response> {
           question,
           error: String((err as Error)?.message ?? err),
           latencyMs: Date.now() - start,
+          actor,
           applicability,
           retrieval,
           continuity,
@@ -256,6 +261,7 @@ export async function POST(req: Request): Promise<Response> {
           question,
           error: String(response.error ?? "reasoning engine failed"),
           latencyMs: durationMs,
+          actor,
           engineAttempts: response.attempts,
           engineRetryWaitMs: response.retryWaitMs,
           applicability,
@@ -293,6 +299,7 @@ export async function POST(req: Request): Promise<Response> {
         modelMs: response.durationMs,
         verification: verification.buffered ? verification : undefined,
         latencyMs: durationMs,
+          actor,
         engineAttempts: response.attempts,
         engineRetryWaitMs: response.retryWaitMs,
         ok: true,

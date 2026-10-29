@@ -1,5 +1,6 @@
 import { logFeedback } from "../../../lib/runtime/interactionLog.ts";
 import { sanitizeFeedbackTags } from "../../../lib/runtime/feedbackTags.ts";
+import { actorForLog } from "../../../lib/runtime/actor.ts";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,7 @@ export async function POST(req: Request): Promise<Response> {
     sessionId,
     interactionId,
     helpful,
+    actor: actorForLog(req.headers),
     comment,
     tags: tags.length > 0 ? tags : undefined,
     waitMs,
