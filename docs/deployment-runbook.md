@@ -42,6 +42,10 @@ npm run deploy:verify
 
 By default the target is the newest revision older than the one serving. It refuses to roll back onto the revision that is already serving. A revision whose startup event shows the previous commit confirms the rollback.
 
+## Where testers open the pilot
+
+**https://hubi-pilot.run.revenue.sdx.us.gcp.wellhub.dev/** (the company's custom domain in front of the service; found 2026-10-29). The two `run.app` addresses Cloud Run reports (`hubi-pilot-909912818983.us-central1.run.app` and `hubi-pilot-s2imk3cf5q-uc.a.run.app`) return 404 from a laptop even on the VPN, because the service has internal ingress; do not hand those out. Access also needs the IAP role (`roles/iap.httpsResourceAccessor`): today only two people hold it, so each tester has to be added (a sandbox-managed IAP change that needs the owners' approval).
+
 ## Verifying what is running
 
 The service is behind IAP with internal ingress, so it cannot be reached from outside the network; verification uses telemetry instead:
