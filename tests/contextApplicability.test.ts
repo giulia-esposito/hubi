@@ -133,6 +133,17 @@ describe("strong regional match: ask for the region instead of a dead end", () =
     assert.notEqual(applyApplicability(["Brazil"], ranked, 5, { strongRegionalRatio: 0.7 }).clarifyReason, "strong-regional-match");
   });
 
+  test("with query terms, only a regional chunk whose document title shares a term counts as a strong match", () => {
+    const onTopic = regional("regional-onboarding", { documentTitle: "Proceso de Onboarding Tiers 0, 1 y 2" });
+    const offTopic = regional("regional-other", { documentTitle: "Entrenamiento de competencia" });
+    const ranked = scored([generic(0), onTopic], [10, 9.5]);
+    assert.equal(applyApplicability([], ranked, 5, { strongRegionalRatio: 0.7, queryTerms: ["client", "onboarding", "process"] }).mode, "must-clarify");
+    const rankedOff = scored([generic(0), offTopic], [10, 9.5]);
+    const d = applyApplicability([], rankedOff, 5, { strongRegionalRatio: 0.7, queryTerms: ["client", "onboarding", "process"] });
+    assert.notEqual(d.mode, "must-clarify");
+    assert.equal(d.clarifyReason, undefined);
+  });
+
   test("a second retrieval pass (gate: false) never gates on it", () => {
     const ranked = scored([generic(0), regional()], [10, 9.5]);
     const d = applyApplicability([], ranked, 5, { gate: false, strongRegionalRatio: 0.7 });
@@ -149,7 +160,7 @@ describe("strong regional match: ask for the region instead of a dead end", () =
   });
 });
 
-describe("real corpus: the strong-regional rule is rare and lands only where context matters", { skip: SKIP_WITHOUT_CORPUS }, () => {
+describe("real corpus: the strong-regional rule is rare, needs a title match, and lands only where context matters", { skip: SKIP_WITHOUT_CORPUS }, () => {
   const { index } = buildGovernedIndex(ingestContentRepository("Content Repository").chunks);
   const gold: BenchmarkCase[] = JSON.parse(readFileSync("benchmarks/retrieval/gold.json", "utf8"));
   const recorded = JSON.parse(readFileSync("benchmarks/retrieval/expansions.json", "utf8")) as Record<string, { terms: string; reason: "non-english-query" | "weak-lexical-match" }>;
@@ -176,19 +187,19 @@ describe("real corpus: the strong-regional rule is rare and lands only where con
   const triggered = (messages: string[], expansion?: { terms: string; reason: "non-english-query" | "weak-lexical-match" }) =>
     retrieveApplicable(index, messages.join(" "), messages, { expansion: expansion?.terms ? expansion : undefined }).decision.clarifyReason === "strong-regional-match";
 
-  test("the onboarding question now becomes a region question instead of a dead end", () => {
-    assert.equal(triggered(["What are the steps of the client onboarding process?"]), true);
+  test("the onboarding question becomes a region question instead of a dead end, using the expansion terms the pilot logged for it", () => {
+    assert.equal(triggered(["What are the steps of the client onboarding process?"], recorded["onboarding-steps"]), true);
   });
 
   test("none of the general, context-supplied, or retrieval-benchmark questions is turned into a question by it", () => {
     for (const q of evalQuestions) assert.equal(triggered([q]), false, q);
-    for (const g of gold) {
+    for (const g of gold.filter((x) => x.id !== "onboarding-steps")) {
       const messages = [g.regionContext, g.question].filter((m): m is string => Boolean(m));
       assert.equal(triggered(messages, recorded[g.id]), false, g.id);
     }
   });
 
-  test("the one other known trigger is the vague contract-differences question, a tier-dependent case", () => {
-    assert.equal(triggered(["What are the contract differences I need to know for my client?"]), true);
+  test("the vague contract-differences question no longer asks for a region: no regional document title shares a term with it", () => {
+    assert.equal(triggered(["What are the contract differences I need to know for my client?"]), false);
   });
 });

@@ -55,3 +55,6 @@ sast-bundle/
 
 # TypeScript incremental build cache (generated)
 tsconfig.tsbuildinfo
+
+# Local copy of the deployed pilot corpus for evaluation (confidential, never committed)
+Content Repository (prod)/

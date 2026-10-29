@@ -1,6 +1,6 @@
-import { applyApplicability, mergeSupplementalDecision, type ApplicabilityDecision } from "../applicability/evaluate.ts";
+import { applyApplicability, classifyChunk, mergeSupplementalDecision, type ApplicabilityDecision } from "../applicability/evaluate.ts";
 import { detectTaskContext, getRegionVocabulary, refersToOwnRegion, type RegionVocabulary } from "../applicability/regions.ts";
-import { search, type RetrievalIndex, type ScoredChunk } from "../retrieval/index.ts";
+import { search, tokenize, type RetrievalIndex, type ScoredChunk } from "../retrieval/index.ts";
 import { searchWithExpansion, type ExpansionInfo } from "../retrieval/queryExpansion.ts";
 import { detectAudienceConflict } from "../applicability/audience.ts";
 import {
@@ -20,6 +20,14 @@ export const OVER_FETCH_K = 15;
 // A region-specific chunk this close to the best match (and the region unknown) means the question is about regional material:
 // ask for the region rather than answer from weaker generic sources. Calibrated on the 60 known questions (docs/context-asking-eval.md).
 export const STRONG_REGIONAL_RATIO = 0.7;
+
+// Once the user has stated a region, material written for that region gets a fair chance: the best few chunks for it, from a
+// deeper search, are added when they score at least this share of the best chunk. Found in production: after Hubi asked for the
+// region and the user said "Tier 1 in Mexico", the Spanish SS Latam onboarding training still never reached the top five, so the
+// question was answered with a dead end. The deeper search needs no model call.
+export const REGION_PASS_DEPTH = 150;
+export const REGION_PASS_K = 2;
+export const REGION_PASS_MIN_RELATIVE_SCORE = 0.5;
 
 export interface ApplicableRetrieval {
   /** The raw ranked results of pass 1, before applicability filtering (empty means retrieval found nothing at all). */
@@ -72,8 +80,20 @@ export function retrieveApplicable(
   }
 
   const raw = searchWithExpansion(index, retrievalQuery, options.expansion, OVER_FETCH_K);
-  let decision: ApplicabilityDecision = { ...applyApplicability(context.regions, raw, TOP_K, { regionCue: userMessages.some(refersToOwnRegion), strongRegionalRatio: STRONG_REGIONAL_RATIO }), taskCountries: context.countries };
+  let decision: ApplicabilityDecision = { ...applyApplicability(context.regions, raw, TOP_K, { regionCue: userMessages.some(refersToOwnRegion), strongRegionalRatio: STRONG_REGIONAL_RATIO, queryTerms: tokenize(retrievalQuery) }), taskCountries: context.countries };
   let factPass: FactPassInfo = { triggered: false, reason: "not-artifact-request", factChunksInPassOne: 0, added: 0 };
+
+  // A known region: add the best chunks written for it that the first pass left out.
+  if (context.regions.length > 0 && decision.mode !== "must-clarify" && decision.mode !== "no-applicable-content" && raw.length > 0) {
+    const seen = new Set(decision.eligible.map((r) => r.chunk.id));
+    const floor = raw[0].score * REGION_PASS_MIN_RELATIVE_SCORE;
+    const regional = search(index, retrievalQuery, REGION_PASS_DEPTH)
+      .filter((r) => r.score >= floor && !seen.has(r.chunk.id) && classifyChunk(r.chunk, context.regions) === "match")
+      .slice(0, REGION_PASS_K);
+    if (regional.length > 0) {
+      decision = { ...decision, eligible: [...regional, ...decision.eligible], eligibleStatuses: [...regional.map(() => "match" as const), ...decision.eligibleStatuses] };
+    }
+  }
 
   const latest = userMessages[userMessages.length - 1] ?? "";
   if (isArtifactRequest(latest, options.lastPlanningMode)) {

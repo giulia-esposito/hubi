@@ -28,7 +28,7 @@ import { search } from "../lib/retrieval/index.ts";
 import { retrieveApplicable } from "../lib/runtime/retrieveApplicable.ts";
 import { expandQuery, searchWithExpansion, type ExpansionInfo } from "../lib/retrieval/queryExpansion.ts";
 import { getReasoningEngine } from "../lib/runtime/reasoningEngine.ts";
-import { byCategory, compareToBaseline, CUTOFFS, scoreCase, summarize, validateCases, type BenchmarkCase, type CaseResult, type Metrics } from "../lib/retrieval/benchmark.ts";
+import { byCategory, compareToBaseline, CUTOFFS, matches, scoreCase, summarize, validateCases, type BenchmarkCase, type CaseResult, type Metrics } from "../lib/retrieval/benchmark.ts";
 
 const GOLD = "benchmarks/retrieval/gold.json";
 const BASELINE = "benchmarks/retrieval/baseline.json";
@@ -39,8 +39,8 @@ const args = process.argv.slice(2);
 const jsonOut = args.includes("--json") ? args[args.indexOf("--json") + 1] : undefined;
 const expandMode = args.includes("--expand-live") ? "live" : args.includes("--expand") ? "replay" : null;
 
-const cases: BenchmarkCase[] = JSON.parse(readFileSync(GOLD, "utf8"));
-const problems = validateCases(cases);
+const allCases: BenchmarkCase[] = JSON.parse(readFileSync(GOLD, "utf8"));
+const problems = validateCases(allCases);
 if (problems.length > 0) {
   console.error(`Gold set is invalid:\n- ${problems.join("\n- ")}`);
   process.exit(1);
@@ -48,6 +48,13 @@ if (problems.length > 0) {
 
 const { chunks } = ingestContentRepository(process.env.HUBI_CONTENT_REPOSITORY_PATH?.trim() || "Content Repository");
 const { index } = buildGovernedIndex(chunks);
+
+// A case whose answer passages are not in this corpus cannot be answered by retrieval here: it is left out and counted,
+// so a different corpus (the deployed one) is measured on the questions it can answer, not penalised for missing documents.
+const cases = allCases.filter((c) => c.relevant.some((p) => index.indexed.some((i) => matches(i.chunk, p))));
+if (cases.length < allCases.length) {
+  console.log(`Corpus: ${index.n} governed chunks. ${allCases.length - cases.length} of ${allCases.length} gold questions have no answer passage in this corpus and are left out: ${allCases.filter((c) => !cases.includes(c)).map((c) => c.id).join(", ")}`);
+}
 
 /** What retrieval is given for one case: the retrieval query, and the user messages the region is read from. */
 const messagesOf = (c: BenchmarkCase) => [c.regionContext, c.question].filter((m): m is string => Boolean(m));

@@ -1,5 +1,5 @@
 import type { Chunk } from "../ingestion/chunk.ts";
-import type { ScoredChunk } from "../retrieval/index.ts";
+import { tokenize, type ScoredChunk } from "../retrieval/index.ts";
 import type { AudienceConflict } from "./audience.ts";
 
 /**
@@ -113,6 +113,12 @@ export function applyApplicability(
      * the best chunk, ask for the region instead of answering from weaker generic sources. Off when undefined.
      */
     strongRegionalRatio?: number;
+    /**
+     * The question's own search terms. When given, a regional chunk only counts as a strong match if its document's title
+     * shares one of them: scores from a cross-language search are not comparable with the question's own, so a Spanish
+     * document that merely matches translated filler words must not turn a general question into a region question.
+     */
+    queryTerms?: string[];
   } = {}
 ): ApplicabilityDecision {
   const statuses = ranked.map((r) => classifyChunk(r.chunk, taskRegions));
@@ -147,7 +153,9 @@ export function applyApplicability(
   let strongRegions: string[] = [];
   if ((mode === "none" || mode === "notice") && options.strongRegionalRatio && taskRegions.length === 0 && ranked.length > 0) {
     const floor = ranked[0].score * options.strongRegionalRatio;
-    const strong = ranked.filter((r, i) => statuses[i] === "unresolved" && r.score >= floor).map((r) => r.chunk);
+    const terms = options.queryTerms ? new Set(options.queryTerms) : undefined;
+    const titleMatches = (c: Chunk) => !terms || tokenize(c.documentTitle).some((w) => terms.has(w));
+    const strong = ranked.filter((r, i) => statuses[i] === "unresolved" && r.score >= floor && titleMatches(r.chunk)).map((r) => r.chunk);
     if (strong.length > 0) {
       mode = "must-clarify";
       clarifyReason = "strong-regional-match";

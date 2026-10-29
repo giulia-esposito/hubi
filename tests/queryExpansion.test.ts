@@ -13,6 +13,9 @@ import {
   fusionWeights,
   parseExpansionTerms,
   planExpansion,
+  searchWithExpansion,
+  stripFunctionWords,
+  DOMINANT_EXPANSION_RATIO,
   type ExpansionEngine,
 } from "../lib/retrieval/queryExpansion.ts";
 import { retrieveApplicable } from "../lib/runtime/retrieveApplicable.ts";
@@ -188,5 +191,38 @@ describe("retrieval with expansion", () => {
     const plain = retrieveApplicable(index, "reuniones de onboarding", ["reuniones de onboarding"], {});
     const empty = retrieveApplicable(index, "reuniones de onboarding", ["reuniones de onboarding"], { expansion: { terms: "", reason: "non-english-query" } });
     assert.deepEqual(empty.raw.map((r) => r.chunk.id), plain.raw.map((r) => r.chunk.id));
+  });
+});
+
+describe("a dominant expansion is not held below the original results", () => {
+  // 20 English filler chunks that match the English question moderately, and one Spanish chunk that only the expansion finds.
+  const filler = Array.from({ length: 20 }, (_, i) => chunk(`f${i}`, `client onboarding process overview number ${i} general notes about onboarding`, "Onboarding overview"));
+  const spanish = chunk("es-onboarding", "pasos del proceso de incorporacion del cliente paso a paso pasos proceso incorporacion cliente", "Paso a paso");
+  const index = buildIndex([...filler, spanish, ...Array.from({ length: 200 }, (_, i) => chunk(`pad${i}`, `unrelated text ${i}`))]);
+  const question = "client onboarding process steps";
+
+  test("when the expansion's best score is at least the ratio times the original best, the expansion-only chunk enters the top results", () => {
+    const expansion = { terms: "pasos proceso incorporacion cliente paso", reason: "weak-lexical-match" as const };
+    const fused = searchWithExpansion(index, question, expansion, 15);
+    assert.ok(fused.some((r) => r.chunk.id === "es-onboarding"), "the expansion-only chunk must be among the 15");
+  });
+
+  test("when the expansion is not clearly better, the original ranking still keeps every one of its top results above expansion-only chunks", () => {
+    const expansion = { terms: "client", reason: "weak-lexical-match" as const };
+    const fused = searchWithExpansion(index, question, expansion, 15);
+    assert.ok(!fused.some((r) => r.chunk.id === "es-onboarding"));
+  });
+
+  test("the ratio is 1.5, and a non-English question was already fused at equal weight", () => {
+    assert.equal(DOMINANT_EXPANSION_RATIO, 1.5);
+    assert.deepEqual(fusionWeights("non-english-query"), { original: 1, expansion: 1 });
+  });
+});
+
+describe("expansion terms", () => {
+  test("Spanish and Portuguese function words are removed so filler cannot look like a dominant match; content words stay", () => {
+    assert.equal(stripFunctionWords("Wellhubverse qué es Wellhubverse o que é"), "Wellhubverse Wellhubverse");
+    assert.equal(stripFunctionWords("pasos del proceso de incorporación do cliente"), "pasos proceso incorporación cliente");
+    assert.equal(stripFunctionWords(""), "");
   });
 });

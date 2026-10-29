@@ -101,3 +101,45 @@ Product asked for the smallest deterministic change that turns the onboarding de
 **One follow-through run was thin.** In the onboarding follow-through scenario, 1 of 3 runs produced a second answer that was too short to count as answering. A separate 5-run check of the same conversation answered substantively every time (5 of 5), so this is most likely run-to-run variation, but it is not proven; one more look is worth taking if it recurs in the pilot.
 
 **Limits.** The ratio was calibrated on one example plus a guard set; 0.7 is not a derived constant. It relies on BM25 scores, which shift if the corpus, chunking or tokenisation changes: the retrieval benchmark and the pinned test are the early warning. The two known firing cases are still only 2 of 64 questions, so the real firing rate on pilot traffic is unknown. Switch it off by removing `strongRegionalRatio` from the call in `retrieveApplicable`.
+
+## Re-measured on the production corpus (2026-10-29, after the first pilot test)
+
+The first real pilot question ("What are the steps of the client onboarding process?") got a dead end although the eval had been green. Cause: **the evals ran on a 20-document local export (2026-07-21); the pilot serves a 74-document Cloud Storage export (2026-08-24)**, with newsletters, town halls and wiki pages the local copy lacks, and without the Sales Tools Playbook, the Golden Pitch deck and RKC-000027. From now on evaluate on the deployed corpus:
+
+```bash
+node --experimental-strip-types scripts/fetch-prod-corpus.ts            # copies the pilot's .docx and .pptx files to "Content Repository (prod)" (gitignored)
+HUBI_CONTENT_REPOSITORY_PATH="Content Repository (prod)" npm run eval:context-asking
+HUBI_CONTENT_REPOSITORY_PATH="Content Repository (prod)" npm run eval:retrieval -- --expand
+```
+
+(The retrieval benchmark leaves out gold questions whose answer passage is not in the corpus: 11 of 46 on the production corpus, listed in its output.)
+
+### What the production corpus showed, and the three changes made
+
+1. **The query expansion could not surface the right document.** The real answer (the Spanish SS Latam onboarding training) scored 21 for the expansion against 12 for the English query, but rank fusion ignores scores and the expansion carried a lower weight for a merely weak English match, so every expansion-only chunk stayed below all 15 original results. Fix: when the expansion's best score is at least 1.5 times the original's, fuse at equal weight (`DOMINANT_EXPANSION_RATIO`); Spanish and Portuguese function words the model keeps in its terms ("qué es") are stripped first, because they match Spanish documents on grammar alone and looked like dominance.
+2. **The strong-regional rule needed a title check once expansion results could enter the list.** Cross-language scores are not comparable with the question's own, so a Spanish document that merely matched translated filler words turned two general questions (a pitch question and "What is the Wellhubverse?") into region questions in a guard test. The rule now also requires the regional document's *title* to share a term with the question ("Onboarding" in "[SSL] Proceso de Onboarding Tiers 0, 1 y 2"). Side effect: the vague contract-differences question no longer asks the region (no title match); it answers across tiers again.
+3. **After the user gave the region, the answer was still a dead end.** "Tier 1 in Mexico" scored the English query high enough (14.6, from the newsletter) that the expansion did not run, so the SS Latam material never reached the top five: Hubi asked for the region and then failed. Fix: once a region is known, the best two chunks written for that region from a deeper search (150 chunks, at least half the best score) are added. No model call.
+
+### Result on the production corpus (22 scenarios, 3 runs each)
+
+| Measure | Result |
+|---|---|
+| **Over-ask** | **0 of 24**; 0 of 12 re-asks when the context was given |
+| Onboarding question | asks for the region 3 of 3 (was a dead end); after "Tier 1 in Mexico" it answers 3 of 3 |
+| Follow-through | 9 of 9 |
+| Tier / Region | 9 of 9 / 3 of 3 |
+| Segment | 5 of 6 (one generic PPS+ answer) |
+| Role | 0 of 3 as scored: see below |
+| Ask-when-needed overall | 17 of 21 (81%) |
+
+**The role result needs interpretation.** The audience-conflict detector fires 3 of 3 and the notice is in the prompt ("Sales (Source 1) versus CS (Source 2)"), but the model answers once, from one guide. In the production corpus the Sales and Customer Success coaching documents open with the same text (a shared "Field Agent Debrief" template; only 33 percent of their vocabulary overlaps, mostly in the session transcripts), and the notice says to answer normally when the answer is the same for every audience. So this may be correct behaviour that the scenario's scoring cannot recognise; it is not proven. A scenario built on documents that truly differ by role would settle it.
+
+### Retrieval benchmark (35 answerable gold questions on the production corpus)
+
+Raw Recall@5 with the cross-language expansion went from 86 to 89 percent and MRR from 0.719 to 0.721; one paraphrase question (`pitch-structure`) that used to sit at rank 13 now falls outside the top 15 because the dominant expansion pushed it out. The onboarding question moved from rank 15 to rank 2. The committed local baseline was regenerated (46 questions).
+
+### Not fixed, and found along the way
+
+- **Newsletters outrank real content.** The "Trending This Week" pages (RKC-000041 and others, Eligible with Restrictions, "always prefer the original source") rank first on topic words for questions about trainings they merely announce. Options: a ranking penalty for chunks carrying that restriction, or Content marks them Not Eligible.
+- **Managers-only documents are in the deployed corpus** (RKC-000001 "MANAGERS ONLY", RKC-000017 "Managers huddle"; the registry says Eligible). The "corpus is the access boundary" decision assumed none were; the cheap fix is to remove them from the bucket.
+- **The content is mostly trainings, not process documents.** Retrieval can now reach the steps inside a training, but a question about "the process" will often be answered from what a training says about it.

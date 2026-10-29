@@ -34,7 +34,7 @@ export interface AudienceConflict {
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 
 /** Labels meaning "everyone": a source marked this way never conflicts with another. */
-const EVERYONE = new Set(["revenue", "all revenue", "all", "everyone", "all teams"]);
+const EVERYONE = new Set(["revenue", "all revenue", "all", "everyone", "all teams", "global", "[global]"]);
 
 /** What a user might write for a label, besides the label itself (whole words, case-insensitive). */
 const ALIASES: Record<string, RegExp> = {

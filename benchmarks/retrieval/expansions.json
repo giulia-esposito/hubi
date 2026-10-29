@@ -313,5 +313,12 @@
     "language": "pt",
     "terms": "Brazil Launch Readiness importance",
     "ms": 824
+  },
+  "onboarding-steps": {
+    "triggered": true,
+    "reason": "weak-lexical-match",
+    "language": "en",
+    "terms": "pasos proceso incorporación cliente processo onboarding cliente",
+    "ms": 1179
   }
 }

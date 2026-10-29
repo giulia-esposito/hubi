@@ -54,7 +54,8 @@ export interface LiveCorpus {
   chunkCount: number;
 }
 
-export function loadCorpus(root = "Content Repository"): LiveCorpus {
+/** The local export by default; HUBI_CONTENT_REPOSITORY_PATH points an evaluation at another corpus (for example the deployed one, scripts/fetch-prod-corpus.ts). */
+export function loadCorpus(root = process.env.HUBI_CONTENT_REPOSITORY_PATH?.trim() || "Content Repository"): LiveCorpus {
   const { chunks } = ingestContentRepository(root);
   const { index, excluded } = buildGovernedIndex(chunks);
   return { index, excluded, chunkCount: chunks.length };

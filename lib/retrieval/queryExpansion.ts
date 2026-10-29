@@ -195,15 +195,43 @@ export async function expandQuery(options: { engine: ExpansionEngine; index: Ret
   }
 }
 
+/**
+ * When the expansion's best match scores this many times the original query's best match, the other-language wording
+ * is clearly the better lexical match for the question, so it is fused at equal weight. Found in production: the real
+ * answer (a Spanish onboarding training) scored 21 for the expansion against 12 for the English query, but the lighter
+ * weight used for a merely weak English match kept every expansion-only chunk below all 15 original results, so the
+ * expansion could never surface it. Rank fusion ignores scores; this is the one place they are used.
+ */
+export const DOMINANT_EXPANSION_RATIO = 1.5;
+
+/**
+ * Spanish and Portuguese function words the model sometimes keeps in its search terms ("qué es", "o que é"). The English
+ * tokenizer does not remove them, and in the Spanish and Portuguese documents they match on grammar alone with high scores,
+ * which would make a throwaway phrase look like a dominant match. Removed from the expansion terms only, never from the
+ * user's own question or from the index.
+ */
+const FOREIGN_FUNCTION_WORDS = new Set(
+  "que qué es son e é o a os as um uma uns umas un una unos unas el la los las lo de del da do dos das em en no na nos nas por para com con se su sus mi mis meu minha como cómo cual cuál cuales qual quais y ou pelo pela ao al".split(" ")
+);
+
+export function stripFunctionWords(terms: string): string {
+  return terms
+    .split(/\s+/)
+    .filter((w) => w && !FOREIGN_FUNCTION_WORDS.has(w.toLowerCase()))
+    .join(" ");
+}
+
 /** Pass-1 search with the expansion's terms fused in (the plain search when there are none). The runtime and the benchmark both go through this. */
 export function searchWithExpansion(index: RetrievalIndex, query: string, expansion: Pick<ExpansionInfo, "terms" | "reason"> | undefined, depth: number): ScoredChunk[] {
   const base = search(index, query, depth);
   if (!expansion?.terms) return base;
-  const weights = fusionWeights(expansion.reason);
+  const expanded = search(index, stripFunctionWords(expansion.terms), depth);
+  const dominant = expanded.length > 0 && expanded[0].score >= DOMINANT_EXPANSION_RATIO * (base[0]?.score ?? 0);
+  const weights = dominant ? { original: 1, expansion: 1 } : fusionWeights(expansion.reason);
   return fuseRankings(
     [
       { results: base, weight: weights.original },
-      { results: search(index, expansion.terms, depth), weight: weights.expansion },
+      { results: expanded, weight: weights.expansion },
     ],
     depth
   );

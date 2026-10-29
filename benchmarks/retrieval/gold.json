@@ -58,5 +58,6 @@
   {"id":"es-no-accents-meetings","category":"spanish","question":"Que reuniones de onboarding tengo que hacer?","regionContext":"Estoy en Mexico.","relevant":[{"doc":"RKC-000006"}],"note":"Same question typed without accents."},
   {"id":"es-no-accents-steps","category":"spanish","question":"Cuales son los pasos del proceso de onboarding?","regionContext":"Estoy en Mexico.","relevant":[{"doc":"RKC-000006"}],"note":"Same question typed without accents."},
   {"id":"pt-no-accents-launch","category":"portuguese","question":"Por que o Launch Readiness e importante?","regionContext":"Estou no Brasil.","relevant":[{"doc":"RKC-000018"},
-  {"doc":"RKC-000014"}],"note":"Same question typed without accents."}
+  {"doc":"RKC-000014"}],"note":"Same question typed without accents."},
+  {"id":"onboarding-steps","category":"cross-language","question":"What are the steps of the client onboarding process?","relevant":[{"doc":"RKC-000006"}],"note":"Found in production 2026-10-29: the answer sits in the Spanish SS Latam onboarding training; the English question ranks newsletters first. Expansion terms are the ones the pilot logged for this question."}
 ]
