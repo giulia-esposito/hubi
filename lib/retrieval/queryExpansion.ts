@@ -174,7 +174,8 @@ export function expansionEnabled(env: Record<string, string | undefined> = proce
  * plain lexical query when `terms` is empty.
  */
 export async function expandQuery(options: { engine: ExpansionEngine; index: RetrievalIndex; query: string; latestMessage: string }): Promise<ExpansionInfo> {
-  const topScore = search(options.index, options.query, 1)[0]?.score ?? 0;
+  // How well the index matches is judged on the question itself: the words of a reply that supplies context ("Tier 1 in Mexico") would lift the score without making the match any better.
+  const topScore = search(options.index, options.latestMessage || options.query, 1)[0]?.score ?? 0;
   const plan = planExpansion(options.latestMessage, topScore);
   if (!plan.expand) return { triggered: false, reason: plan.reason, language: plan.language, terms: "", ms: 0 };
 

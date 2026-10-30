@@ -90,7 +90,8 @@ export function retrieveApplicable(
   if (context.regions.length > 0 && decision.mode !== "must-clarify" && decision.mode !== "no-applicable-content" && raw.length > 0) {
     const seen = new Set(decision.eligible.map((r) => r.chunk.id));
     const floor = raw[0].score * REGION_PASS_MIN_RELATIVE_SCORE;
-    const regional = search(index, retrievalQuery, REGION_PASS_DEPTH)
+    // The same cross-language search as pass 1: the document written for the user's region is often in that region's language.
+    const regional = searchWithExpansion(index, retrievalQuery, options.expansion, REGION_PASS_DEPTH)
       .filter((r) => r.score >= floor && !seen.has(r.chunk.id) && classifyChunk(r.chunk, context.regions) === "match")
       .slice(0, REGION_PASS_K);
     if (regional.length > 0) {
@@ -101,7 +102,7 @@ export function retrieveApplicable(
   const latest = userMessages[userMessages.length - 1] ?? "";
   let intentPass: IntentPassInfo = { intents: [], added: [] };
   if (decision.mode !== "must-clarify" && decision.mode !== "no-applicable-content" && raw.length > 0) {
-    const slots = applyIntentSlots(index, retrievalQuery, latest, decision.eligible, decision.eligibleStatuses, context.regions, raw[0].score);
+    const slots = applyIntentSlots(index, retrievalQuery, latest, decision.eligible, decision.eligibleStatuses, context.regions, raw[0].score, options.expansion);
     decision = { ...decision, eligible: slots.eligible, eligibleStatuses: slots.statuses, unspecifiedUsed: slots.statuses.filter((s) => s === "unspecified").length };
     intentPass = slots.info;
   }

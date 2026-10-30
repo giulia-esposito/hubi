@@ -1,6 +1,7 @@
 import type { Chunk } from "../ingestion/chunk.ts";
 import { classifyChunk, type ChunkRegionStatus } from "../applicability/evaluate.ts";
-import { search, type RetrievalIndex, type ScoredChunk } from "./index.ts";
+import type { RetrievalIndex, ScoredChunk } from "./index.ts";
+import { searchWithExpansion, type ExpansionInfo } from "./queryExpansion.ts";
 import { sourceFactsOf } from "../governance/sourceFacts.ts";
 import { isUpdateSource } from "../governance/sourceGovernance.ts";
 
@@ -55,7 +56,8 @@ export function applyIntentSlots(
   eligible: ScoredChunk[],
   statuses: ChunkRegionStatus[],
   taskRegions: string[],
-  bestScore: number
+  bestScore: number,
+  expansion?: Pick<ExpansionInfo, "terms" | "reason">
 ): IntentPassResult {
   const intents = detectSourceIntents(question);
   const info: IntentPassInfo = { intents, added: [] };
@@ -67,7 +69,7 @@ export function applyIntentSlots(
   for (const intent of intents) {
     const wanted = intent === "process" ? "process" : "update";
     if (out.some((r) => kindOf(r.chunk) === wanted)) continue; // already represented
-    candidates ??= search(index, query, INTENT_PASS_DEPTH).filter((r) => {
+    candidates ??= searchWithExpansion(index, query, expansion, INTENT_PASS_DEPTH).filter((r) => {
       const s = classifyChunk(r.chunk, taskRegions);
       // Same footing as the first pass: a source of unknown region may be used (and is labelled so), region-specific content for another or an unknown region may not.
       return r.score >= bestScore * INTENT_PASS_MIN_RELATIVE_SCORE && (s === "global" || s === "match" || s === "unspecified");

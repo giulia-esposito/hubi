@@ -8,7 +8,7 @@ import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../lib/runtime/promptBuilder.ts
 import { formatApplicabilityLabel, formatCitation } from "../lib/runtime/citationBuilder.ts";
 import { getReasoningEngine, resolveReasoningProvider } from "../lib/runtime/reasoningEngine.ts";
 import { generateWithVerification, ledgerEnabled, shouldVerify } from "../lib/runtime/verifiedGeneration.ts";
-import { createSession, addTurn, accumulatedUserQuery, type Session } from "../lib/runtime/sessionState.ts";
+import { createSession, addTurn, accumulatedUserQuery, searchContext, type Session } from "../lib/runtime/sessionState.ts";
 import { describeGovernance } from "../lib/governance/governance.ts";
 import { createTagAwareStreamer, extractResponseTags } from "../lib/runtime/turnKind.ts";
 
@@ -23,7 +23,7 @@ async function handleQuestion(question: string, index: RetrievalIndex, session: 
   // exchange retrieving relevant content without a separate classifier).
   const retrievalQuery = accumulatedUserQuery(session);
   const userMessages = session.turns.filter((t) => t.role === "user").map((t) => t.content);
-  const expansion = expansionEnabled() ? await expandQuery({ engine: getReasoningEngine(), index, query: retrievalQuery, latestMessage: question }) : undefined;
+  const expansion = expansionEnabled() ? await expandQuery({ engine: getReasoningEngine(), index, query: retrievalQuery, latestMessage: searchContext(userMessages).anchor }) : undefined;
   const { raw, decision, factPass, retrievalMs } = retrieveApplicable(index, retrievalQuery, userMessages, {
     lastPlanningMode: session.lastPlanningMode,
     expansion: expansion?.terms ? expansion : undefined,

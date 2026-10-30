@@ -32,8 +32,51 @@ export function addTurn(session: Session, role: Turn["role"], content: string): 
  * without building a separate intent/context classifier.
  */
 export function accumulatedUserQuery(session: Session): string {
-  return session.turns
-    .filter((t) => t.role === "user")
-    .map((t) => t.content)
-    .join(" ");
+  return searchContext(session.turns.filter((t) => t.role === "user").map((t) => t.content)).query;
+}
+
+export interface SearchContext {
+  /** What retrieval searches: the question that opened the current topic plus every message after it. */
+  query: string;
+  /** The message that opened the current topic: what the cross-language check should read, never a one-word reply to a clarifying question. */
+  anchor: string;
+  /** True when an earlier topic was left behind. */
+  reset: boolean;
+}
+
+/** Words that open a request ("write me a pitch"), so a short message that starts with one is a new request and not a reply. */
+const REQUEST_OPENERS = new Set(
+  "what how why when where who which can could should would do does is are write draft create make build give show tell explain list prepare help find summarize compare qual quais como quando onde quem por que qué cuál cuáles cómo cuándo dónde escreva escreve escribe haz hazme dame crea".split(" ")
+);
+const TERM_STOP = new Set(
+  "de do da dos das del la el los las le um uma un una em en no na nos nas por para com con se que qué como cómo qual quais the and for with are was were what how why when where who which can could should would does did have has this that from your you our not about".split(" ")
+);
+
+const wordsOf = (text: string) => text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+const contentTerms = (text: string) => new Set(wordsOf(text).filter((w) => w.length > 2 && !TERM_STOP.has(w)));
+
+/** A message that asks or requests something, as opposed to a reply that supplies context ("Mexico", "Tier 1", "A company from the financial industry"). Statements never start a new topic. */
+function opensARequest(message: string): boolean {
+  if (/[?¿]/.test(message)) return true;
+  return REQUEST_OPENERS.has(wordsOf(message)[0] ?? "");
+}
+
+/**
+ * The search context for the latest turn. A short reply that gives context ("Mexico") continues the question it answers, so the
+ * question's own words (and language) stay in the search: found in production, where a one-word reply made retrieval lose
+ * the onboarding steps and the cross-language terms. A new question that shares no content word with the current topic starts
+ * a new topic, so an earlier question cannot pull the search toward its subject. A follow-up that shares a word with the topic
+ * ("what about Tier 3?" after an onboarding question) stays in it. Deterministic; the region the user stated is tracked
+ * separately and is not affected by a topic change.
+ */
+export function searchContext(userMessages: string[]): SearchContext {
+  let start = 0;
+  for (let i = 1; i < userMessages.length; i++) {
+    if (!opensARequest(userMessages[i])) continue;
+    const topic = contentTerms(userMessages.slice(start, i).join(" "));
+    const own = contentTerms(userMessages[i]);
+    if (![...own].some((w) => topic.has(w))) start = i;
+  }
+  const kept = userMessages.slice(start);
+  return { query: kept.join(" "), anchor: kept[0] ?? "", reset: start > 0 };
 }

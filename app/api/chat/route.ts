@@ -1,7 +1,7 @@
 import { getKnowledgeBase } from "../../../lib/runtime/knowledgeBase.ts";
 import { getOrCreateSession } from "../../../lib/runtime/sessionRegistry.ts";
 import { describeHistory, parseChatRequest, sessionFromRequest } from "../../../lib/runtime/requestSession.ts";
-import { addTurn, accumulatedUserQuery } from "../../../lib/runtime/sessionState.ts";
+import { addTurn, searchContext } from "../../../lib/runtime/sessionState.ts";
 import { retrieveApplicable } from "../../../lib/runtime/retrieveApplicable.ts";
 import { expandQuery, expansionEnabled } from "../../../lib/retrieval/queryExpansion.ts";
 
@@ -82,15 +82,16 @@ export async function POST(req: Request): Promise<Response> {
 
   // Retrieval uses every user message so far, not just this one -- see
   // lib/runtime/sessionState.ts for why.
-  const retrievalQuery = accumulatedUserQuery(session);
   const userMessages = session.turns.filter((t) => t.role === "user").map((t) => t.content);
+  const topic = searchContext(userMessages);
+  const retrievalQuery = topic.query;
 
   // Retrieval is unchanged; the Applicability Layer (Finding #002) then
   // filters what the model may see: mismatched regions never pass, region-
   // specific content is withheld until the user's region is known.
   // Cross-language recall: one cheap model call, only for a non-English or weakly matched question; a failure falls back to plain BM25.
   const expansion = expansionEnabled()
-    ? await expandQuery({ engine: getReasoningEngine(), index, query: retrievalQuery, latestMessage: question })
+    ? await expandQuery({ engine: getReasoningEngine(), index, query: retrievalQuery, latestMessage: topic.anchor })
     : undefined;
   const { raw, decision, factPass, intentPass, retrievalMs, regionSource } = retrieveApplicable(index, retrievalQuery, userMessages, {
     lastPlanningMode: session.lastPlanningMode,

@@ -16,7 +16,7 @@ import { extractResponseTags } from "../../lib/runtime/turnKind.ts";
 import { formatCitation } from "../../lib/runtime/citationBuilder.ts";
 import { regionLabel } from "../../lib/applicability/evaluate.ts";
 import type { RetrievalIndex } from "../../lib/retrieval/index.ts";
-import type { Turn } from "../../lib/runtime/sessionState.ts";
+import { searchContext, type Turn } from "../../lib/runtime/sessionState.ts";
 
 export interface SourceView {
   citation: string;
@@ -87,8 +87,8 @@ export async function converse(corpus: LiveCorpus, userMessages: string[]): Prom
     const turnStart = performance.now();
     asked.push(question);
     // Same as the web route: a non-English or weakly matched question gets cross-language search terms first.
-    const expansion = expansionEnabled() ? await expandQuery({ engine: retryingEngine, index: corpus.index, query: asked.join(" "), latestMessage: question }) : undefined;
-    const { raw, decision, factPass, retrievalMs } = retrieveApplicable(corpus.index, asked.join(" "), asked, { lastPlanningMode, expansion: expansion?.terms ? expansion : undefined });
+    const expansion = expansionEnabled() ? await expandQuery({ engine: retryingEngine, index: corpus.index, query: searchContext(asked).query, latestMessage: searchContext(asked).anchor }) : undefined;
+    const { raw, decision, factPass, retrievalMs } = retrieveApplicable(corpus.index, searchContext(asked).query, asked, { lastPlanningMode, expansion: expansion?.terms ? expansion : undefined });
 
     let text: string;
     let turnKind = "unknown";
