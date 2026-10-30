@@ -33,8 +33,8 @@ describe("search context", () => {
   });
   it("is the identity for a single message", () => {
     const c = searchContext(["Write me an elevator pitch."]);
-    assert.deepEqual(c, { query: "Write me an elevator pitch.", anchor: "Write me an elevator pitch.", reset: false });
-    assert.deepEqual(searchContext([]), { query: "", anchor: "", reset: false });
+    assert.deepEqual(c, { query: "Write me an elevator pitch.", anchor: "Write me an elevator pitch.", reset: false, start: 0 });
+    assert.deepEqual(searchContext([]), { query: "", anchor: "", reset: false, start: 0 });
   });
   it("lets the cross-language check read the question and not the one-word reply", () => {
     assert.equal(planExpansion("Brasil", 5).reason, "too-short");

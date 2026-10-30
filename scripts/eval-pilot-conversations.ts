@@ -40,7 +40,7 @@ const substantive = (r: TurnResult) => !asked(r) && r.turnKind !== "no-grounded-
 const STAGE_TERMS = [/\bM0\b|alineaci|alignment/i, /\bM1\b|implementaci|implementation/i, /\bM2\b|comunicaci|communication/i, /W4C|training|capacitaci/i, /launch|lanzamiento/i, /checkpoint|30[- ]day|60[- ]day|30 d[ií]as|60 d[ií]as/i, /presentation|presentaci/i, /overview|visi[oó]n general|prepar/i, /C-level/i, /agreement|acuerdo/i];
 const NO_STEPS_CLAIM = /(does not|do not|doesn't|don't|cannot|can't|not|no) (\w+ ){0,4}(detail|list|provide|provided|contain|include|outline|specify|specific)\b[^.]{0,60}\bsteps?|\bsteps?\b[^.]{0,40}\b(not|aren't|isn't) (\w+ ){0,3}(provided|available|detailed|listed)/i;
 const ADMITS_NO_STEPS = /(do not|don't|does not|doesn't|cannot|can't|no) (\w+ ){0,5}(steps?|step-by-step|list the steps|detail)|not (\w+ ){0,3}(available|documented|in (the|my) (knowledge|sources))|only (a |an )?(training|announcement|mention)|\bsteps?\b[^.]{0,40}\b(not|aren't|isn't) (\w+ ){0,3}(provided|available|detailed|listed)/i;
-const DIRECT = /\b(direct|direta|direto|diret[oa]s?|venda direta|SMB|order form|magic link)\b/i;
+const DIRECT = /\b(direct|direta|direto|diret[oa]s?|venda direta|SMB|Sales ENT|enterprise|T3|T4|order form|magic link)\b/i;
 const PARTNER = /\b(partner|partners|parceiro|parceiros|indireto|indireta|indirect|canal|channel|Pluxee|Alelo|Ticket|Hagata)\b/i;
 const PARTNER_NAMES = /\b(Pluxee|Alelo|Hagata)\b/;
 

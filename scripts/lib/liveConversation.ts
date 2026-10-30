@@ -9,6 +9,7 @@ import { ingestContentRepository } from "../../lib/ingestion/ingest.ts";
 import { buildGovernedIndex } from "../../lib/runtime/governedIndex.ts";
 import { retrieveApplicable } from "../../lib/runtime/retrieveApplicable.ts";
 import { expandQuery, expansionEnabled } from "../../lib/retrieval/queryExpansion.ts";
+import { applyScopeGate } from "../../lib/runtime/scopeGate.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../lib/runtime/promptBuilder.ts";
 import { getReasoningEngine, type ReasoningEngine } from "../../lib/runtime/reasoningEngine.ts";
 import { generateWithVerification, ledgerEnabled, shouldVerify, type VerificationInfo } from "../../lib/runtime/verifiedGeneration.ts";
@@ -16,7 +17,7 @@ import { extractResponseTags } from "../../lib/runtime/turnKind.ts";
 import { formatCitation } from "../../lib/runtime/citationBuilder.ts";
 import { regionLabel } from "../../lib/applicability/evaluate.ts";
 import type { RetrievalIndex } from "../../lib/retrieval/index.ts";
-import { searchContext, type Turn } from "../../lib/runtime/sessionState.ts";
+import { clarificationsInTopic, searchContext, type Turn } from "../../lib/runtime/sessionState.ts";
 
 export interface SourceView {
   citation: string;
@@ -88,8 +89,9 @@ export async function converse(corpus: LiveCorpus, userMessages: string[]): Prom
     asked.push(question);
     // Same as the web route: a non-English or weakly matched question gets cross-language search terms first.
     const expansion = expansionEnabled() ? await expandQuery({ engine: retryingEngine, index: corpus.index, query: searchContext(asked).query, latestMessage: searchContext(asked).anchor }) : undefined;
-    const { raw, decision, factPass, retrievalMs } = retrieveApplicable(corpus.index, searchContext(asked).query, asked, { lastPlanningMode, expansion: expansion?.terms ? expansion : undefined });
+    const { raw, decision: retrievedDecision, factPass, retrievalMs, scopeCandidates } = retrieveApplicable(corpus.index, searchContext(asked).query, asked, { lastPlanningMode, expansion: expansion?.terms ? expansion : undefined });
 
+    const { decision } = await applyScopeGate(retryingEngine, retrievedDecision, scopeCandidates, question, asked, clarificationsInTopic([...history, { role: "user", content: question }]));
     let text: string;
     let turnKind = "unknown";
     let planningMode = "unknown";

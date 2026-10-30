@@ -42,6 +42,8 @@ export interface SearchContext {
   anchor: string;
   /** True when an earlier topic was left behind. */
   reset: boolean;
+  /** Index, among the user messages, of the message that opened the topic. */
+  start: number;
 }
 
 /** Words that open a request ("write me a pitch"), so a short message that starts with one is a new request and not a reply. */
@@ -78,5 +80,24 @@ export function searchContext(userMessages: string[]): SearchContext {
     if (![...own].some((w) => topic.has(w))) start = i;
   }
   const kept = userMessages.slice(start);
-  return { query: kept.join(" "), anchor: kept[0] ?? "", reset: start > 0 };
+  return { query: kept.join(" "), anchor: kept[0] ?? "", reset: start > 0, start };
+}
+
+/** An assistant turn that is a short question: the heuristic the evals use, applied to the history. */
+const isClarifyingTurn = (content: string) => /[?¿]["')\]*_]*$/.test(content.trim()) && content.trim().length < 400;
+
+/** How many clarifying questions Hubi has already asked in the current topic (turns before the latest user message). */
+export function clarificationsInTopic(turns: Turn[]): number {
+  const users = turns.filter((t) => t.role === "user").map((t) => t.content);
+  const { start } = searchContext(users);
+  let seen = -1;
+  let count = 0;
+  for (const t of turns) {
+    if (t.role === "user") {
+      seen++;
+      continue;
+    }
+    if (seen >= start && isClarifyingTurn(t.content)) count++;
+  }
+  return count;
 }

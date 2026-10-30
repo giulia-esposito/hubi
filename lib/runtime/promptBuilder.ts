@@ -87,6 +87,19 @@ export function buildPrompt(
     ? `Conversation so far:\n${history.map((t) => `${t.role === "user" ? "User" : "Assistant"}: ${t.content}`).join("\n")}\n\n---\n\n`
     : "";
 
+  if (decision?.mode === "must-clarify" && decision.clarifyReason === "scope-conflict" && decision.clarifyQuestion) {
+    return (
+      `${historyBlock}User question: ${question}
+
+` +
+      `[Clarification gate -- mandatory]
+` +
+      `The approved material for this question differs depending on the user's situation, and the user has not said which one applies. The material is NOT shown to you: do not answer from general knowledge and do not guess a situation. ` +
+      `Respond with ONLY this one short clarifying question, in the language of the user's question: "${decision.clarifyQuestion}" ` +
+      `End with the [[HUBI:CLARIFYING_QUESTION]] tag.`
+    );
+  }
+
   if (decision?.mode === "must-clarify") {
     const regions = decision.withheldRegions;
     const regionList = regions.length > 0 ? regions.join(", ") : "specific regions";

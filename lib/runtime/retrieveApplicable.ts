@@ -3,7 +3,9 @@ import { detectTaskContext, getRegionVocabulary, refersToOwnRegion, type RegionV
 import { search, tokenize, type RetrievalIndex, type ScoredChunk } from "../retrieval/index.ts";
 import { searchWithExpansion, type ExpansionInfo } from "../retrieval/queryExpansion.ts";
 import { detectAudienceConflict } from "../applicability/audience.ts";
+import { searchContext } from "./sessionState.ts";
 import { applyIntentSlots, type IntentPassInfo } from "../retrieval/sourceIntent.ts";
+import { findScopeCandidates, type ScopeGroup } from "../applicability/scopeClarification.ts";
 import {
   FACT_K,
   buildFactQuery,
@@ -27,8 +29,22 @@ export const STRONG_REGIONAL_RATIO = 0.7;
 // region and the user said "Tier 1 in Mexico", the Spanish SS Latam onboarding training still never reached the top five, so the
 // question was answered with a dead end. The deeper search needs no model call.
 export const REGION_PASS_DEPTH = 150;
+export const SCOPE_PROBE_DEPTH = 60;
 export const REGION_PASS_K = 2;
 export const REGION_PASS_MIN_RELATIVE_SCORE = 0.5;
+
+const plain = (word: string) => word.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/**
+ * The cross-language terms were written for the whole conversation, replies included ("Tier 1 in Mexico"). Candidate situations must be about
+ * the question itself, so the words of the replies are taken out of the terms: otherwise a reply's "Tier" pulls in a contract training for an
+ * onboarding question.
+ */
+function withoutReplyWords(expansion: RetrieveOptions["expansion"], replies: string[]): RetrieveOptions["expansion"] {
+  if (!expansion || replies.length === 0) return expansion;
+  const replyWords = new Set((replies.join(" ").match(/[\p{L}\p{N}]+/gu) ?? []).map(plain));
+  return { ...expansion, terms: expansion.terms.split(/\s+/).filter((w) => w && !replyWords.has(plain(w))).join(" ") };
+}
 
 export interface ApplicableRetrieval {
   /** The raw ranked results of pass 1, before applicability filtering (empty means retrieval found nothing at all). */
@@ -38,6 +54,8 @@ export interface ApplicableRetrieval {
   factPass: FactPassInfo;
   /** Intent-aware reserved slots (docs/source-selection-design.md): the cue read from the question and any source added for it. */
   intentPass: IntentPassInfo;
+  /** Situations the question could be about, from documents written for audiences that share no label; null when there are none. The scope gate decides whether to ask (lib/runtime/scopeGate.ts). */
+  scopeCandidates: ScopeGroup[] | null;
   /** Wall-clock milliseconds spent in retrieval, both passes and applicability included. */
   retrievalMs: number;
   /** Where the user's region came from: a message in the window, the pinned context, or nowhere. */
@@ -129,5 +147,18 @@ export function retrieveApplicable(
     if (conflict) decision = { ...decision, audienceConflict: conflict };
   }
 
-  return { raw, decision, factPass, intentPass, retrievalMs: performance.now() - start, regionSource };
+  // Candidate situations: the documents that best match the QUESTION (not the replies that supplied context, which would pull in documents on other topics),
+  // from a deeper cross-language search limited to what the Applicability Layer lets through. Not for requests to create something: those proceed on stated assumptions.
+  let scopeCandidates: ScopeGroup[] | null = null;
+  if (decision.mode !== "must-clarify" && decision.mode !== "no-applicable-content" && raw.length > 0 && !isArtifactRequest(latest, options.lastPlanningMode)) {
+    const letThrough = (r: ScoredChunk) => {
+      const s = classifyChunk(r.chunk, context.regions);
+      return s === "global" || s === "match" || s === "unspecified";
+    };
+    const topic = searchContext(userMessages);
+    const pool = searchWithExpansion(index, topic.anchor, withoutReplyWords(options.expansion, userMessages.slice(topic.start + 1)), SCOPE_PROBE_DEPTH).filter(letThrough);
+    scopeCandidates = findScopeCandidates(pool, pool[0]?.score ?? 0);
+  }
+
+  return { raw, decision, factPass, intentPass, scopeCandidates, retrievalMs: performance.now() - start, regionSource };
 }

@@ -1,7 +1,7 @@
 import { getKnowledgeBase } from "../../../lib/runtime/knowledgeBase.ts";
 import { getOrCreateSession } from "../../../lib/runtime/sessionRegistry.ts";
 import { describeHistory, parseChatRequest, sessionFromRequest } from "../../../lib/runtime/requestSession.ts";
-import { addTurn, searchContext } from "../../../lib/runtime/sessionState.ts";
+import { addTurn, clarificationsInTopic, searchContext } from "../../../lib/runtime/sessionState.ts";
 import { retrieveApplicable } from "../../../lib/runtime/retrieveApplicable.ts";
 import { expandQuery, expansionEnabled } from "../../../lib/retrieval/queryExpansion.ts";
 
@@ -15,6 +15,7 @@ import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtim
 import { generateWithVerification, ledgerEnabled, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
 import { logInteraction, logInteractionError, type ApplicabilityLog, type ContinuityLog, type RetrievalLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
 import { sourceFactsLog } from "../../../lib/governance/sourceFacts.ts";
+import { applyScopeGate } from "../../../lib/runtime/scopeGate.ts";
 import { detectSourceGovernance } from "../../../lib/governance/sourceGovernance.ts";
 
 // Route Handler must run in the Node.js runtime, not Edge. The Claude Code
@@ -93,11 +94,13 @@ export async function POST(req: Request): Promise<Response> {
   const expansion = expansionEnabled()
     ? await expandQuery({ engine: getReasoningEngine(), index, query: retrievalQuery, latestMessage: topic.anchor })
     : undefined;
-  const { raw, decision, factPass, intentPass, retrievalMs, regionSource } = retrieveApplicable(index, retrievalQuery, userMessages, {
+  const { raw, decision: retrievedDecision, factPass, intentPass, scopeCandidates, retrievalMs, regionSource } = retrieveApplicable(index, retrievalQuery, userMessages, {
     lastPlanningMode: session.lastPlanningMode,
     pinned: parsed.value.pinned,
     expansion: expansion?.terms ? expansion : undefined,
   });
+  // One fast model call, only when retrieval found candidate situations: ask which applies if the answer would materially differ.
+  const { decision, judged: scopeGate } = await applyScopeGate(getReasoningEngine(), retrievedDecision, scopeCandidates, question, userMessages, clarificationsInTopic(session.turns));
   const results = decision.eligible;
   const sourceSignal = detectSourceGovernance(results);
   const sources: SourceRef[] = results.map((r, i) => ({
@@ -138,6 +141,7 @@ export async function POST(req: Request): Promise<Response> {
     unspecifiedUsed: decision.unspecifiedUsed,
     factPass: { triggered: factPass.triggered, reason: factPass.reason, added: factPass.added, query: factPass.query },
     intentPass: intentPass.intents.length > 0 ? intentPass : undefined,
+    scopeGate,
     retrievalMs: Math.round(retrievalMs * 10) / 10,
   };
 

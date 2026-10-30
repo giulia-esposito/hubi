@@ -68,6 +68,8 @@ export interface ApplicabilityLog {
   unspecifiedUsed: number;
   /** Conditional fact-retrieval pass (Finding #004). */
   factPass?: { triggered: boolean; reason: string; added: number; query?: string };
+  /** The scope gate ran (candidate situations were found): whether it asked, the question, and the audience labels of the situations. */
+  scopeGate?: { asked: boolean; question?: string; ms: number; error?: string; groups: string[][] };
   /** Intent cue and the sources added for it (process or recency); absent when the question carried no cue. */
   intentPass?: { intents: string[]; added: { intent: string; chunkId: string; documentId: string }[] };
   /** Milliseconds spent in retrieval (both passes plus applicability). */

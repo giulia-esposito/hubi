@@ -77,7 +77,9 @@ export interface ApplicabilityDecision {
    * region-specific material is a close match for the question while the user's region is unknown, and the only other
    * sources are weaker, so answering from them would be a dead end or the wrong process.
    */
-  clarifyReason?: "strong-regional-match";
+  clarifyReason?: "strong-regional-match" | "scope-conflict";
+  /** For "scope-conflict": the question to ask, written by the scope judge (lib/applicability/scopeClarification.ts). */
+  clarifyQuestion?: string;
   /** Set when the eligible sources are written for different audiences and the user has not said which applies (lib/applicability/audience.ts). */
   audienceConflict?: AudienceConflict;
 }
