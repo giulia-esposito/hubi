@@ -3,6 +3,8 @@ import type { ScoredChunk } from "../retrieval/index.ts";
 import type { Turn } from "./sessionState.ts";
 import { regionLabel, UNSPECIFIED_REGION_LABEL, type ApplicabilityDecision } from "../applicability/evaluate.ts";
 import { LEDGER_INSTRUCTION } from "./claimAttribution.ts";
+import { ANSWERABILITY_NOTICE } from "./answerability.ts";
+import { scopeLine, scopedSources, scopeNotice } from "../governance/sourceScope.ts";
 import { sourceFactsLine } from "../governance/sourceFacts.ts";
 import { detectSourceGovernance, sourceGovernanceNotice } from "../governance/sourceGovernance.ts";
 
@@ -81,7 +83,7 @@ export function buildPrompt(
   results: ScoredChunk[],
   history: Turn[] = [],
   decision?: ApplicabilityDecision,
-  options: { ledger?: boolean } = {}
+  options: { ledger?: boolean; answerability?: boolean } = {}
 ): string {
   const historyBlock = history.length
     ? `Conversation so far:\n${history.map((t) => `${t.role === "user" ? "User" : "Assistant"}: ${t.content}`).join("\n")}\n\n---\n\n`
@@ -139,7 +141,8 @@ export function buildPrompt(
     const applicability = decision ? `Applicability: ${applicabilityLine(r.chunk)}\n` : "";
     const restriction = r.chunk.governance?.restriction ? `Registry restriction: ${r.chunk.governance.restriction}\n` : "";
     const facts = sourceFactsLine(r.chunk);
-    return `[Source ${i + 1}] ${locator}\n${facts ? `${facts}\n` : ""}${applicability}${restriction}${r.chunk.text}`;
+    const scope = scopeLine(r.chunk);
+    return `[Source ${i + 1}] ${locator}\n${facts ? `${facts}\n` : ""}${applicability}${scope ? `${scope}\n` : ""}${restriction}${r.chunk.text}`;
   };
   const SEPARATOR = "\n\n---\n\n";
   const factCount = decision?.factSourceCount ?? 0;
@@ -184,6 +187,9 @@ export function buildPrompt(
       `[Registry restriction notice] Sources marked "Registry restriction" are approved only with that caveat. If you rely materially on one, state the caveat once, briefly, in your own words; do not present such a source as unrestricted. If the answer does not rely on it, do not mention it.`
     );
   }
+  const scoped = scopedSources(results);
+  if (scoped.length > 0) notices.push(scopeNotice(scoped));
+  if (options.answerability) notices.push(ANSWERABILITY_NOTICE);
   if (options.ledger) notices.push(LEDGER_INSTRUCTION);
   const noticeBlock = notices.length > 0 ? `\n\n${notices.join("\n")}` : "";
 

@@ -15,6 +15,7 @@ import { createTagAwareStreamer, extractResponseTags } from "../../../lib/runtim
 import { generateWithVerification, ledgerEnabled, shouldVerify } from "../../../lib/runtime/verifiedGeneration.ts";
 import { logInteraction, logInteractionError, type ApplicabilityLog, type ContinuityLog, type RetrievalLog, type SourceRef } from "../../../lib/runtime/interactionLog.ts";
 import { sourceFactsLog } from "../../../lib/governance/sourceFacts.ts";
+import { asksForInstructions } from "../../../lib/retrieval/sourceIntent.ts";
 import { applyScopeGate } from "../../../lib/runtime/scopeGate.ts";
 import { detectSourceGovernance } from "../../../lib/governance/sourceGovernance.ts";
 
@@ -219,7 +220,7 @@ export async function POST(req: Request): Promise<Response> {
 
       // The claims ledger rides only on buffered (verified) turns, so it can never reach a streamed answer.
       const useLedger = bufferForVerification && ledgerEnabled();
-      const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision, { ledger: useLedger });
+      const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision, { ledger: useLedger, answerability: asksForInstructions(topic.anchor) });
       const streamer = createTagAwareStreamer((visible) => send({ type: "delta", text: visible }));
 
       // Verify-and-revise (prototype, HUBI_VERIFY_CLAIMS=1): turns that may be

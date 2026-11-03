@@ -9,6 +9,7 @@ import { ingestContentRepository } from "../../lib/ingestion/ingest.ts";
 import { buildGovernedIndex } from "../../lib/runtime/governedIndex.ts";
 import { retrieveApplicable } from "../../lib/runtime/retrieveApplicable.ts";
 import { expandQuery, expansionEnabled } from "../../lib/retrieval/queryExpansion.ts";
+import { asksForInstructions } from "../../lib/retrieval/sourceIntent.ts";
 import { applyScopeGate } from "../../lib/runtime/scopeGate.ts";
 import { buildPrompt, HUBI_SYSTEM_PROMPT } from "../../lib/runtime/promptBuilder.ts";
 import { getReasoningEngine, type ReasoningEngine } from "../../lib/runtime/reasoningEngine.ts";
@@ -108,7 +109,7 @@ export async function converse(corpus: LiveCorpus, userMessages: string[]): Prom
       const useLedger = verify && ledgerEnabled();
       const generated = await generateWithVerification({
         engine: retryingEngine,
-        prompt: buildPrompt(question, decision.eligible, history, decision, { ledger: useLedger }),
+        prompt: buildPrompt(question, decision.eligible, history, decision, { ledger: useLedger, answerability: asksForInstructions(searchContext(asked).anchor) }),
         systemPrompt: HUBI_SYSTEM_PROMPT,
         retrievedTexts: decision.eligible.map((r) => r.chunk.text),
         verify,

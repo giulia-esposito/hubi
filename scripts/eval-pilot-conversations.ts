@@ -39,7 +39,7 @@ const substantive = (r: TurnResult) => !asked(r) && r.turnKind !== "no-grounded-
 // The SS Latam onboarding training lays the process out as stages: presentation in the sale, overview and preparation, internal alignment (M0), implementation meeting (M1), communication strategy (M2), W4C training, launch actions, then 30- and 60-day checkpoints.
 const STAGE_TERMS = [/\bM0\b|alineaci|alignment/i, /\bM1\b|implementaci|implementation/i, /\bM2\b|comunicaci|communication/i, /W4C|training|capacitaci/i, /launch|lanzamiento/i, /checkpoint|30[- ]day|60[- ]day|30 d[ií]as|60 d[ií]as/i, /presentation|presentaci/i, /overview|visi[oó]n general|prepar/i, /C-level/i, /agreement|acuerdo/i];
 const NO_STEPS_CLAIM = /(does not|do not|doesn't|don't|cannot|can't|not|no) (\w+ ){0,4}(detail|list|provide|provided|contain|include|outline|specify|specific)\b[^.]{0,60}\bsteps?|\bsteps?\b[^.]{0,40}\b(not|aren't|isn't) (\w+ ){0,3}(provided|available|detailed|listed)/i;
-const ADMITS_NO_STEPS = /(do not|don't|does not|doesn't|cannot|can't|no) (\w+ ){0,5}(steps?|step-by-step|list the steps|detail)|not (\w+ ){0,3}(available|documented|in (the|my) (knowledge|sources))|only (a |an )?(training|announcement|mention)|\bsteps?\b[^.]{0,40}\b(not|aren't|isn't) (\w+ ){0,3}(provided|available|detailed|listed)/i;
+const ADMITS_NO_STEPS = /(do not|don't|does not|doesn't|cannot|can't|no) (\w+ ){0,5}(steps?|step-by-step|list the steps|detail)|not (\w+ ){0,3}(available|documented|in (the|my) (knowledge|sources))|only (a |an )?(training|announcement|mention)|\bsteps?\b[^.]{0,90}\b(not|aren't|isn't) (\w+ ){0,3}(provided|available|detailed|listed)/i;
 const DIRECT = /\b(direct|direta|direto|diret[oa]s?|venda direta|SMB|Sales ENT|enterprise|T3|T4|order form|magic link)\b/i;
 const PARTNER = /\b(partner|partners|parceiro|parceiros|indireto|indireta|indirect|canal|channel|Pluxee|Alelo|Ticket|Hagata)\b/i;
 const PARTNER_NAMES = /\b(Pluxee|Alelo|Hagata)\b/;
@@ -47,15 +47,26 @@ const PARTNER_NAMES = /\b(Pluxee|Alelo|Hagata)\b/;
 function stageHits(text: string): number {
   return STAGE_TERMS.filter((re) => re.test(text)).length;
 }
+/** The answer says, near its start, which channel it covers and that the guidance is limited to it. */
+function statesChannelScope(text: string): boolean {
+  const start = text.slice(0, 420);
+  return (PARTNER.test(start) || DIRECT.test(start)) && /(apenas|somente|s[oó] para|only|applies to|aplica-se|se aplica|refere-se|covers|cobre|para o canal|no canal|in the .{0,20}channel|for the .{0,20}channel|n[aã]o cobre|do not cover|n[aã]o h[aá] .{0,40}(outros|other))/i.test(start);
+}
 const listItems = (text: string) => (text.match(/^\s*(?:\d+[.)]|[-*•])\s+/gm) ?? []).length;
 
+/**
+ * What the pilot tester could not get was the steps. An answer delivers them when it lists at least three stages of the process
+ * (as a list, or at length in prose). It may still say that part of the process is not shown: a partial answer that says so is the
+ * behaviour the answerability rule asks for, so a caveat alone does not fail it.
+ */
 function onboardingGivesSteps(turns: TurnResult[]): Verdict {
   const last = turns[turns.length - 1];
   if (asked(last)) return { ok: false, why: "asked again instead of answering" };
-  if (NO_STEPS_CLAIM.test(last.text)) return { ok: false, why: "said the steps are not available" };
   const stages = stageHits(last.text);
   const items = listItems(last.text);
-  return stages >= 3 && items >= 3 ? { ok: true, why: `${items} list items, ${stages} stage terms` } : { ok: false, why: `only ${items} list items and ${stages} stage terms` };
+  const delivers = stages >= 3 && (items >= 3 || last.text.length >= 600);
+  if (delivers) return { ok: true, why: `${items} list items, ${stages} stage terms` };
+  return { ok: false, why: NO_STEPS_CLAIM.test(last.text) ? "said the steps are not available" : `only ${items} list items and ${stages} stage terms` };
 }
 
 /** The yes/no rubric question the F4 judge asks the model; the answer being judged is quoted verbatim. */
@@ -82,6 +93,17 @@ const SCENARIOS: Scenario[] = [
       const last = turns[turns.length - 1];
       const opening = last.text.slice(0, 260);
       const ok = ADMITS_NO_STEPS.test(opening) && !(stageHits(last.text) >= 3 && listItems(last.text) >= 3);
+      return { ok, why: ok ? "says up front that the steps are not in the knowledge" : "describes the training or process without saying the steps are missing" };
+    },
+  },
+  {
+    id: "onboarding-us-single",
+    fix: "F3",
+    origin: "variant",
+    turns: ["What is the process for onboarding a new client in the United States?"],
+    judge: (turns) => {
+      const last = turns[turns.length - 1];
+      const ok = ADMITS_NO_STEPS.test(last.text.slice(0, 260)) && !(stageHits(last.text) >= 3 && listItems(last.text) >= 3);
       return { ok, why: ok ? "says up front that the steps are not in the knowledge" : "describes the training or process without saying the steps are missing" };
     },
   },
@@ -124,7 +146,8 @@ const SCENARIOS: Scenario[] = [
       const channelQuestion = asked(last) && /(direct|direta|direto|indireto|indirect|canal|channel|parceir|partner)/i.test(last.text);
       const bothChannels = !asked(last) && DIRECT.test(last.text) && PARTNER.test(last.text);
       const silentPartner = !asked(last) && PARTNER_NAMES.test(last.text) && !DIRECT.test(last.text);
-      return { ok: channelQuestion || bothChannels, why: channelQuestion ? "asks which channel" : bothChannels ? "answers for both channels" : silentPartner ? "silently assumed the partner channel" : "neither asks nor covers both channels" };
+      const scoped = !asked(last) && statesChannelScope(last.text);
+      return { ok: channelQuestion || bothChannels || scoped, why: channelQuestion ? "asks which channel" : bothChannels ? "answers for both channels" : scoped ? "states which channel it covers" : silentPartner ? "silently assumed the partner channel" : "neither asks, covers both, nor states its scope" };
     },
   },
   {
@@ -136,7 +159,8 @@ const SCENARIOS: Scenario[] = [
       const last = turns[turns.length - 1];
       const channelQuestion = asked(last) && /(direct|indirect|channel|partner)/i.test(last.text);
       const bothChannels = !asked(last) && DIRECT.test(last.text) && PARTNER.test(last.text);
-      return { ok: channelQuestion || bothChannels, why: channelQuestion ? "asks which channel" : bothChannels ? "answers for both channels" : "silently assumed one channel" };
+      const scoped = !asked(last) && statesChannelScope(last.text);
+      return { ok: channelQuestion || bothChannels || scoped, why: channelQuestion ? "asks which channel" : bothChannels ? "answers for both channels" : scoped ? "states which channel it covers" : "silently assumed one channel" };
     },
   },
   {

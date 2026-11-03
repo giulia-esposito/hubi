@@ -67,3 +67,19 @@ describe("intent slots", () => {
     assert.deepEqual(r.info.added.map((a) => [a.intent, a.documentId]), [["recency", "n2"]]);
   });
 });
+
+describe("answerability notice", () => {
+  it("is added to a how-to prompt only when asked for, and states the actionable-versus-mention rule", async () => {
+    const { asksForInstructions } = await import("../lib/retrieval/sourceIntent.ts");
+    const { buildPrompt } = await import("../lib/runtime/promptBuilder.ts");
+    const { ANSWERABILITY_NOTICE } = await import("../lib/runtime/answerability.ts");
+    const results = [{ score: 1, chunk: { id: "a::s0", documentId: "a", documentTitle: "A", heading: null, text: "A training is live.", citationUrl: null, citationUrlType: null as null } }];
+    assert.ok(buildPrompt("What are the steps?", results, [], undefined, { answerability: true }).includes(ANSWERABILITY_NOTICE));
+    assert.ok(!buildPrompt("What are the steps?", results).includes("[Answerability notice]"));
+    assert.match(ANSWERABILITY_NOTICE, /announces a training/);
+    assert.match(ANSWERABILITY_NOTICE, /is instructions/);
+    assert.match(ANSWERABILITY_NOTICE, /begin your answer with one plain sentence/);
+    assert.equal(asksForInstructions("What are the steps of the client onboarding process?"), true);
+    assert.equal(asksForInstructions("What is Per Subscriber pricing?"), false);
+  });
+});

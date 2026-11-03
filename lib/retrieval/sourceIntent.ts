@@ -20,6 +20,11 @@ const PROCESS_CUE =
 const RECENCY_CUE =
   /\b(what(?:'s| is| has| have)? (?:new|changed)|what changed|any(?:thing)? new|latest|recent(?:ly)?|this week|last week|this month|updates?\b|announce\w*|novedades|novidades|[uú]ltimas?|o que mudou|qu[eé] cambi[oó])/i;
 
+/** True when the topic's opening question asks for steps, a process or instructions (the cue is read on the question, not on a short reply to it). */
+export function asksForInstructions(topicQuestion: string): boolean {
+  return PROCESS_CUE.test(topicQuestion);
+}
+
 export function detectSourceIntents(question: string): SourceIntent[] {
   const intents: SourceIntent[] = [];
   if (PROCESS_CUE.test(question)) intents.push("process");
