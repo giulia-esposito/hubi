@@ -31,7 +31,7 @@ describe("scope notice", () => {
   it("separates general from conditional guidance, presents alternatives, and states the covered situation", () => {
     const n = scopeNotice([{ source: 2, limits: ["written for Channel partners only"] }]);
     assert.match(n, /Sources 2 carry a "Scope" line/);
-    assert.match(n, /General guidance comes only from sources without a limit/);
+    assert.match(n, /First the general guidance, from sources without a limit only/);
     assert.match(n, /Never put limited content in the numbered steps/);
     assert.match(n, /each one under its own clearly labelled heading/);
     assert.match(n, /Write the answer in two parts/);
