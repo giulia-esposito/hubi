@@ -349,3 +349,11 @@ Nothing in this section is an approval or an attestation; the approvals in §2 t
 | Platform Engineering | Name the standard CI/CD pipeline and the production catalog row; confirm the logging retention and storage agreement for Cloud Logging. |
 | Content | Register the four unregistered files (Pricing Playbook, PMM Slide Library, Revenue Organization 2025, Rules of Engagement) or decide they leave the pilot. |
 | Product Owner | Training confirmation (AI Security, Secure SDLC); cost center and environment label values; decide when to request Wellhub GitHub organization membership. |
+
+## 10. Product Owner clarifications, 2026-11-05
+
+Reported by the Product Owner in conversation; not yet confirmed in writing by InfoSec, so attach the confirmation to the ISSD-51294 delta review when it is requested.
+
+- **Impact Radius is 1** (the CBRA 4, Low tier stands). The inconsistency noted in section 3 is resolved in favor of the score.
+- **Vertex AI inside the company's own project is not an "external AI API"**, so the approved-gateway requirement does not apply to the model path.
+- **Decision:** the pilot proceeds on the existing approval. Anything that needs reassessment is reassessed after the pilot, not before it.
