@@ -53,7 +53,7 @@ deployment:
   source_url: null
   staging_environment: none
 readiness:
-  availability_monitoring: pending      # /api/health exists; uptime check and alert routing into the company stack are missing
+  availability_monitoring: partial       # 2026-11-05: five log-based metrics created; alert policies and email channel written but blocked on Monitoring Editor; no uptime check (internal ingress)
   backup_dr:
     state: pending                      # expected: not-applicable, with the owner's written justification (stateless service, content re-importable, redeploy previous revision)
     rpo: null

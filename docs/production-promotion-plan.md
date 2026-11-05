@@ -320,3 +320,32 @@ Hubi has no database and no user store. State is: the Content Repository copy in
 ## 8. Cost and effort, honestly
 
 Phase 1 is a few engineering days on top of what exists (the resilience, governance, logging and deploy foundations are the same controls the standard asks for). Phases 0 and 2 are calendar time on other teams: durations are set by intake queues and approvals that this repository cannot shorten. A reasonable planning assumption is weeks, not days, from intake to go-live. That estimate is mine, not Platform Engineering's. The existing InfoSec approval should shorten InfoSec's step; it does not remove it.
+
+---
+
+## 9. Status update, 2026-11-05 (P1-12 of the readiness audit)
+
+Nothing in this section is an approval or an attestation; the approvals in §2 to §4 are other people's decisions and are all still pending. This records what changed on the engineering side since 2026-10-29 and turns the open items into one list of requests, by who has to act.
+
+### 9.1 Engineering changes that affect the promotion picture
+
+| Topic | State on 2026-11-05 |
+|---|---|
+| Availability monitoring (criterion e) | Five log-based metrics exist in `wh-revenue-sandbox` (failed answers, rate limits, circuit open, wrong provider, stale registry); the alert policies and the email notification channel are written (`config/monitoring/`, `docs/monitoring.md`) but not created: the owner's account lacks Monitoring Editor. An external uptime check cannot reach an internal-ingress service; a private check is a Platform decision. |
+| Memory and scale | Peak memory about 250 MB on a 2 Gi limit; one instance serves about 60 to 70 turns a minute; no failures in 409 load-test requests (`docs/load-test-2026-11-05.md`). |
+| Security hardening | Production dependencies audit clean (0 vulnerabilities after the Next.js fix) and CI now blocks on high or critical advisories; retrieved text is fenced as data; explicit Gemini safety thresholds; a live prompt-injection and safety eval (`scripts/eval-safety.ts`). |
+| Governance | Identity from the `[RKC-…]` file name with conflicts excluded; four files with no registry record are still served under the pilot policy (decision for Content and Product). |
+| Deployment mechanism (§5 of the manifest) | Still direct from a developer machine through `scripts/deploy.ts` (exact commit, protected settings compared). The move to the Wellhub GitHub organization and a CI pipeline was deliberately deferred by Product on 2026-11-05, so criterion "standard CI/CD" remains open. |
+| Persistent memory trigger (re-score (d)) | Unchanged: the browser keeps the conversation for a limited time (`lib/runtime/conversationStore.ts`), nothing is stored server-side beyond logs. InfoSec still needs to re-score this. |
+
+### 9.2 Requests, by who must act (to be raised in one ticket where the channel is the same)
+
+| Who | Request |
+|---|---|
+| IT / Platform (permissions) | Monitoring Editor on `wh-revenue-sandbox` (notification channel and alert policies); Monitoring Viewer (dashboards); a read-only service account allowed as a Drive sharing target (governed Drive to bucket sync). Optional for scale: Cloud Run concurrency of about 10 to 16 and always-allocated CPU, both Platform-owned. |
+| Project Owner (G6+) and Accountable LT | Confirm the names in `workload.yaml` and the RASCI; Marina Michel's agreement to it is stated by the product owner, not yet given by her. Confirm the Accountable is an LT member. |
+| Legal / Privacy | Determine whether prospect or client business details entered by users make this personal or regulated data, and whether a DPIA is required (the manifest assumes yes, conservatively). |
+| InfoSec | Re-score the "persistent memory" trigger for browser-side conversation storage; confirm the earlier approval (ISSD-51294, CBRA 4 Low) still holds for the pilot's current shape; the Impact Radius row is inconsistent (4 Low versus 8 Medium) and needs a ruling. |
+| Platform Engineering | Name the standard CI/CD pipeline and the production catalog row; confirm the logging retention and storage agreement for Cloud Logging. |
+| Content | Register the four unregistered files (Pricing Playbook, PMM Slide Library, Revenue Organization 2025, Rules of Engagement) or decide they leave the pilot. |
+| Product Owner | Training confirmation (AI Security, Secure SDLC); cost center and environment label values; decide when to request Wellhub GitHub organization membership. |
