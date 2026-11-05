@@ -61,3 +61,15 @@ The two rankings are fused by reciprocal rank fusion (equal weights for a non-En
 - The gold labels are one engineer's reading of the corpus, not a reviewed ground truth. Several are deliberately broad (any chunk of a document). They need review by Content before the numbers are quoted outside the team.
 - 45 questions, 4 of them cross-language: enough to show the gap, not to size it. Real pilot questions (from the interaction log) should be added as they accumulate.
 - It measures retrieval, not answers. Whether the model uses the retrieved passage well is covered by the other evals.
+
+## 2026-11-05: two cheap levers re-tried on the 46-question gold set (audit P2-3, P2-4), neither adopted
+
+Both were run offline with `npm run eval:retrieval` (plain BM25, no expansion), against the same corpus, and reverted.
+
+| Change | Raw R@5 / R@15 / MRR | Served R@5 / MRR | Cross-language coverage | Verdict |
+|---|---|---|---|---|
+| Baseline | 85% / 93% / 0.773 | 85% / 0.708 | 40% | |
+| Document title added to each chunk's indexed text | 87% / 91% / 0.772 | 85% / 0.698 | 20% | no gain; recall at 10 and 15 and cross-language got worse |
+| Light plural stemming (`-ies`, `-es` after s/sh/ch/x/z, trailing `-s`) | 87% / 91% / 0.764 | 85% / 0.733 | 20% | served ranking up (R@1 61% to 65%, paraphrase R@3 75% to 83%), but exact-term MRR down (0.896 to 0.854) and cross-language down |
+
+Why neither was adopted: the set has 46 questions, so one or two questions swing a percentage by 2 to 4 points; the "wins" and "losses" above are all inside that noise, and the one clear loss (cross-language, 5 questions) is the family that matters most. The audit's own condition for this item is a larger gold set seeded from real pilot questions and **reviewed by Content**; that set does not exist yet and should not be invented by engineering. Stemming looks like the more promising of the two (it helps the ranking the model actually sees) and should be re-run first when the reviewed set exists. Section-level context via overlap between chunks and a separate weight for transcripts were not tried: both need that set to be measurable, and the corpus audit (`project_content_corpus_audit_2026_10_30`: transcripts are about half the chunks) says the transcript weighting question is a content-structure decision for Content and Product, not a tuning knob.
