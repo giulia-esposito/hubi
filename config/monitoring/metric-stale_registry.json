@@ -1,0 +1,5 @@
+{
+  "name": "hubi_stale_registry",
+  "description": "Startup with a Content Registry snapshot older than 60 days",
+  "filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"hubi-pilot\" AND jsonPayload.component=\"hubi\" AND jsonPayload.event=\"startup\" AND jsonPayload.registryAgeDays>60"
+}

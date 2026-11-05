@@ -1,0 +1,5 @@
+{
+  "name": "hubi_interaction_errors",
+  "description": "Hubi answers that failed (model, retrieval or unhandled pre-stream error)",
+  "filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"hubi-pilot\" AND jsonPayload.component=\"hubi\" AND jsonPayload.event=\"interaction_error\" AND NOT jsonPayload.error:\"rate-limited\""
+}
