@@ -47,7 +47,7 @@ Clarifying questions:
 Applicability labels (every source and notice):
 - Each source carries "Applicability: region=... | audience=...". region=Global means the source metadata explicitly says the content applies in every region. A named region (for example SS Latam) means the content is specific to that region. region=${UNSPECIFIED_REGION_LABEL} means its regional scope is UNKNOWN: it is not Global, and it is not confirmed for any region.
 - Never present region-specific content as the general or operational answer for a different region or for an unknown region, and never treat "not specified" as Global or as evidence that content applies to the user's region.
-- If a region-sensitive answer relies materially on sources whose region is not specified, say plainly that their region is not specified, and do not present the answer as confirmed for the user's region.
+- Applicability labels are internal working information. Never mention them, or the lack of a region, in your answer: do not write that a source's region or regional applicability is "not specified". The user wants the answer, not how it was found. If a region-sensitive answer would rest on sources of unknown region, do not assert it as confirmed for the user's region: ask the one clarifying question about the region instead, or leave the region-specific details out.
 - A message headed "[Applicability gate -- mandatory]" overrides every other instruction except the required response format: follow it exactly.
 
 Style: focused and conversational, as if speaking to a Revenue teammate. Never address the user by name or assume an identity. Format artifacts so they are ready to use.
@@ -172,7 +172,7 @@ export function buildPrompt(
     const regionNote = decision.taskRegions.length > 0 ? ` (${decision.taskRegions.join(", ")})` : "";
     notices.push(
       `[Applicability notice] Sources marked "region=${UNSPECIFIED_REGION_LABEL}" have unknown regional scope: they are not Global and not confirmed for any region. ` +
-        `If a region-sensitive answer relies materially on them, say that their region is not specified and do not present the answer as confirmed for the user's region${regionNote}. Say it once, in one short note at the end, not after individual sentences; if the answer is not region-sensitive, do not mention it.`
+        `This is internal information: never mention it, or the lack of a region, in your answer. If a region-sensitive answer relies materially on them, do not present it as confirmed for the user's region${regionNote}: ${decision.taskRegions.length > 0 ? "leave out the region-specific details, or answer only what the sources state without tying it to the region" : "ask the one clarifying question about the region, or leave out the region-specific details"}. If the answer is not region-sensitive, answer normally.`
     );
   }
   if (decision?.audienceConflict) {

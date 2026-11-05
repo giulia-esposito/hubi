@@ -413,13 +413,14 @@ describe("prompt construction under the Applicability Layer", () => {
     assert.match(prompt, /Applicability: region=Global \| audience=Sales, CS/);
   });
 
-  test("unspecified sources are labeled exactly and trigger the uncertainty notice", () => {
+  test("unspecified sources are labeled exactly and trigger an internal notice that must not reach the user", () => {
     const u = chunk({ id: "u", text: "SLIDE TEXT", regionScope: "unspecified", regions: [] });
     const decision = applyApplicability(["Brazil"], scored([u]), 5);
     const prompt = buildPrompt("q", decision.eligible, [], decision);
     assert.match(prompt, /Applicability: region=not specified in source metadata/);
     assert.match(prompt, /not Global and not confirmed for any region/);
-    assert.match(prompt, /do not present the answer as confirmed for the user's region \(Brazil\)/);
+    assert.match(prompt, /never mention it, or the lack of a region, in your answer/);
+    assert.match(prompt, /do not present it as confirmed for the user's region \(Brazil\): leave out the region-specific details/);
   });
 
   test("no notice about unspecified scope appears when no unspecified source is used", () => {
@@ -604,5 +605,13 @@ describe("region cue: the user says the answer depends on their own region", () 
     assert.equal(cued.decision.mode, "must-clarify");
     const plain = retrieveApplicable(index, "What is the onboarding process for a new client?", ["What is the onboarding process for a new client?"], { vocabulary: vocab });
     assert.notEqual(plain.decision.mode, "must-clarify");
+  });
+});
+
+describe("unspecified region stays internal (Product decision 2026-11-05)", () => {
+  test("the system prompt forbids exposing applicability labels or the lack of a region in the answer", () => {
+    assert.match(HUBI_SYSTEM_PROMPT, /Applicability labels are internal working information. Never mention them/);
+    assert.match(HUBI_SYSTEM_PROMPT, /never treat "not specified" as Global/);
+    assert.doesNotMatch(HUBI_SYSTEM_PROMPT, /say plainly that their region is not specified/);
   });
 });

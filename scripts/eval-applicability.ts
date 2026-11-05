@@ -43,7 +43,8 @@ const taskRegionIs = (region: string): Check => (t) => (last(t).taskRegions.incl
 const noSslCitation: Check = (t) => (last(t).citations.some((c) => c.includes("[SSL]")) ? "cites an SS Latam document for a different region" : null);
 const planning = (mode: string): Check => (t) => (last(t).planningMode === mode ? null : `planningMode ${last(t).planningMode}, expected ${mode}`);
 const notRefusal: Check = (t) => (/(does not|doesn't|do not|don't) (contain|include|have) (a |an )?(pre-?written|ready-?made)/i.test(last(t).text) ? "says no pre-written pitch exists" : null);
-const disclosesUnspecified: Check = (t) => (DISCLOSES_UNSPECIFIED.test(last(t).text) ? null : "does not disclose that the source's region is not specified");
+const REGION_NEAR_UNSPECIFIED = /(?:region|regional|regi[oã]o)[^.\n]{0,80}(?:not (?:specified|stated|confirmed)|unspecified|n[aã]o (?:est[aá] )?especificad)|(?:not (?:specified|stated|confirmed)|unspecified)[^.\n]{0,80}(?:region|regional|regi[oã]o)/i;
+const hidesUnspecified: Check = (t) => (REGION_NEAR_UNSPECIFIED.test(last(t).text) ? "exposes that the source's region is not specified (internal information, Product decision 2026-11-05)" : null);
 const usedUnspecified: Check = (t) => (last(t).statuses.includes("unspecified") ? null : "scenario invalid: no unspecified source was used");
 const answered: Check = (t) => (last(t).turnKind === "grounded-answer" ? null : `turnKind ${last(t).turnKind}, expected grounded-answer`);
 
@@ -86,9 +87,9 @@ const SCENARIOS: Scenario[] = [
   },
   {
     id: "unspecified-disclosure",
-    describes: "A region-sensitive answer that relies on content with unspecified region must say so",
+    describes: "A region-sensitive answer that relies on content with unspecified region must not expose that metadata to the user",
     turns: ["As a rep in Brazil, which sales tools can I get access to and how long does access take?"],
-    checks: [usedUnspecified, disclosesUnspecified],
+    checks: [usedUnspecified, hidesUnspecified],
   },
   {
     id: "pitch-after-exclusion",

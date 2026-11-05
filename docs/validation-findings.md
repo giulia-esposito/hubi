@@ -560,3 +560,12 @@ Added a hidden claims ledger and deterministic attribution checks (verbatim quot
 
 ### Product decision (2026-11-04): enforce, and keep the visible draft label
 Both policies apply. (1) Every Business Assistance answer carries the visible "AI-generated draft ... review figures and claims against the cited sources" label, and ledger flags stay in telemetry. (2) The claims ledger is now **enforced by default**: attribution violations trigger the single revision call (kept only if it has fewer violations). `HUBI_CLAIM_LEDGER=observe` restores observe-only. Accepted cost: about 6-9 s more on most artifact turns. Finding #005 stays open for claims the model omits from the ledger and for `dropped-qualifier` precision.
+
+
+## Update 2026-11-05: regional applicability is internal, not shown to the user
+
+**Product decision (Giulia):** the fact that a source's regional applicability is "not specified" is a finding of the search, not knowledge the end user needs. It appeared in the text of almost every answer. Hubi no longer writes it.
+
+**What changed:** the system prompt and the applicability notice now treat the labels as internal. When a region-sensitive answer would rest on sources of unknown region, Hubi asks the one region question or leaves out the region-specific details; it still never treats "not specified" as Global and never presents such content as confirmed for the user's region. The `unspecified-disclosure` scenario in `scripts/eval-applicability.ts` now checks the opposite (the answer must not expose it).
+
+**Trade-off, accepted:** the earlier decision (Finding #002) had the user told when an answer rested on unknown-region sources. The protection against wrongly applying content to the user's region stays; the visible caveat goes. The source list under each answer still carries the region label (`app/page.tsx`): whether to hide it too is open.
