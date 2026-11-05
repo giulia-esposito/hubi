@@ -328,3 +328,19 @@ IDs are assigned by this audit. "Observed" values come from the repo's own recor
 ---
 
 *Org rule check: no API key is used, suggested or required anywhere in this system or in this roadmap. Model access is by service identity (ADC) and content access by the service's attached identity, consistent with the managed-settings policy.*
+
+## Progress log
+
+### 2026-11-05: P0-1 to P0-4 and P1-1 to P1-4
+
+| Item | Status | Notes |
+|---|---|---|
+| P0-1 generation parameters | Done | Explicit temperature, topP, bounded output; env overrides; logged at startup. Live eval baseline taken. |
+| P0-2 Finding #005 | Done | Claims ledger enforced by default; AI-draft label already in the UI. Latency cost not yet measured in production. |
+| P0-3 region from language | Done | pt→Brazil, de/fr/it/nl→Europe; en/es still ask. Caveat: Portuguese from Portugal is treated as Brazil until the user names the country. |
+| P0-4 identity | Done | ID from the `[RKC-…]` file name; conflicts excluded. Four unregistered files still served (Product decision pending). |
+| P0-4b Drive→GCS sync | Blocked | Needs IT to allow one service account as a sharing target. |
+| P1-1 claim verifier | Done | Whole-number matching, percentages must be stated as percentages, value terms match as words, verification no longer depends on the model's self-tag (TS-010, TS-011 covered by tests). |
+| P1-2 cancellation | Done | `signal` on the engine contract; the Gemini call is aborted on client disconnect or timeout, the timer is cleared, an abort is not a retry and does not count against the circuit breaker. The adapter's own abort path is not unit-tested (it needs the live SDK). |
+| P1-3 pre-stream errors, warm-up | Done | Route wrapped so any pre-stream failure is logged and returned as a JSON 500; knowledge base warmed at startup; `/api/health?ready=1` returns 503 until loaded. |
+| P1-4 memory headroom | Measured | Production corpus copy (266 MB on disk, 74 documents, 1,980 chunks): parse + index 2.4 s, peak RSS 228 MB (process baseline 73 MB) with `scripts/measure-ingest.ts`. Against the 2 Gi limit this is about 11% before the Next.js server and GCS download buffers; no change needed now. An RSS alert belongs with P1-5. |
