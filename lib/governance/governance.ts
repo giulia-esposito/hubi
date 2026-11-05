@@ -123,6 +123,11 @@ export function applyGovernance(
   };
 
   for (const chunk of chunks) {
+    // Never resolved silently: a file that names two different registry records is out until Content fixes it.
+    if (chunk.identityConflict) {
+      exclude(chunk, "Identity conflict", `the document says ${chunk.identityConflict.documentId} but its file name says ${chunk.identityConflict.pathId}`);
+      continue;
+    }
     const entry = byId.get(chunk.documentId);
 
     if (entry) {

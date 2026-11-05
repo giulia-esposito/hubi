@@ -26,6 +26,8 @@ export interface Chunk {
   audience?: string[];
   /** The document's own "Last Updated" (else "Creation Date") metadata value, raw: the primary freshness source. */
   documentDate?: string;
+  /** Set by ingestion when the document's Content ID and the "[RKC-...]" in its file name name different records (lib/ingestion/identity.ts). Governance excludes it. */
+  identityConflict?: { documentId: string; pathId: string };
   /**
    * Set by the governance gate (lib/governance/governance.ts), never by ingestion: how the Content
    * Registry classified this document. Absent on chunks that have not passed through the gate.

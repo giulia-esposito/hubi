@@ -4,6 +4,7 @@ import { parseDocxRaw } from "./docx.ts";
 import { parsePptxRaw } from "./pptx.ts";
 import { normalizeDocx, normalizePptx, type NormalizedDocument } from "./normalize.ts";
 import { chunkDocument, type Chunk } from "./chunk.ts";
+import { resolveIdentity } from "./identity.ts";
 import { SUPPORTED_EXTENSIONS } from "./supportedFormats.ts";
 
 export interface IngestionReportEntry {
@@ -61,7 +62,11 @@ export function ingestContentRepository(rootDir: string): IngestionResult {
       const fallbackTitle = path.basename(file, ext);
       const doc: NormalizedDocument =
         ext === ".pptx" ? normalizePptx(parsePptxRaw(buffer), file, fallbackTitle) : normalizeDocx(parseDocxRaw(buffer), file, fallbackTitle);
+      // The registry record this file is: the Content ID row, the "[RKC-...]" in its path, or (neither) its title.
+      const identity = resolveIdentity(doc.id, fallbackTitle, relative, ext === ".docx" && Boolean(doc.metadata.contentId?.trim()));
+      doc.id = identity.id;
       const docChunks = chunkDocument(doc);
+      if (identity.conflict) for (const c of docChunks) c.identityConflict = identity.conflict;
 
       documents.push(doc);
       chunks.push(...docChunks);
