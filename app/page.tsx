@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { visibleRegionLabel } from "../lib/applicability/regionLabel.ts";
 import { FEEDBACK_TAGS, FEEDBACK_TAG_LABELS, type FeedbackTag } from "../lib/runtime/feedbackTags.ts";
 import { CONVERSATION_TTL_MS, clearConversation, loadConversation, saveConversation, type KeyValueStore } from "../lib/runtime/conversationStore.ts";
 
@@ -113,7 +114,7 @@ function SourcesList({ sources }: { sources: SourceRef[] }) {
             ) : (
               <span>{locator} (no link available)</span>
             )}
-            {s.regionLabel && <span className="source-region">region: {s.regionLabel}</span>}
+            {visibleRegionLabel(s.regionLabel) && <span className="source-region">region: {visibleRegionLabel(s.regionLabel)}</span>}
             {s.restriction && <span className="source-region">restricted: {s.restriction}</span>}
           </div>
         );

@@ -18,8 +18,9 @@ import type { AudienceConflict } from "./audience.ts";
  */
 export type ChunkRegionStatus = "global" | "match" | "mismatch" | "unresolved" | "unspecified";
 
-/** Exact visible/logged label for chunks with no usable region metadata. */
-export const UNSPECIFIED_REGION_LABEL = "not specified in source metadata";
+/** Exact logged label for chunks with no usable region metadata (defined in regionLabel.ts so the browser can import it). */
+import { UNSPECIFIED_REGION_LABEL } from "./regionLabel.ts";
+export { UNSPECIFIED_REGION_LABEL };
 
 export function classifyChunk(chunk: Chunk, taskRegions: string[]): ChunkRegionStatus {
   const scope = chunk.regionScope ?? "unspecified";

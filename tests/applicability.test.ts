@@ -615,3 +615,13 @@ describe("unspecified region stays internal (Product decision 2026-11-05)", () =
     assert.doesNotMatch(HUBI_SYSTEM_PROMPT, /say plainly that their region is not specified/);
   });
 });
+
+import { visibleRegionLabel } from "../lib/applicability/regionLabel.ts";
+describe("what the source list shows", () => {
+  test("an unknown region is never shown; a named region and Global are", () => {
+    assert.equal(visibleRegionLabel(UNSPECIFIED_REGION_LABEL), undefined);
+    assert.equal(visibleRegionLabel(undefined), undefined);
+    assert.equal(visibleRegionLabel("Global"), "Global");
+    assert.equal(visibleRegionLabel("SS Latam"), "SS Latam");
+  });
+});
