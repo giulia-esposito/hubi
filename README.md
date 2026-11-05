@@ -24,7 +24,7 @@ This file is the practical "how do I run it" entry point.
 
 ## Current state
 
-A one-screen Next.js web UI wraps the validated pipeline: DOCX ingestion → lexical retrieval → session-aware prompt building → Claude Code reasoning (real token streaming) → grounded, cited responses, with multi-turn continuity, clarifying questions, and an honest "I don't know" when the knowledge base doesn't support an answer. It also captures Helpful/Not-helpful feedback and a local interaction log for product validation. **Internal prototype, local only** — see `docs/testing-guide.md` for the intended test model before running this with anyone else in the room.
+A one-screen Next.js web UI wraps the pipeline: DOCX/PPTX ingestion → governance gate (Content Registry) → applicability layer → BM25 retrieval with cross-language expansion → prompt building with retrieved text fenced as data → Gemini 2.5 Flash on Vertex AI (or Claude Code locally) with real token streaming → claim checks and a claims ledger for generated artifacts → grounded, cited responses, with multi-turn continuity, clarifying questions, and an honest "I don't know" when the knowledge base does not support an answer. It runs as a stakeholder **pilot** on Cloud Run (`hubi-pilot`, behind IAP); locally it still runs on `127.0.0.1` only. Current status, decisions and the open plan: [`Implementation_Handoff.md`](Implementation_Handoff.md) and [`docs/production-readiness-audit-2026-11-04.md`](docs/production-readiness-audit-2026-11-04.md). Feedback and a structured interaction log (to Cloud Logging on Cloud Run, `logs/interactions.jsonl` locally) support product validation.
 
 The original terminal tool (`scripts/ask.ts`) still exists and still works — useful for quick debugging without a browser.
 

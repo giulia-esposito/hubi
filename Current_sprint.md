@@ -1,3 +1,5 @@
+> **Historical (2026-08).** This is the scope of the first prototype sprint, which is complete. The pilot that followed is described in `Implementation_Handoff.md` and `docs/production-readiness-audit-2026-11-04.md`.
+
 # CURRENT_SPRINT.md
 
 # Sprint Goal

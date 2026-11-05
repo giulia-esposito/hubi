@@ -1,3 +1,5 @@
+> **Partly historical.** Some numbers below describe the first local prototype (for example a 602-chunk corpus and a local-only runtime). For the current state see `Implementation_Handoff.md`; the pilot runs on Cloud Run with about 1,800 served chunks across 74 documents.
+
 # Technical Handoff
 
 For another engineer picking this project up. This is a map and a set of pointers, not a duplicate of the full history — read `Prototype_Plan.md` for that.
@@ -9,7 +11,7 @@ A local Next.js prototype of Hubi, Wellhub Revenue's AI Copilot. A single conver
 ## Get it running
 
 1. Node.js 22.6+ and the `claude` CLI, authenticated. See `README.md` if either needs a no-admin-rights workaround.
-2. `npm install` (only real dependencies: `next`, `react`, `react-dom`; devDependencies: `typescript`, `@types/node`, `@types/react` — **pin `typescript` to a stable 5.x release**, not `latest`; `npm install typescript` resolved to a `7.0.x` pre-release build during this milestone that broke Next.js's type-checking step in ways that weren't obvious from the error message).
+2. `npm install` (runtime dependencies include `next`, `react`, `react-dom`, `@google/genai`, `@google-cloud/storage`; see `package.json`. Pin `typescript` to a stable 5.x release, not `latest`.)
 3. `npm run dev` → http://127.0.0.1:3000. `npm test` → the offline regression suite.
 4. `npm run validate-phase0` (or `:windows` for the no-Node PowerShell version) if you need to re-confirm the Reasoning Engine is working on a new machine.
 

@@ -723,13 +723,15 @@ Only approved internal Revenue knowledge should be processed.
 
 Any future expansion into client data, operational systems, or automated actions will require separate review.
 
-## 17.1 Web UI prototype access model — CONFIRMED
+## 17.1 Web UI prototype access model (local prototype; the pilot differs, see below)
 
 For the current prototype testing phase, Hubi's web UI is reachable **only via `127.0.0.1` (localhost) on the machine it runs on** — `next dev`/`next start` are explicitly launched with `--hostname 127.0.0.1` (see `package.json`), not the framework default, which binds every network interface and would otherwise expose the app to the corporate network. This was caught during this milestone's own browser testing (the dev server's own startup log showed a LAN-reachable address before the fix) — confirming the fix by re-checking that log, not just by reading the flag's documentation, mattered.
 
 Validation stages, in order: (1) internal project-team testing on the local machine, (2) moderated Revenue rep testing via screen-share or remote-control access to that same machine — reps do not independently reach Hubi from their own devices during this phase. No authentication or access-control work has been built, because none is needed under this access model; introducing independent rep access from other devices would change that and must be revisited before it happens, not assumed.
 
 Interaction logs (`logs/interactions.jsonl`) capture no personal data beyond a random per-browser-session UUID — no names, no IP addresses, no browser fingerprinting. The logged question/response content is real Wellhub Revenue business content by nature of what Hubi answers, and should be handled with the same care as the knowledge base itself; the log directory is gitignored.
+
+> **Update 2026-11-05.** The pilot is no longer localhost-only: it runs on Cloud Run with internal ingress behind IAP, with access decided at the platform layer, and interaction logs go to Cloud Logging (emails and phone-like numbers scrubbed; the actor is logged only when `HUBI_LOG_ACTOR=1`). The statements above describe the local prototype and remain true for `npm run dev`.
 
 ## 17.2 Model self-report is not independent verification — accepted prototype debt
 
