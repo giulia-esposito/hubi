@@ -113,41 +113,43 @@ export async function askGemini(
 
   let finalText = "";
   let timedOut = false;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
-      timedOut = true;
-      reject(new Error("timeout"));
-    }, timeoutMs);
-  });
+  // One controller ends the provider call for either reason: our timeout or the caller leaving. Aborting stops the
+  // stream itself (no tokens are generated or billed for an answer nobody will read) and frees the concurrency slot.
+  const controller = new AbortController();
+  const onCallerAbort = () => controller.abort();
+  if (opts.signal?.aborted) return { ok: false, text: "", mode: "stream", durationMs: 0, error: "aborted" };
+  opts.signal?.addEventListener("abort", onCallerAbort, { once: true });
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
 
   try {
-    const run = async () => {
-      // System prompt maps to systemInstruction; the prepared prompt (which
-      // already carries retrieved knowledge + conversation history, per
-      // lib/runtime/promptBuilder.ts) is sent as a single user turn -- the
-      // same deliberate choice as the Claude Code adapter: Hubi's own
-      // Session State stays the single source of truth for history, never
-      // the provider's own session/context mechanism. This is what keeps
-      // this file swappable in the first place.
-      const client = await getClient();
-      const stream = await client.models.generateContentStream({
-        model: MODEL,
-        contents: [{ role: "user", parts: [{ text: preparedPrompt }] }],
-        config: { systemInstruction: systemPrompt, ...generationConfig(opts.fast) },
-      });
-
-      for await (const chunk of stream) {
-        if (chunk.usageMetadata) lastUsage = chunk.usageMetadata;
-        const delta = chunk.text;
-        if (delta) {
-          finalText += delta;
-          opts.onDelta?.(delta);
-        }
-      }
-    };
+    // System prompt maps to systemInstruction; the prepared prompt (which
+    // already carries retrieved knowledge + conversation history, per
+    // lib/runtime/promptBuilder.ts) is sent as a single user turn -- the
+    // same deliberate choice as the Claude Code adapter: Hubi's own
+    // Session State stays the single source of truth for history, never
+    // the provider's own session/context mechanism. This is what keeps
+    // this file swappable in the first place.
+    const client = await getClient();
+    const stream = await client.models.generateContentStream({
+      model: MODEL,
+      contents: [{ role: "user", parts: [{ text: preparedPrompt }] }],
+      config: { systemInstruction: systemPrompt, abortSignal: controller.signal, ...generationConfig(opts.fast) },
+    });
 
     let lastUsage: UsageMetadata | undefined;
-    await Promise.race([run(), timeoutPromise]);
+    for await (const chunk of stream) {
+      if (controller.signal.aborted) break;
+      if (chunk.usageMetadata) lastUsage = chunk.usageMetadata;
+      const delta = chunk.text;
+      if (delta) {
+        finalText += delta;
+        opts.onDelta?.(delta);
+      }
+    }
+    if (controller.signal.aborted) throw new Error("aborted");
     recordUsage(lastUsage);
 
     return { ok: true, text: finalText, mode: "stream", durationMs: Date.now() - start };
@@ -157,7 +159,10 @@ export async function askGemini(
       text: finalText,
       mode: "stream",
       durationMs: Date.now() - start,
-      error: timedOut ? "timeout" : String((err as Error)?.message ?? err),
+      error: timedOut ? "timeout" : opts.signal?.aborted ? "aborted" : String((err as Error)?.message ?? err),
     };
+  } finally {
+    clearTimeout(timer);
+    opts.signal?.removeEventListener("abort", onCallerAbort);
   }
 }

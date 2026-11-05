@@ -17,6 +17,8 @@ export interface ReasoningOptions {
   onDelta?: (text: string) => void;
   /** A short helper call (for example query expansion): the provider should skip extended thinking where it supports that. */
   fast?: boolean;
+  /** Aborts the call (the client left, or the request was cancelled). The adapter stops the provider call and returns error "aborted". */
+  signal?: AbortSignal;
 }
 
 // Confirmed in Phase 0 (Prototype_Plan.md Section 3.2): these three flags are

@@ -34,6 +34,11 @@ const NO_KNOWLEDGE_MESSAGE =
 // (each instance keeps its own windows; see lib/runtime/resilience.ts).
 const requestGuard = createRequestGuard();
 
+/** Every model call of this request stops when the client disconnects: no tokens are generated for an answer nobody will read. */
+function cancellable(engine: ReturnType<typeof getReasoningEngine>, signal: AbortSignal): ReturnType<typeof getReasoningEngine> {
+  return (prompt, system, opts) => engine(prompt, system, { ...opts, signal });
+}
+
 export async function POST(req: Request): Promise<Response> {
   // Behind IAP the caller is the authenticated user; locally every caller shares one bucket.
   const callerKey = req.headers.get("x-goog-authenticated-user-email") ?? "anonymous";
@@ -93,7 +98,7 @@ export async function POST(req: Request): Promise<Response> {
   // specific content is withheld until the user's region is known.
   // Cross-language recall: one cheap model call, only for a non-English or weakly matched question; a failure falls back to plain BM25.
   const expansion = expansionEnabled()
-    ? await expandQuery({ engine: getReasoningEngine(), index, query: retrievalQuery, latestMessage: topic.anchor })
+    ? await expandQuery({ engine: cancellable(getReasoningEngine(), req.signal), index, query: retrievalQuery, latestMessage: topic.anchor })
     : undefined;
   const { raw, decision: retrievedDecision, factPass, intentPass, scopeCandidates, retrievalMs, regionSource } = retrieveApplicable(index, retrievalQuery, userMessages, {
     lastPlanningMode: session.lastPlanningMode,
@@ -101,7 +106,7 @@ export async function POST(req: Request): Promise<Response> {
     expansion: expansion?.terms ? expansion : undefined,
   });
   // One fast model call, only when retrieval found candidate situations: ask which applies if the answer would materially differ.
-  const { decision, judged: scopeGate } = await applyScopeGate(getReasoningEngine(), retrievedDecision, scopeCandidates, question, userMessages, clarificationsInTopic(session.turns));
+  const { decision, judged: scopeGate } = await applyScopeGate(cancellable(getReasoningEngine(), req.signal), retrievedDecision, scopeCandidates, question, userMessages, clarificationsInTopic(session.turns));
   // A region inferred from the question's language is not carried to later turns: only a region the user stated is pinned.
   const pinnedContext = regionSource === "language" ? { regions: [], countries: [] } : { regions: decision.taskRegions, countries: decision.taskCountries };
   const results = decision.eligible;
@@ -232,7 +237,7 @@ export async function POST(req: Request): Promise<Response> {
       let generated: Awaited<ReturnType<typeof generateWithVerification>>;
       try {
         generated = await generateWithVerification({
-          engine: getReasoningEngine(),
+          engine: cancellable(getReasoningEngine(), req.signal),
           prompt,
           systemPrompt: HUBI_SYSTEM_PROMPT,
           retrievedTexts: results.map((r) => r.chunk.text),

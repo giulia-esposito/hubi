@@ -144,6 +144,7 @@ export function withResilience(
   return async (prompt: string, system: string, opts: ReasoningOptions = {}): Promise<ReasoningResult> => {
     const started = now();
 
+    if (opts.signal?.aborted) return { ok: false, text: "", mode: "stream", durationMs: 0, error: "aborted" };
     if (!(await limiter.acquire(config.maxQueueWaitMs))) {
       return { ok: false, text: "", mode: "stream", durationMs: now() - started, error: "busy: too many model calls in flight on this instance" };
     }
@@ -168,6 +169,8 @@ export function withResilience(
         attempts++;
         const result = await engine(prompt, system, guarded);
         last = result;
+        // The caller left: not a provider failure (the breaker must not count it) and never worth a retry.
+        if (result.error === "aborted") return { ...result, attempts, retryWaitMs: waited };
         if (result.ok) breaker.recordSuccess();
         else breaker.recordFailure(signalsOutage(result.error));
         const base = { ...result, attempts, retryWaitMs: waited };

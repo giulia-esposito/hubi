@@ -13,6 +13,7 @@ import {
   withResilience,
   type ResilienceConfig,
 } from "../lib/runtime/resilience.ts";
+import { CircuitBreaker } from "../lib/runtime/circuitBreaker.ts";
 import type { ReasoningEngine, ReasoningResult } from "../lib/runtime/reasoningEngine.ts";
 import { getReasoningEngine } from "../lib/runtime/reasoningEngine.ts";
 
@@ -224,5 +225,25 @@ describe("configuration", () => {
 
   test("the runtime engine is built once per provider so its concurrency cap is shared", () => {
     assert.equal(getReasoningEngine(), getReasoningEngine());
+  });
+});
+
+describe("cancellation", () => {
+  test("an aborted caller is not retried and does not trip the breaker", async () => {
+    const { engine, calls } = sequence([fail("aborted"), ok()]);
+    const breaker = new CircuitBreaker();
+    const wrapped = withResilience(engine, CONFIG, clock(), breaker);
+    const result = await wrapped("p", "s", { signal: new AbortController().signal });
+    assert.equal(result.error, "aborted");
+    assert.equal(calls(), 1);
+    assert.equal(breaker.allow(), true);
+  });
+  test("an already-aborted signal never reaches the provider or takes a slot", async () => {
+    const { engine, calls } = sequence([ok()]);
+    const controller = new AbortController();
+    controller.abort();
+    const result = await withResilience(engine, CONFIG, clock())("p", "s", { signal: controller.signal });
+    assert.equal(result.error, "aborted");
+    assert.equal(calls(), 0);
   });
 });
