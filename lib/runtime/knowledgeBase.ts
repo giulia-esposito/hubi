@@ -5,7 +5,7 @@ import { buildGovernedIndex } from "./governedIndex.ts";
 import type { ExcludedContent, GovernanceReport } from "../governance/governance.ts";
 import { emitTelemetry } from "./telemetry.ts";
 
-interface KnowledgeBase {
+export interface KnowledgeBase {
   index: RetrievalIndex;
   documentCount: number;
   chunkCount: number;
@@ -42,6 +42,12 @@ export function knowledgeBaseState(): KnowledgeBaseState {
  * HUBI_CONTENT_SOURCE unset, path resolution is synchronous in effect and
  * this simply awaits a value that was already available.
  */
+/** Test seam: route-level tests supply an in-memory knowledge base. Never called by application code. */
+export function setKnowledgeBaseForTests(kb: KnowledgeBase | null): void {
+  cached = kb ? Promise.resolve(kb) : null;
+  state = kb ? { status: "ready", since: new Date().toISOString(), documents: kb.documentCount, chunks: kb.chunkCount } : { status: "not-started" };
+}
+
 export async function getKnowledgeBase(): Promise<KnowledgeBase> {
   if (!cached) {
     state = { status: "loading", since: new Date().toISOString() };

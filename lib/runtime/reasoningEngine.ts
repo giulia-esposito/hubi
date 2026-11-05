@@ -61,7 +61,14 @@ export function rawEngine(provider: ReasoningProvider): ReasoningEngine {
 // must be shared by every request, so the wrapper cannot be rebuilt per call.
 const resilient = new Map<ReasoningProvider, ReasoningEngine>();
 
+/** Test seam: route-level tests substitute a fake model. Never called by application code. */
+let override: ReasoningEngine | null = null;
+export function setReasoningEngineForTests(engine: ReasoningEngine | null): void {
+  override = engine;
+}
+
 export function getReasoningEngine(): ReasoningEngine {
+  if (override) return override;
   const provider = resolveReasoningProvider();
   let engine = resilient.get(provider);
   if (!engine) {
