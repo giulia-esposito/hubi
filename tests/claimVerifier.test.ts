@@ -106,12 +106,12 @@ describe("generateWithVerification", () => {
     assert.equal(calls[0].streamed, false);
   });
 
-  test("a turn that is not business-assistance is never scanned or revised", async () => {
-    const { engine, calls } = fakeEngine([result(DIRTY.replace("BUSINESS_ASSISTANCE", "KNOWLEDGE_SYNTHESIS"))]);
+  test("a predicted artifact turn is checked even when the model tags it as another mode (TS-010)", async () => {
+    const { engine, calls } = fakeEngine([result(DIRTY.replace("BUSINESS_ASSISTANCE", "KNOWLEDGE_SYNTHESIS")), result(FIXED)]);
     const out = await run(engine);
-    assert.equal(calls.length, 1);
-    assert.equal(out.verification.checked, false);
-    assert.equal(out.verification.revised, false);
+    assert.equal(calls.length, 2);
+    assert.equal(out.verification.checked, true);
+    assert.equal(out.verification.revised, true);
   });
 
   test("a clean business-assistance draft costs no extra call", async () => {
@@ -199,5 +199,26 @@ describe("verifyClaims: questions are not claims", () => {
 
   test("figures are still checked inside questions", () => {
     assert.equal(verifyClaims("Would a 75% increase matter to you?", ["Nothing numeric here."]).violations.length, 1);
+  });
+});
+
+describe("token-level matching (TS-011)", () => {
+  test("a figure is not supported by a longer number that contains it", () => {
+    assert.equal(verifyClaims("Clients see 15% more.", ["Revenue grew 115 million."]).violations.length, 1);
+    assert.equal(verifyClaims("Clients pay $50.", ["There were 1500 clients."]).violations.length, 1);
+  });
+  test("a percentage needs a percentage in the source, not the same digits elsewhere", () => {
+    assert.equal(verifyClaims("It improves retention by 15%.", ["Retention is discussed. Page 15 of the deck."]).violations.some((v) => v.includes("15%")), true);
+    assert.equal(verifyClaims("Enrollment reaches 15%.", ["Enrollment reaches 15 percent in year one."]).violations.length, 0);
+    assert.equal(verifyClaims("Enrollment reaches 15%.", ["Enrollment reaches 15% in year one."]).violations.length, 0);
+  });
+  test("thousands separators and decimals compare as the same number", () => {
+    assert.equal(verifyClaims("The plan costs $1,000.", ["Plan price: 1000 USD."]).violations.length, 0);
+    assert.equal(verifyClaims("Up to 2.5x more.", ["Clients report 2.5x."]).violations.length, 0);
+  });
+  test("a value term must appear as a word in a source", () => {
+    assert.equal(verifyClaims("It delivers ROI.", ["Install the android app."]).violations.length, 1);
+    assert.equal(verifyClaims("It delivers ROI.", ["Clients ask about ROI."]).violations.length, 0);
+    assert.equal(verifyClaims("It helps retain talent.", ["Employers retained staff."]).violations.length, 0);
   });
 });

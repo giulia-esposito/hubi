@@ -157,8 +157,9 @@ export async function generateWithVerification(options: {
   const base: VerificationInfo = { ...NOT_VERIFIED, buffered: true };
   if (!draft.ok) return { response: draft, verification: base };
 
+  // The turn was predicted to be an artifact request from the conversation itself (shouldVerify), so it is
+  // checked whatever planning mode the model tagged: a guardrail must not depend on the model's self-report.
   const draftTags = extractResponseTags(draft.text);
-  if (draftTags.planningMode !== "business-assistance") return { response: draft, verification: base };
 
   const useLedger = options.ledger === true;
   const enforce = options.ledgerEnforce ?? ledgerEnforced();

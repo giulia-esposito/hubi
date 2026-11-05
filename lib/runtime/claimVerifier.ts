@@ -55,12 +55,21 @@ export const VALUE_LANGUAGE =
   /\b(roi|return on investment|cost[- ]sav\w*|sav(?:e|es|ing|ings) (?:you |your )?(?:money|costs?)|payback|value for (?:your )?(?:money|investment|spend)|maximi[sz]e (?:your |the )?(?:investment|spend|value|impact)|productiv\w*|retention|retain\w*|turnover|absenteeism|healthcare costs?|measurable (?:results|impact|outcomes?)|bottom line)\b/gi;
 
 /**
+ * Whether a source uses the term as a word, not inside another word ("roi" in "android"). A word start is
+ * required; a word end too for short terms, so longer ones still match their inflections ("retain" in "retained").
+ */
+function termInText(term: string, text: string): boolean {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+  return new RegExp(`\\b${escaped}${term.length <= 4 ? "\\b" : ""}`, "i").test(text);
+}
+
+/**
  * Unsupported ROI / value language: any value term in the output that does
  * not occur in at least one retrieved chunk. A term that the sources
  * themselves use is not flagged here.
  */
 export function checkUnsupportedValueLanguage(text: string, retrievedTexts: string[]): CheckResult {
-  const retrieved = retrievedTexts.join("\n").toLowerCase();
+  const retrieved = retrievedTexts.join("\n");
   const violations: string[] = [];
   let claimPresent = false;
   for (const sentence of splitSentences(text)) {
@@ -71,7 +80,7 @@ export function checkUnsupportedValueLanguage(text: string, retrievedTexts: stri
     if (!matches) continue;
     claimPresent = true;
     for (const term of new Set(matches.map((m) => m.toLowerCase()))) {
-      if (!retrieved.includes(term)) violations.push(`value language not in retrieved knowledge ("${term}"): "${sentence}"`);
+      if (!termInText(term, retrieved)) violations.push(`value language not in retrieved knowledge ("${term}"): "${sentence}"`);
     }
   }
   return { claimPresent, violations };
@@ -88,6 +97,21 @@ function figureCore(figure: string): string {
   return figure.replace(/[^\d.]/g, "").replace(/\.$/, "");
 }
 
+const NUMBER = /\d[\d,]*(?:\.\d+)?/g;
+
+/** The numbers a text states, as whole tokens ("115" does not contain "15"; "1,000" is 1000). */
+function numberTokens(text: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of text.matchAll(NUMBER)) out.add(m[0].replace(/,/g, "").replace(/\.$/, ""));
+  return out;
+}
+
+/** A percentage must be stated as a percentage in a source: a bare "15" elsewhere does not support "15%". */
+function percentStated(core: string, text: string): boolean {
+  const n = core.replace(/\./g, "\\.");
+  return new RegExp(`(?<![\\d.,])${n}\\s?(?:%|percent|per cent|pct)`, "i").test(text.replace(/(\d),(?=\d{3})/g, "$1"));
+}
+
 /**
  * Invented statistics: any figure in the output whose number does not appear
  * in at least one retrieved chunk. A figure the sources do state is not
@@ -95,6 +119,7 @@ function figureCore(figure: string): string {
  */
 export function checkUngroundedFigures(text: string, retrievedTexts: string[]): CheckResult {
   const retrieved = retrievedTexts.join("\n");
+  const tokens = numberTokens(retrieved);
   const violations: string[] = [];
   let claimPresent = false;
   for (const sentence of splitSentences(text)) {
@@ -103,7 +128,8 @@ export function checkUngroundedFigures(text: string, retrievedTexts: string[]): 
     claimPresent = true;
     for (const figure of new Set(matches)) {
       const core = figureCore(figure);
-      if (core && !retrieved.includes(core)) violations.push(`figure not in retrieved knowledge ("${figure.trim()}"): "${sentence}"`);
+      const supported = figure.includes("%") ? percentStated(core, retrieved) : tokens.has(core);
+      if (core && !supported) violations.push(`figure not in retrieved knowledge ("${figure.trim()}"): "${sentence}"`);
     }
   }
   return { claimPresent, violations };
