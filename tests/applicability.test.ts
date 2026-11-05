@@ -519,10 +519,11 @@ describe("real corpus: Findings #001 / #002 applicability scenarios", { skip: SK
     eligibleIsSafe(result);
   });
 
-  test("#002 scenario 3 (Portuguese, no region): Brazil-tagged chunks are not passed on as the answer", () => {
+  test("#002 scenario 3 (Portuguese, no region): since 2026-11-04 the language implies Brazil, so only Brazil and Global content passes", () => {
     const result = run(["Como faço para criar cadências eficazes no Salesloft?"]);
     eligibleIsSafe(result);
-    assert.ok(result.decision.eligible.every((r) => r.chunk.regionScope !== "regional"));
+    assert.deepEqual(result.decision.taskRegions, ["Brazil"]);
+    assert.ok(result.decision.eligible.every((r) => r.chunk.regionScope !== "regional" || r.chunk.regions?.includes("Brazil")));
   });
 
   test("#002 scenario 4 (no region, Global answer available): Global content is not forced into a clarifying question", () => {

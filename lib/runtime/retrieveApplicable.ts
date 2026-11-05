@@ -4,6 +4,7 @@ import { search, tokenize, type RetrievalIndex, type ScoredChunk } from "../retr
 import { searchWithExpansion, type ExpansionInfo } from "../retrieval/queryExpansion.ts";
 import { detectAudienceConflict } from "../applicability/audience.ts";
 import { searchContext } from "./sessionState.ts";
+import { inferRegionFromLanguage, languageRegionEnabled } from "../applicability/languageRegion.ts";
 import { applyIntentSlots, type IntentPassInfo } from "../retrieval/sourceIntent.ts";
 import { findScopeCandidates, type ScopeGroup } from "../applicability/scopeClarification.ts";
 import {
@@ -59,7 +60,7 @@ export interface ApplicableRetrieval {
   /** Wall-clock milliseconds spent in retrieval, both passes and applicability included. */
   retrievalMs: number;
   /** Where the user's region came from: a message in the window, the pinned context, or nowhere. */
-  regionSource: "message" | "pinned" | "none";
+  regionSource: "message" | "pinned" | "language" | "none";
 }
 
 export interface RetrieveOptions {
@@ -94,10 +95,18 @@ export function retrieveApplicable(
   let context = detectTaskContext(vocabulary, userMessages);
   // A region stated in a message always wins; the pinned region only fills in when
   // that message has fallen out of the history window.
-  let regionSource: "message" | "pinned" | "none" = context.regions.length > 0 ? "message" : "none";
+  let regionSource: "message" | "pinned" | "language" | "none" = context.regions.length > 0 ? "message" : "none";
   if (context.regions.length === 0 && options.pinned && options.pinned.regions.length > 0) {
     context = { regions: options.pinned.regions, countries: options.pinned.countries };
     regionSource = "pinned";
+  }
+  // Weakest signal, used only when nothing else names a region: the question's own language, for the languages Product approved.
+  if (context.regions.length === 0 && languageRegionEnabled()) {
+    const inferred = inferRegionFromLanguage(userMessages);
+    if (inferred) {
+      context = { regions: [inferred], countries: [] };
+      regionSource = "language";
+    }
   }
 
   const raw = searchWithExpansion(index, retrievalQuery, options.expansion, OVER_FETCH_K);

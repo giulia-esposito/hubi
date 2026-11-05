@@ -102,6 +102,8 @@ export async function POST(req: Request): Promise<Response> {
   });
   // One fast model call, only when retrieval found candidate situations: ask which applies if the answer would materially differ.
   const { decision, judged: scopeGate } = await applyScopeGate(getReasoningEngine(), retrievedDecision, scopeCandidates, question, userMessages, clarificationsInTopic(session.turns));
+  // A region inferred from the question's language is not carried to later turns: only a region the user stated is pinned.
+  const pinnedContext = regionSource === "language" ? { regions: [], countries: [] } : { regions: decision.taskRegions, countries: decision.taskCountries };
   const results = decision.eligible;
   const sourceSignal = detectSourceGovernance(results);
   const sources: SourceRef[] = results.map((r, i) => ({
@@ -212,7 +214,7 @@ export async function POST(req: Request): Promise<Response> {
           interactionId,
           turnKind: "no-grounded-answer",
           planningMode: "unknown",
-          pinned: { regions: decision.taskRegions, countries: decision.taskCountries },
+          pinned: pinnedContext,
         });
         controller.close();
         return;
@@ -220,7 +222,7 @@ export async function POST(req: Request): Promise<Response> {
 
       // The claims ledger rides only on buffered (verified) turns, so it can never reach a streamed answer.
       const useLedger = bufferForVerification && ledgerEnabled();
-      const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision, { ledger: useLedger, answerability: asksForInstructions(topic.anchor) });
+      const prompt = buildPrompt(question, results, historyBeforeThisTurn, decision, { ledger: useLedger, answerability: asksForInstructions(topic.anchor), regionFromLanguage: regionSource === "language" });
       const streamer = createTagAwareStreamer((visible) => send({ type: "delta", text: visible }));
 
       // Verify-and-revise (prototype, HUBI_VERIFY_CLAIMS=1): turns that may be
@@ -336,7 +338,7 @@ export async function POST(req: Request): Promise<Response> {
           ? { checked: verification.checked, revised: verification.revised, accepted: verification.revisionAccepted }
           : undefined,
         // Region and country in force; the client sends them back so they outlive the history window.
-        pinned: { regions: decision.taskRegions, countries: decision.taskCountries },
+        pinned: pinnedContext,
       });
       controller.close();
     },

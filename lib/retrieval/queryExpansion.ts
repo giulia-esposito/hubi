@@ -26,7 +26,7 @@ import { search } from "./index.ts";
  * one call or one missed expansion, never a wrong answer.
  */
 
-export type QueryLanguage = "en" | "es" | "pt" | "es-pt" | "unknown";
+export type QueryLanguage = "en" | "es" | "pt" | "es-pt" | "de" | "fr" | "it" | "nl" | "unknown";
 
 const EN_SET = new Set(
   "the and is are was were what how do does did to of for with my i in on can should when who why which have has this that these those it our your we they be an or not about from by at as if".split(" ")
@@ -36,6 +36,13 @@ const ES_ONLY = new Set("el los las es son qué cuál cuáles cuándo cómo dón
 const PT_ONLY = new Set("o os as é são não qual quais quando onde quem tenho tem faço posso devo estão também mas muito meu minha meus minhas nosso nossos porque porquê uns umas pelo pela do da dos das no na nos nas e em uma um".split(" "));
 // Spanish and Portuguese both: enough to say "not English", not enough to say which.
 const SHARED = new Set("de del para por se su sus en que como cliente clientes reuniones".split(" "));
+
+// Function words distinctive to German, French, Italian and Dutch (words shared with English, Spanish or Portuguese are left out).
+// They exist to recognise the language of a question, which the Applicability Layer may turn into a region (lib/applicability/languageRegion.ts).
+const DE_ONLY = new Set("der die das und ist nicht ein eine einen für mit auf wie wann wo wer welche ich wir kann können muss müssen haben hat bei von zum zur auch oder aber kunden kunde kundin ablauf".split(" "));
+const FR_ONLY = new Set("est une pour avec dans qui quoi comment quand sont je nous vous pas du aux cette être très aussi faire dois peux quel quelle quels quelles".split(" "));
+const IT_ONLY = new Set("gli sono nel nella cosa quale quali anche più hanno fare dei delle degli della perché".split(" "));
+const NL_ONLY = new Set("het een niet voor met zijn hoe wanneer waar wie welke ik wij moet hebben heeft naar ook maar klant klanten deze dit dat".split(" "));
 
 const words = (text: string) => text.toLowerCase().match(/[\p{L}]+/gu) ?? [];
 
@@ -56,6 +63,16 @@ export function detectLanguage(text: string): QueryLanguage {
     if (PT_ONLY.has(t)) pt++;
     if (SHARED.has(t)) shared++;
   }
+  const count = (set: Set<string>) => tokens.filter((t) => set.has(t)).length;
+  const scores: [QueryLanguage, number][] = [
+    ["de", count(DE_ONLY) + (/ß/.test(text) ? 3 : 0) + (/[äöü]/i.test(text) ? 1 : 0)],
+    ["fr", count(FR_ONLY)],
+    ["it", count(IT_ONLY)],
+    ["nl", count(NL_ONLY)],
+  ];
+  const best = scores.reduce((a, b) => (b[1] > a[1] ? b : a));
+  // Two or more distinctive words, and more than English, Spanish and Portuguese show.
+  if (best[1] >= 2 && best[1] > en && best[1] > es && best[1] > pt) return best[0];
   if (/[¿¡ñ]/.test(text)) es += 3;
   if (/[ãõç]/i.test(text)) pt += 3;
   if (en > 0 && en >= es + pt + shared) return "en";
@@ -78,7 +95,7 @@ export interface ExpansionPlan {
 
 export function planExpansion(question: string, topScore: number): ExpansionPlan {
   const language = detectLanguage(question);
-  if (language === "es" || language === "pt" || language === "es-pt") return { expand: true, reason: "non-english-query", language, targets: ["English"] };
+  if (language !== "en" && language !== "unknown") return { expand: true, reason: "non-english-query", language, targets: ["English"] };
   if (words(question).length < MIN_WORDS_FOR_WEAK_TRIGGER) return { expand: false, reason: "too-short", language, targets: [] };
   if (topScore < WEAK_SCORE) return { expand: true, reason: "weak-lexical-match", language, targets: ["Spanish", "Portuguese"] };
   return { expand: false, reason: "sufficient", language, targets: [] };

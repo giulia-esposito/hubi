@@ -75,7 +75,7 @@ export interface ApplicabilityLog {
   /** Milliseconds spent in retrieval (both passes plus applicability). */
   retrievalMs?: number;
   /** Where the region in force came from: a message in the window, the pinned context, or nowhere. */
-  regionSource?: "message" | "pinned" | "none";
+  regionSource?: "message" | "pinned" | "language" | "none";
 }
 
 export interface InteractionRecord {

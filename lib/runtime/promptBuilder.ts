@@ -83,7 +83,7 @@ export function buildPrompt(
   results: ScoredChunk[],
   history: Turn[] = [],
   decision?: ApplicabilityDecision,
-  options: { ledger?: boolean; answerability?: boolean } = {}
+  options: { ledger?: boolean; answerability?: boolean; regionFromLanguage?: boolean } = {}
 ): string {
   const historyBlock = history.length
     ? `Conversation so far:\n${history.map((t) => `${t.role === "user" ? "User" : "Assistant"}: ${t.content}`).join("\n")}\n\n---\n\n`
@@ -157,7 +157,10 @@ export function buildPrompt(
   const notices: string[] = [];
   if (decision && decision.taskRegions.length > 0) {
     const countryNote = decision.taskCountries.length > 0 ? ` (country: ${decision.taskCountries.join(", ")})` : "";
-    notices.push(`[Applicability context] The user's operating region: ${decision.taskRegions.join(", ")}${countryNote}.`);
+    notices.push(
+      `[Applicability context] The user's operating region: ${decision.taskRegions.join(", ")}${countryNote}.` +
+        (options.regionFromLanguage ? ` This was inferred from the language of the question, not stated by the user: if the user's own words place them elsewhere, follow the user.` : "")
+    );
   }
   if (decision?.mode === "notice") {
     notices.push(
