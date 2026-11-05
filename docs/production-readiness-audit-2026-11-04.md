@@ -373,3 +373,16 @@ IDs are assigned by this audit. "Observed" values come from the repo's own recor
 ### 2026-11-05 (night): P1-8 completed
 
 `tests/chatRouteStream.test.ts` runs a whole turn through the real `/api/chat` route offline: the real governance gate, retrieval, applicability layer and prompt builder on a small in-memory corpus, with a fake model. It asserts the NDJSON event sequence the web client depends on (retrieval, deltas, done), that response tags never reach the screen even when split across deltas, that the sources sent match what the model saw and the abort signal reaches the model call, that a Not Eligible document never reaches the model or the user, that an empty retrieval is refused without a model call, and that a model failure ends the stream with a `done` event that says so. Two test seams were added (`setReasoningEngineForTests`, `setKnowledgeBaseForTests`); application code never calls them. No corpus or model is needed, so the test runs in CI. Not covered: a real browser session, and the verify-and-revise (buffered) path through the route.
+
+### 2026-11-05 (late): P1-10 to P2 complete
+
+| Item | Result |
+|---|---|
+| P1-10 load and soak | 409 requests, 0 failures; one instance serves about 60 to 70 turns a minute; memory 160 to 245 MB of 2 Gi; no Vertex 429. Report: `docs/load-test-2026-11-05.md`. Estimated cost about $0.008 per turn. |
+| P1-11 stale docs | `Implementation_Handoff.md` rewritten as a current snapshot; README, handoff, sprint, guide section 8 and Architecture 17 corrected or marked historical. |
+| P1-12 promotion path | Status and a request list by owner added to `docs/production-promotion-plan.md` section 9; the manifest's monitoring state updated. Approvals remain other people's decisions. |
+| P2-1 sessions | In-memory registry bounded (500 sessions, 6 h idle TTL, least recently used out); session and interaction ids validated (up to 100 letters, digits, - or _). |
+| P2-2 feedback | Ids validated, 30 per minute per caller and 3,000 per hour per instance. Existence of the interaction is not checked: feedback can land on a different instance than the answer, and there is no shared store of interaction ids. |
+| P2-3, P2-4 retrieval | Stemming and title indexing re-tried on the 46-question set and not adopted (inside noise, cross-language worse). Needs the larger Content-reviewed gold set first (`docs/retrieval-benchmark.md`). |
+| P2-5, P2-6, P2-8 | Decisions and revisit triggers recorded in `docs/p2-decisions-2026-11-05.md`. |
+| P2-7 model lifecycle | `docs/model-lifecycle.md`. The versioned model id and its retirement date are not filled in: they must be read from the Vertex model page, not guessed. |
