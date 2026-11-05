@@ -36,6 +36,7 @@ jobs:
       # `deploy.ts` (every deploy runs the full suite locally, corpus present). The skipped count is printed so a
       # growing number of skips is visible, not silent.
       - name: Tests (real-corpus tests skip: Content Repository is not in GitHub)
+        shell: bash # with pipefail, so a failing test still fails the step despite the pipe
         run: npm test | tee test-output.txt
       - name: Report skipped tests
         run: grep -E "^ℹ (tests|pass|fail|skipped)" test-output.txt
