@@ -101,11 +101,15 @@ export function sanitizeHistory(raw: unknown): { ok: true; turns: Turn[]; report
   return { ok: true, turns: kept, report: { received: turns.length, kept: kept.length, droppedOldest: turns.length - kept.length, truncatedTurns } };
 }
 
+/** Identifiers the browser generates (UUIDs): bounded and plain, because they key in-memory state and appear in logs. */
+export const VALID_ID = /^[A-Za-z0-9_-]{1,100}$/;
+
 export function parseChatRequest(body: unknown): ParsedChatRequest {
   const b = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
   const sessionId = typeof b.sessionId === "string" ? b.sessionId : "";
   const rawQuestion = typeof b.question === "string" ? b.question.trim() : "";
   if (!sessionId || !rawQuestion) return { ok: false, error: "sessionId and question are required" };
+  if (!VALID_ID.test(sessionId)) return { ok: false, error: "sessionId is invalid (letters, digits, - and _ only, up to 100 characters)" };
   const question = rawQuestion.length > MAX_QUESTION_CHARS ? rawQuestion.slice(0, MAX_QUESTION_CHARS) : rawQuestion;
 
   const lastPlanningMode = typeof b.lastPlanningMode === "string" && KNOWN_MODES.has(b.lastPlanningMode) ? b.lastPlanningMode : undefined;

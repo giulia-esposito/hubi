@@ -36,7 +36,7 @@ async function ask(route: { POST: (r: Request) => Promise<Response> }, question:
     new Request("http://localhost/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-authenticated-user-email": caller },
-      body: JSON.stringify({ sessionId: `s-${Math.random()}`, question }),
+      body: JSON.stringify({ sessionId: crypto.randomUUID(), question }),
     })
   );
   const body = await res.text();
