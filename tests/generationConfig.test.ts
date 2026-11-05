@@ -27,3 +27,12 @@ describe("generationConfig", () => {
     assert.equal(bad.maxOutputTokens, DEFAULT_MAX_OUTPUT_TOKENS);
   });
 });
+
+import { SAFETY_SETTINGS } from "../lib/runtime/reasoningEngine.gemini.ts";
+describe("safety settings", () => {
+  test("all four harm categories are set explicitly, for answers and helper calls", () => {
+    assert.equal(SAFETY_SETTINGS.length, 4);
+    for (const fast of [false, true]) assert.deepEqual(generationConfig(fast, {}).safetySettings, SAFETY_SETTINGS);
+    assert.ok(SAFETY_SETTINGS.every((s) => s.threshold === "BLOCK_ONLY_HIGH"));
+  });
+});

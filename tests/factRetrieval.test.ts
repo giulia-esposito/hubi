@@ -167,7 +167,7 @@ describe("merging the second pass: facts first, references after", () => {
     assert.ok(prompt.indexOf("FACT-f1") > factsAt && prompt.indexOf("FACT-f2") < refsAt);
     assert.ok(prompt.indexOf("REFERENCE-r1") > refsAt);
     assert.ok(prompt.indexOf("[Source 1]") < prompt.indexOf("[Source 2]") && prompt.indexOf("[Source 2]") < prompt.indexOf("[Source 3]"));
-    assert.match(prompt, /\[Source 3\][^\n]*\n[^\n]*\nREFERENCE-r1/);
+    assert.match(prompt, /\[Source 3\][^\n]*\n[^\n]*\n<source_text>\nREFERENCE-r1/);
   });
 
   test("without a second pass the prompt keeps the single 'Retrieved Knowledge:' block", async () => {

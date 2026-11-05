@@ -92,11 +92,24 @@ function numberFrom(raw: string | undefined, fallback: number | undefined, min: 
  * values keep the defaults; there is no default seed). A helper call (`fast`: query expansion, scope judge)
  * is always deterministic and skips extended thinking.
  */
+/**
+ * Explicit content-safety thresholds, so behavior does not depend on a model default that can change under us.
+ * BLOCK_ONLY_HIGH keeps ordinary business content (competition, discounts, "kill the deal") from being blocked while
+ * still stopping clearly harmful output. A blocked answer comes back empty and is handled as "no grounded answer".
+ */
+export const SAFETY_SETTINGS = [
+  "HARM_CATEGORY_HARASSMENT",
+  "HARM_CATEGORY_HATE_SPEECH",
+  "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+  "HARM_CATEGORY_DANGEROUS_CONTENT",
+].map((category) => ({ category, threshold: "BLOCK_ONLY_HIGH" }));
+
 export function generationConfig(fast: boolean | undefined, env: Env = process.env): Record<string, unknown> {
   const seed = numberFrom(env.HUBI_GEMINI_SEED, undefined, 0, 2_147_483_647);
   return {
     temperature: fast ? 0 : numberFrom(env.HUBI_GEMINI_TEMPERATURE, DEFAULT_TEMPERATURE, 0, 2),
     topP: numberFrom(env.HUBI_GEMINI_TOP_P, DEFAULT_TOP_P, 0, 1),
+    safetySettings: SAFETY_SETTINGS,
     maxOutputTokens: Math.floor(numberFrom(env.HUBI_GEMINI_MAX_OUTPUT_TOKENS, DEFAULT_MAX_OUTPUT_TOKENS, 256, 65_536) ?? DEFAULT_MAX_OUTPUT_TOKENS),
     ...(seed !== undefined ? { seed: Math.floor(seed) } : {}),
     ...(fast ? { thinkingConfig: { thinkingBudget: 0 } } : {}),

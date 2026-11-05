@@ -59,8 +59,8 @@ describe("source labels in the prompt", () => {
       { chunk: labeled, score: 2 },
       { chunk: plain, score: 1 },
     ]);
-    assert.match(prompt, /\[Source 1\] Trending This Week\nType: Training \| Updated: 9 Jun 2026\nBody text\./);
-    assert.match(prompt, /\[Source 2\] Pricing Playbook\nBody text\./);
+    assert.match(prompt, /\[Source 1\] Trending This Week\nType: Training \| Updated: 9 Jun 2026\n<source_text>\nBody text\./);
+    assert.match(prompt, /\[Source 2\] Pricing Playbook\n<source_text>\nBody text\./);
   });
   it("does not rank: order and content of sources are untouched by labels", () => {
     const a = chunk({ governance: { status: "registered", contentType: "Newsletter" } });
