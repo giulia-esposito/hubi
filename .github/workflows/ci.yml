@@ -32,13 +32,18 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      # The real-corpus tests need the confidential Content Repository, which is not in GitHub. They run in
+      # `deploy.ts` (every deploy runs the full suite locally, corpus present). The skipped count is printed so a
+      # growing number of skips is visible, not silent.
       - name: Tests (real-corpus tests skip: Content Repository is not in GitHub)
-        run: npm test
+        run: npm test | tee test-output.txt
+      - name: Report skipped tests
+        run: grep -E "^ℹ (tests|pass|fail|skipped)" test-output.txt
 
       - name: Production build
         run: npm run build
 
-      # Informational: transitive advisories are tracked in docs/gcp-deployment-guide.md.
+      # Blocking: a high or critical advisory in a production dependency fails the build.
+      # A moderate advisory with no upstream fix is tracked in docs/gcp-deployment-guide.md and does not.
       - name: Dependency audit (production dependencies)
         run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true
