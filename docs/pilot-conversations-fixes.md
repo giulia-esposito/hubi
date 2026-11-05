@@ -64,3 +64,16 @@ Effect: the contract question with the channel unstated went from 3/12 to 18/20 
 | Retrieval benchmark (local gold set) | baseline | no regression |
 
 The judges are text checks (and one model rubric for F4); the F1 judge was recalibrated during this work to measure steps delivered rather than hedging. Original strict numbers for F1 were 5/20 then 9/20 to 13/20 across runs of the same code.
+
+## Update 2026-11-05: region from the question's language (Product decision) and identity from the file name
+
+**Region from language.** The open decision above (a general Portuguese question asked "which region?" 5 of 5 runs) is closed by Product: for a question written in Portuguese, German, French, Italian or Dutch the region is inferred from the language, so the region question is not asked. Portuguese maps to Brazil; German, French, Italian and Dutch map to Europe. Spanish and English never imply a region (each is used in several operating regions), so those are asked as before. Rules, in `lib/applicability/languageRegion.ts`:
+- it is the weakest signal: a region the user names, or one carried from earlier in the conversation, always wins;
+- it is never pinned, so a later English reply does not inherit it;
+- the prompt tells the model the region was inferred and to follow the user's own words if they place them elsewhere;
+- a short reply ("Tier 1") does not decide the language; the earlier question does;
+- `HUBI_LANGUAGE_REGION=0` turns it off; the interaction log records `regionSource: "language"`.
+Caveat for Product: a Portuguese question from Portugal is treated as Brazil until the user names the country (Portugal belongs to Europe in the approved map).
+Language detection (`lib/retrieval/queryExpansion.ts`) gained German, French, Italian and Dutch; such questions also get the cross-language expansion into English.
+
+**Identity.** A file with no Content ID row now takes its identifier from the `[RKC-000NNN]` in its file or folder name, so the registry can govern it (RKC-000069, Not Eligible, was served before because it fell back to its title). A document whose Content ID and file name name different records is excluded and reported, never resolved silently (`lib/ingestion/identity.ts`). On the production corpus RKC-000069 is now excluded; no conflict exists in the deployed bucket (the RKC-000075 document is not in it).

@@ -58,3 +58,4 @@ tsconfig.tsbuildinfo
 
 # Local copy of the deployed pilot corpus for evaluation (confidential, never committed)
 Content Repository (prod)/
+evals-out/
