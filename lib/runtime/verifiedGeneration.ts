@@ -92,13 +92,15 @@ export function ledgerEnabled(env: Record<string, string | undefined> = process.
 }
 
 /**
- * Whether attribution violations trigger a revision (HUBI_CLAIM_LEDGER=enforce). Default is observe-only:
- * they are recorded in telemetry but do not cost a revision call. Measured on the pilot corpus, the
- * attribution checks flag nearly every draft and a revision clears them only about a third of the time,
- * so enforcing them by default would roughly double latency for little gain.
+ * Whether attribution violations trigger a revision. ENFORCED BY DEFAULT (Product decision, 2026-11-04, Finding #005):
+ * scope and causality strengthening must not reach users unchecked. HUBI_CLAIM_LEDGER=observe records the violations in
+ * telemetry without a revision call (the earlier default); HUBI_CLAIM_LEDGER=0 turns the ledger off. The cost, measured on
+ * the pilot corpus: the checks flag nearly every draft and a revision clears them about a third of the time, so enforcement
+ * adds a revision call (about 6-9 s) to most artifact turns. The revision is kept only when it has fewer violations.
  */
 export function ledgerEnforced(env: Record<string, string | undefined> = process.env): boolean {
-  return env.HUBI_CLAIM_LEDGER?.trim() === "enforce";
+  const flag = env.HUBI_CLAIM_LEDGER?.trim();
+  return flag !== "observe" && flag !== "0";
 }
 
 /** Everything the verifier checks on a Business Assistance answer: unsupported content, plus ledger attribution when a ledger came back. */

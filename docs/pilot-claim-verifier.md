@@ -66,7 +66,7 @@ Nothing in the rules names a product, offer, region, industry or artifact type; 
 ### Setting
 
 - Default: the ledger is requested and verified, but attribution violations are **recorded only** (`verification.attribution`, `verification.ledger` in the interaction log); they do not trigger a revision.
-- `HUBI_CLAIM_LEDGER=enforce`: attribution violations also trigger the single revision call.
+- Attribution violations trigger the single revision call **by default** (Product decision 2026-11-04). `HUBI_CLAIM_LEDGER=observe` records them without a revision (the previous default); `HUBI_CLAIM_LEDGER=enforce` is accepted and equals the default.
 - `HUBI_CLAIM_LEDGER=0`: no ledger (the figure/value-language check is unchanged).
 
 ### Why observe-only (Gemini 2.5 Flash, real corpus, 5 scenarios x 3 runs, enforced)

@@ -366,7 +366,7 @@ export default function ChatPage() {
               {m.text ? (
                 m.role === "assistant" ? <MarkdownMessage text={m.text} /> : m.text
               ) : (
-                m.isStreaming ? (m.buffered ? "Drafting and checking the answer against the sources -- this can take up to about 20 seconds." : "...") : ""
+                m.isStreaming ? (m.buffered ? "Drafting and checking the answer against the sources -- this can take up to about 30 seconds." : "...") : ""
               )}
             </div>
             {m.role === "assistant" && turnKindLabel(m.turnKind) && (

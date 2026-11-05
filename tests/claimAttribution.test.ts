@@ -238,9 +238,11 @@ describe("ledger in the generation flow", () => {
     assert.ok((turn.verification.attribution?.violations ?? 0) > 0);
   });
 
-  test("HUBI_CLAIM_LEDGER=enforce enables enforcement; unset does not", () => {
-    assert.equal(ledgerEnforced({}), false);
+  test("attribution is enforced by default; observe and 0 turn enforcement off", () => {
+    assert.equal(ledgerEnforced({}), true);
     assert.equal(ledgerEnforced({ HUBI_CLAIM_LEDGER: "enforce" }), true);
+    assert.equal(ledgerEnforced({ HUBI_CLAIM_LEDGER: "observe" }), false);
+    assert.equal(ledgerEnforced({ HUBI_CLAIM_LEDGER: "0" }), false);
   });
 
   test("HUBI_CLAIM_LEDGER=0 disables the ledger; default is on", () => {
