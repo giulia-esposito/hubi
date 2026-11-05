@@ -39,7 +39,20 @@ function cancellable(engine: ReturnType<typeof getReasoningEngine>, signal: Abor
   return (prompt, system, opts) => engine(prompt, system, { ...opts, signal });
 }
 
+/**
+ * Everything before the stream opens (parsing, knowledge base, retrieval, scope gate) can throw; none of it may
+ * reach the user as a framework error page or vanish from the logs.
+ */
 export async function POST(req: Request): Promise<Response> {
+  try {
+    return await handleChat(req);
+  } catch (err) {
+    emitTelemetry("interaction_error", { type: "interaction_error", timestamp: new Date().toISOString(), error: `unhandled before stream: ${String((err as Error)?.message ?? err)}` });
+    return new Response(JSON.stringify({ error: "internal", message: "Hubi could not process this request. Please try again." }), { status: 500, headers: { "Content-Type": "application/json" } });
+  }
+}
+
+async function handleChat(req: Request): Promise<Response> {
   // Behind IAP the caller is the authenticated user; locally every caller shares one bucket.
   const callerKey = req.headers.get("x-goog-authenticated-user-email") ?? "anonymous";
   // Written to the audit log only when HUBI_LOG_ACTOR=1 (lib/runtime/actor.ts).

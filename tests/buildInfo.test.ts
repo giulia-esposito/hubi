@@ -37,4 +37,13 @@ describe("build identity", () => {
       }
     }
   });
+
+  test("readiness is separate from liveness: liveness is always 200, ?ready=1 is 503 until the knowledge base is loaded", async () => {
+    const live = await healthGet(new Request("http://x/api/health"));
+    assert.equal(live.status, 200);
+    const body = await live.json();
+    assert.equal(body.knowledgeBase.status, "not-started");
+    const ready = await healthGet(new Request("http://x/api/health?ready=1"));
+    assert.equal(ready.status, 503);
+  });
 });

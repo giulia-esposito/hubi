@@ -16,6 +16,18 @@ interface KnowledgeBase {
 }
 
 let cached: Promise<KnowledgeBase> | null = null;
+let state: KnowledgeBaseState = { status: "not-started" };
+
+export type KnowledgeBaseState =
+  | { status: "not-started" }
+  | { status: "loading"; since: string }
+  | { status: "ready"; since: string; documents: number; chunks: number }
+  | { status: "failed"; since: string; error: string };
+
+/** Readiness for /api/health: reading it never starts (or waits for) ingestion. */
+export function knowledgeBaseState(): KnowledgeBaseState {
+  return state;
+}
 
 /**
  * Ingests Content Repository and builds the retrieval index exactly once per
@@ -32,6 +44,7 @@ let cached: Promise<KnowledgeBase> | null = null;
  */
 export async function getKnowledgeBase(): Promise<KnowledgeBase> {
   if (!cached) {
+    state = { status: "loading", since: new Date().toISOString() };
     cached = (async () => {
       const contentPath = await resolveContentRepositoryPath();
       const { documents, chunks } = ingestContentRepository(contentPath);
@@ -47,6 +60,7 @@ export async function getKnowledgeBase(): Promise<KnowledgeBase> {
         unregistered: report.unregistered,
         drift: report.drift,
       });
+      state = { status: "ready", since: new Date().toISOString(), documents: documents.length, chunks: report.chunksKept };
       return {
         index,
         documentCount: documents.length,
@@ -58,7 +72,8 @@ export async function getKnowledgeBase(): Promise<KnowledgeBase> {
     // A transient failure (e.g. a momentary GCS download error) must not
     // permanently wedge the process into a rejected singleton -- clear the
     // cache so the next request retries ingestion from scratch.
-    cached.catch(() => {
+    cached.catch((err) => {
+      state = { status: "failed", since: new Date().toISOString(), error: String((err as Error)?.message ?? err).slice(0, 300) };
       cached = null;
     });
   }

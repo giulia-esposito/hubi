@@ -34,4 +34,12 @@ export async function register(): Promise<void> {
     breaker: breakerConfig(),
     registryAgeDays: Math.floor((Date.now() - Date.parse(REGISTRY_SNAPSHOT.syncedAt)) / 86_400_000),
   });
+
+  // Warm the knowledge base now, not on the first user's request: the download and parse take seconds, and a
+  // failure should appear in the logs at startup. Not awaited: the server accepts traffic while it loads (the first
+  // request simply shares this same load), and /api/health?ready=1 reports when it is done.
+  const { getKnowledgeBase } = await import("./lib/runtime/knowledgeBase.ts");
+  getKnowledgeBase().catch((err) => {
+    emitTelemetry("interaction_error", { type: "interaction_error", timestamp: new Date().toISOString(), error: `knowledge base warm-up failed: ${String((err as Error)?.message ?? err)}` });
+  });
 }
