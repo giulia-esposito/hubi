@@ -52,6 +52,57 @@ async function getClient(): Promise<GoogleGenAIType> {
 
 const MODEL = process.env.HUBI_GEMINI_MODEL || "gemini-2.5-flash";
 
+type Env = Record<string, string | undefined>;
+
+interface UsageMetadata {
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+  thoughtsTokenCount?: number;
+}
+
+/** Tokens used by this process so far (successful calls). Read by the evals to report what a run cost. */
+export const usageTotals = { calls: 0, inputTokens: 0, outputTokens: 0, thinkingTokens: 0 };
+
+function recordUsage(usage: UsageMetadata | undefined): void {
+  usageTotals.calls++;
+  usageTotals.inputTokens += usage?.promptTokenCount ?? 0;
+  usageTotals.outputTokens += usage?.candidatesTokenCount ?? 0;
+  usageTotals.thinkingTokens += usage?.thoughtsTokenCount ?? 0;
+}
+
+// HUBI_USAGE_REPORT=1 prints the totals when the process ends (evals; billing is output tokens including thinking).
+if (process.env.HUBI_USAGE_REPORT === "1") {
+  process.on("exit", () => console.log(`[usage] ${JSON.stringify(usageTotals)}`));
+}
+
+// Grounded answers should not vary run to run: before these were set, the model's default
+// sampling (temperature about 1.0) made identical code score 5/20 to 13/20 on the same eval.
+// maxOutputTokens also counts the model's thinking tokens on Gemini 2.5, so it is generous.
+export const DEFAULT_TEMPERATURE = 0.2;
+export const DEFAULT_TOP_P = 0.9;
+export const DEFAULT_MAX_OUTPUT_TOKENS = 8192;
+
+function numberFrom(raw: string | undefined, fallback: number | undefined, min: number, max: number): number | undefined {
+  const n = Number(raw?.trim());
+  return raw?.trim() && Number.isFinite(n) && n >= min && n <= max ? n : fallback;
+}
+
+/**
+ * Generation settings from HUBI_GEMINI_TEMPERATURE, _TOP_P, _MAX_OUTPUT_TOKENS and _SEED (unset or invalid
+ * values keep the defaults; there is no default seed). A helper call (`fast`: query expansion, scope judge)
+ * is always deterministic and skips extended thinking.
+ */
+export function generationConfig(fast: boolean | undefined, env: Env = process.env): Record<string, unknown> {
+  const seed = numberFrom(env.HUBI_GEMINI_SEED, undefined, 0, 2_147_483_647);
+  return {
+    temperature: fast ? 0 : numberFrom(env.HUBI_GEMINI_TEMPERATURE, DEFAULT_TEMPERATURE, 0, 2),
+    topP: numberFrom(env.HUBI_GEMINI_TOP_P, DEFAULT_TOP_P, 0, 1),
+    maxOutputTokens: Math.floor(numberFrom(env.HUBI_GEMINI_MAX_OUTPUT_TOKENS, DEFAULT_MAX_OUTPUT_TOKENS, 256, 65_536) ?? DEFAULT_MAX_OUTPUT_TOKENS),
+    ...(seed !== undefined ? { seed: Math.floor(seed) } : {}),
+    ...(fast ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+  };
+}
+
 export async function askGemini(
   preparedPrompt: string,
   systemPrompt: string,
@@ -82,10 +133,11 @@ export async function askGemini(
       const stream = await client.models.generateContentStream({
         model: MODEL,
         contents: [{ role: "user", parts: [{ text: preparedPrompt }] }],
-        config: { systemInstruction: systemPrompt, ...(opts.fast ? { thinkingConfig: { thinkingBudget: 0 } } : {}) },
+        config: { systemInstruction: systemPrompt, ...generationConfig(opts.fast) },
       });
 
       for await (const chunk of stream) {
+        if (chunk.usageMetadata) lastUsage = chunk.usageMetadata;
         const delta = chunk.text;
         if (delta) {
           finalText += delta;
@@ -94,7 +146,9 @@ export async function askGemini(
       }
     };
 
+    let lastUsage: UsageMetadata | undefined;
     await Promise.race([run(), timeoutPromise]);
+    recordUsage(lastUsage);
 
     return { ok: true, text: finalText, mode: "stream", durationMs: Date.now() - start };
   } catch (err) {

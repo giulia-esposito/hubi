@@ -15,12 +15,15 @@ export async function register(): Promise<void> {
   const { scrubEnabled } = await import("./lib/runtime/redact.ts");
   const { actorLoggingEnabled } = await import("./lib/runtime/actor.ts");
   const { breakerConfig } = await import("./lib/runtime/circuitBreaker.ts");
+  const { generationConfig } = await import("./lib/runtime/reasoningEngine.gemini.ts");
   emitTelemetry("startup", {
     type: "startup",
     timestamp: new Date().toISOString(),
     buildBranch: BUILD_INFO.branch,
     builtAt: BUILD_INFO.builtAt,
     claimVerifierEnabled: verificationEnabled(),
+    model: process.env.HUBI_GEMINI_MODEL || "gemini-2.5-flash",
+    generation: generationConfig(false),
     logTarget: telemetryTarget(),
     contentSource: process.env.HUBI_CONTENT_SOURCE || "local",
     regionConfigWarnings: getRegionVocabulary().warnings.length,
