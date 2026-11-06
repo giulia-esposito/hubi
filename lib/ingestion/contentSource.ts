@@ -49,7 +49,7 @@ export async function resolveContentRepositoryPath(): Promise<string> {
   return cachedGcsPath;
 }
 
-async function openGcsBucket(): Promise<{ bucket: GcsBucketLike; bucketName: string; prefix: string }> {
+export async function openGcsBucket(): Promise<{ bucket: GcsBucketLike; raw: any; bucketName: string; prefix: string }> {
   const bucketName = process.env.HUBI_GCS_BUCKET?.trim();
   if (!bucketName) {
     throw new Error(
@@ -62,7 +62,8 @@ async function openGcsBucket(): Promise<{ bucket: GcsBucketLike; bucketName: str
   // resolvable when running locally with the default "local" mode.
   const { Storage } = await import("@google-cloud/storage");
   const storage = new Storage();
-  return { bucket: storage.bucket(bucketName) as unknown as GcsBucketLike, bucketName, prefix };
+  const raw = storage.bucket(bucketName);
+  return { bucket: raw as unknown as GcsBucketLike, raw, bucketName, prefix };
 }
 
 async function downloadFromGcs(): Promise<string> {

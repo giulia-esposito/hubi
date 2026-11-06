@@ -123,3 +123,13 @@ describe("country-level sources", () => {
     assert.deepEqual(out.regions, ["Europe"]);
   });
 });
+
+describe("prepared corpus", () => {
+  test("is used only when the source objects are exactly the ones it was built from", async () => {
+    const { sameObjects } = await import("../lib/ingestion/corpusSnapshot.ts");
+    assert.equal(sameObjects(["a|1|9", "b|2|8"], ["a|1|9", "b|2|8"]), true);
+    assert.equal(sameObjects(["a|1|9"], ["a|1|10"]), false, "a replaced file has a new generation");
+    assert.equal(sameObjects(["a|1|9"], ["a|1|9", "b|2|8"]), false, "an added file");
+    assert.equal(sameObjects(["a|1|9", "b|2|8"], ["a|1|9"]), false, "a removed file");
+  });
+});

@@ -51,7 +51,7 @@ export async function getKnowledgeBase(): Promise<KnowledgeBase> {
   if (!cached) {
     state = { status: "loading", since: new Date().toISOString() };
     cached = (async () => {
-      const { documents, chunks } = await loadContent();
+      const { documentCount, chunks } = await loadContent();
       const { index, excluded, report } = buildGovernedIndex(chunks);
       emitTelemetry("governance", {
         type: "governance",
@@ -64,10 +64,10 @@ export async function getKnowledgeBase(): Promise<KnowledgeBase> {
         unregistered: report.unregistered,
         drift: report.drift,
       });
-      state = { status: "ready", since: new Date().toISOString(), documents: documents.length, chunks: report.chunksKept };
+      state = { status: "ready", since: new Date().toISOString(), documents: documentCount, chunks: report.chunksKept };
       return {
         index,
-        documentCount: documents.length,
+        documentCount,
         chunkCount: chunks.length,
         excluded,
         governance: report,
