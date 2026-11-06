@@ -51,7 +51,9 @@ What the registry now supplies when a document does not say it itself: the citat
 
 Formats: `.docx`, `.pptx` and `.md` are read. PDF and Excel are not (the four registry spreadsheets are 30 to 40 sheets of price grids each; a text dump would invite wrong prices, so they wait for a decision). A Word file without the house template is titled by its file name, because its first heading is a section heading.
 
-The deployed service now reads the bucket one file at a time (download, parse, delete) instead of keeping the whole repository in `/tmp`, which on Cloud Run is memory. The corpus after this batch is about 1.3 GB, mostly slide-library images, and would not fit in the 2 GiB container otherwise.
+The deployed service reads the bucket one file at a time (download, parse, delete) instead of keeping the whole repository in `/tmp`, which on Cloud Run is memory. The corpus after this batch is about 2 GB, mostly slide-library images, and would not fit in the 2 GiB container otherwise.
+
+Start-up time and the prepared corpus. Reading 2 GB of source files on a throttled Cloud Run instance took more than 10 minutes and had not finished. So after every content change run `node --experimental-strip-types scripts/build-corpus-snapshot.ts pilot` (about 10 minutes from a laptop): it stores the chunks (about 2 MB) in the bucket under `_hubi-snapshot/` together with the exact list of source objects (name, size, generation) it was built from. At start the service uses it only if the bucket still holds exactly those objects; if anything was added, replaced or removed since, it logs why and reads the files instead (slow, never stale). Measured on revision 00016 (2026-11-06): chunks loaded 87 s after the container started, search index ready after 3 min 6 s in total. Order for a content change: upload, rebuild the prepared corpus, then deploy or restart so the new revision starts from it. Set `HUBI_CORPUS_SNAPSHOT=off` to ignore it.
 
 ## Known behavior: names that are not in the knowledge (2026-11-06)
 
