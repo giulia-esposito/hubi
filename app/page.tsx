@@ -68,7 +68,7 @@ const TTL_HOURS = Math.round(CONVERSATION_TTL_MS / 3_600_000);
 const EXAMPLE_QUESTIONS = [
   "How do I use Activities and Chatter in Salesforce?",
   "What are the best practices for reps using Salesloft?",
-  "What is client segmentation by contract adherence?",
+  "How do I add a new SKU in Salesforce?",
   "What are the Rules of Engagement?",
 ];
 
