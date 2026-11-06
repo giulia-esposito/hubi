@@ -1767,7 +1767,8 @@ export const REGISTRY_SNAPSHOT: RegistrySnapshot = {
       "contentType": "Deck",
       "collection": "CS Renewal",
       "accessLevel": "Revenue – Specific Function",
-      "sourceModified": "30/1/26"
+      "sourceModified": "30/1/26",
+      "sourceUrl": "https://docs.google.com/presentation/d/14Z_ewRn_0_zT94cM7w5OrXt2eghtWUQ8XldO8nmO60E/edit"
     }
   ]
 };
