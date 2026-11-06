@@ -1,20 +1,16 @@
 import type { Metadata } from "next";
+import "@fontsource-variable/inter";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Hubi (Prototype)",
-  description: "Wellhub Revenue's AI Copilot -- internal prototype.",
+  title: "Hubi | Wellhub Revenue",
+  description: "Wellhub Revenue's AI Copilot (pilot).",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <div className="prototype-banner">
-          Internal prototype -- verify important answers through the cited sources.
-        </div>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { visibleRegionLabel } from "../lib/applicability/regionLabel.ts";
+import { groupSources } from "../lib/ui/sourceDisplay.ts";
 import { FEEDBACK_TAGS, FEEDBACK_TAG_LABELS, type FeedbackTag } from "../lib/runtime/feedbackTags.ts";
 import { CONVERSATION_TTL_MS, clearConversation, loadConversation, saveConversation, type KeyValueStore } from "../lib/runtime/conversationStore.ts";
 
@@ -63,6 +63,69 @@ function browserStore(): KeyValueStore {
 
 const TTL_HOURS = Math.round(CONVERSATION_TTL_MS / 3_600_000);
 
+// Starting points on the first screen: tool usage, a process, a concept and an internal rule. Each was tried against
+// the pilot corpus on 2026-11-06 and answered from one to four relevant sources. Re-check them when content is added.
+const EXAMPLE_QUESTIONS = [
+  "How do I use Activities and Chatter in Salesforce?",
+  "What are the best practices for reps using Salesloft?",
+  "What is client segmentation by contract adherence?",
+  "What are the Rules of Engagement?",
+];
+
+// While the service loads its knowledge after an update, the first question can take up to about 30 seconds. Asking the
+// health endpoint on open lets the page say so before anyone types. Failing to reach it just means no banner.
+function useKnowledgeReady(): boolean {
+  const [ready, setReady] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    async function check() {
+      try {
+        const res = await fetch("/api/health", { cache: "no-store" });
+        const body = await res.json();
+        const status = body?.knowledgeBase?.status;
+        if (cancelled) return;
+        // Only "loading" is a wait. "not-started" (local development) loads on the first question, so no banner.
+        if (status === "loading") {
+          setReady(false);
+          timer = setTimeout(check, 3000);
+        } else setReady(true);
+      } catch {
+        if (!cancelled) setReady(true);
+      }
+    }
+    void check();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+  return ready;
+}
+
+// Says what is happening while an answer is on its way, in steps so a long wait is never a silent one.
+function WaitStatus({ sentAt, buffered }: { sentAt?: number; buffered?: boolean }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const start = sentAt ?? performance.now();
+    const id = setInterval(() => setElapsed(performance.now() - start), 1000);
+    return () => clearInterval(id);
+  }, [sentAt]);
+  let label = "Searching the knowledge base";
+  if (elapsed > 4000) label = buffered ? "Drafting the answer and checking it against the sources" : "Preparing your answer";
+  if (elapsed > 12000) label = "Still working. The first question after an update can take up to 30 seconds";
+  return (
+    <span className="wait-status" role="status">
+      <span className="dots" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
+      {label}
+    </span>
+  );
+}
+
 function turnKindClassName(turnKind: TurnKind | undefined): string {
   if (turnKind === "clarifying-question") return "clarifying-question";
   if (turnKind === "no-grounded-answer") return "no-grounded-answer";
@@ -99,27 +162,50 @@ function MarkdownMessage({ text }: { text: string }) {
   );
 }
 
+// One row per document, collapsed by default. Region and eligibility metadata stay in the logs; the only caveat shown
+// outside the collapsed list is a registry usage restriction, because a reader must see it before reusing the content.
 function SourcesList({ sources }: { sources: SourceRef[] }) {
-  if (sources.length === 0) return null;
+  const rows = groupSources(sources);
+  if (rows.length === 0) return null;
+  const restricted = rows.filter((r) => r.restriction);
   return (
     <div className="sources">
-      {sources.map((s, i) => {
-        const locator = s.heading ? `${s.documentTitle} -- ${s.heading}` : s.documentTitle;
-        return (
-          <div key={i}>
-            {s.citationUrl ? (
-              <a href={s.citationUrl} target="_blank" rel="noreferrer">
-                {locator}
-              </a>
-            ) : (
-              <span>{locator} (no link available)</span>
-            )}
-            {visibleRegionLabel(s.regionLabel) && <span className="source-region">region: {visibleRegionLabel(s.regionLabel)}</span>}
-            {s.restriction && <span className="source-region">restricted: {s.restriction}</span>}
-          </div>
-        );
-      })}
+      {restricted.map((r) => (
+        <div key={r.title} className="source-restriction">
+          Usage note for {r.title}: {r.restriction}
+        </div>
+      ))}
+      <details>
+        <summary>
+          Sources ({rows.length})
+        </summary>
+        <ul>
+          {rows.map((r) => (
+            <li key={r.title}>
+              {r.url ? (
+                <a href={r.url} target="_blank" rel="noreferrer">
+                  {r.title}
+                </a>
+              ) : (
+                <span>{r.title} (no link available)</span>
+              )}
+              {r.sections.length > 0 && <span className="source-sections">{r.sections.join(" · ")}</span>}
+            </li>
+          ))}
+        </ul>
+      </details>
     </div>
+  );
+}
+
+const THUMB_UP = "M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3Zm0 0 3.5-7a2 2 0 0 1 2 2v3.5h5.2a2 2 0 0 1 2 2.3l-1.1 6.5a2 2 0 0 1-2 1.7H7";
+const THUMB_DOWN = "M17 13V4h3a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-3Zm0 0-3.5 7a2 2 0 0 1-2-2v-3.5H6.3a2 2 0 0 1-2-2.3l1.1-6.5a2 2 0 0 1 2-1.7H17";
+
+function ThumbIcon({ path }: { path: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={path} />
+    </svg>
   );
 }
 
@@ -135,37 +221,44 @@ function Feedback({
   const [tags, setTags] = useState<FeedbackTag[]>([]);
 
   if (message.feedback?.submitted) {
-    return <div className="feedback-thanks">Thanks for the feedback.</div>;
+    return <div className="feedback-thanks">Thanks, that helps us improve Hubi.</div>;
   }
 
   function toggleTag(tag: FeedbackTag) {
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   }
 
+  // The wait is recorded with every vote (waitMs), so "helpful but slow" needs no button of its own.
   return (
-    <div>
+    <div className="feedback-block">
       <div className="feedback">
-        <button onClick={() => onSubmit(true)}>Helpful</button>
-        <button onClick={() => onSubmit(true, undefined, ["too-slow"])} title="The answer was useful but the wait felt too long">
-          Helpful, but slow
+        <span className="feedback-prompt">Was this helpful?</span>
+        <button type="button" onClick={() => onSubmit(true)} aria-label="Helpful">
+          <ThumbIcon path={THUMB_UP} /> Helpful
         </button>
-        <button onClick={() => setShowDetails(true)}>Not helpful</button>
+        <button type="button" className={showDetails ? "active" : ""} onClick={() => setShowDetails(true)} aria-label="Not helpful" aria-expanded={showDetails}>
+          <ThumbIcon path={THUMB_DOWN} /> Not helpful
+        </button>
       </div>
       {showDetails && (
-        <div className="feedback-comment">
+        <div className="feedback-panel">
+          <p className="feedback-panel-title">What went wrong? Pick any that apply.</p>
           <div className="feedback-tags">
             {FEEDBACK_TAGS.map((tag) => (
-              <button key={tag} type="button" className={tags.includes(tag) ? "tag selected" : "tag"} onClick={() => toggleTag(tag)}>
+              <button key={tag} type="button" className={tags.includes(tag) ? "tag selected" : "tag"} aria-pressed={tags.includes(tag)} onClick={() => toggleTag(tag)}>
                 {FEEDBACK_TAG_LABELS[tag]}
               </button>
             ))}
           </div>
-          <textarea
-            placeholder="Optional: what was wrong? (not required)"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-          />
-          <button onClick={() => onSubmit(false, comment.trim() || undefined, tags)}>Send</button>
+          <textarea placeholder="Tell us more (optional)" aria-label="Tell us more" rows={2} value={comment} onChange={(e) => setComment(e.target.value)} />
+          <div className="feedback-actions">
+            <button type="button" className="feedback-send" onClick={() => onSubmit(false, comment.trim() || undefined, tags)}>
+              Send feedback
+            </button>
+            <button type="button" className="feedback-cancel" onClick={() => setShowDetails(false)}>
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -180,6 +273,7 @@ export default function ChatPage() {
   const [hydrated, setHydrated] = useState(false);
   const [restored, setRestored] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const knowledgeReady = useKnowledgeReady();
 
   // On open: restore the stored conversation if it is still inside its window, otherwise start a new one.
   useEffect(() => {
@@ -211,9 +305,12 @@ export default function ChatPage() {
     setRestored(false);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const question = input.trim();
+    void sendQuestion(input.trim());
+  }
+
+  async function sendQuestion(question: string) {
     if (!question || isStreaming || !sessionId) return;
 
     // The conversation travels with the request (see lib/runtime/requestSession.ts).
@@ -334,23 +431,28 @@ export default function ChatPage() {
 
   return (
     <main className="page">
-      <div className="page-header">
-        <div>
-          <h1>Hubi</h1>
-          <p>Wellhub Revenue's AI Copilot -- internal prototype</p>
-          <details className="guidelines">
-            <summary>Usage guidelines</summary>
-            <ul>
-              <li>Ask about Revenue processes, tools and playbooks.</li>
-              <li>Do not enter personal data (names, emails, phone numbers) or confidential client information.</li>
-              <li>Pitches and emails are AI-generated drafts: review figures and claims against the cited sources before using or sharing them.</li>
-            </ul>
-          </details>
+      <header className="page-header">
+        <div className="brand">
+          <img className="brand-logo" src="/brand/wellhub-logo-magenta.png" alt="Wellhub" width={113} height={22} />
+          <span className="brand-divider" aria-hidden="true" />
+          <span className="brand-product">Hubi</span>
+          <span className="pilot-chip">Pilot</span>
         </div>
         <button className="new-session-button" onClick={handleNewConversation}>
           New conversation
         </button>
-      </div>
+      </header>
+
+      {!knowledgeReady && (
+        <div className="ready-banner" role="status">
+          <span className="dots" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          Hubi is getting its knowledge ready. This takes up to 30 seconds after an update, and you can type your question meanwhile.
+        </div>
+      )}
 
       <div className="messages">
         {restored && messages.length > 0 && (
@@ -359,7 +461,24 @@ export default function ChatPage() {
           </div>
         )}
         {messages.length === 0 && (
-          <div className="empty-state">Ask a Revenue question to get started.</div>
+          <div className="empty-state">
+            <h1>What are you working on?</h1>
+            <p>Ask about Revenue processes, tools and playbooks. Answers come from approved Revenue knowledge.</p>
+            <div className="example-questions">
+              {EXAMPLE_QUESTIONS.map((q) => (
+                <button key={q} type="button" className="example-question" disabled={isStreaming || !sessionId} onClick={() => void sendQuestion(q)}>
+                  {q}
+                </button>
+              ))}
+            </div>
+            <details className="guidelines">
+              <summary>Usage guidelines</summary>
+              <ul>
+                <li>Do not enter personal data (names, emails, phone numbers) or confidential client information.</li>
+                <li>Pitches and emails are AI-generated drafts: review figures and claims against the cited sources before using or sharing them.</li>
+              </ul>
+            </details>
+          </div>
         )}
         {messages.map((m, i) => (
           <div key={i} className={`message ${m.role} ${turnKindClassName(m.turnKind)}`}>
@@ -367,7 +486,7 @@ export default function ChatPage() {
               {m.text ? (
                 m.role === "assistant" ? <MarkdownMessage text={m.text} /> : m.text
               ) : (
-                m.isStreaming ? (m.buffered ? "Drafting and checking the answer against the sources -- this can take up to about 30 seconds." : "...") : ""
+                m.isStreaming ? <WaitStatus sentAt={m.sentAt} buffered={m.buffered} /> : ""
               )}
             </div>
             {m.role === "assistant" && turnKindLabel(m.turnKind) && (
@@ -398,7 +517,8 @@ export default function ChatPage() {
         <form onSubmit={handleSubmit}>
           <textarea
             rows={1}
-            placeholder="Ask Hubi a Revenue question..."
+            placeholder="Ask Hubi about Revenue work"
+            aria-label="Your question"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -412,6 +532,7 @@ export default function ChatPage() {
             Send
           </button>
         </form>
+        <p className="composer-note">Hubi can make mistakes. Check the sources before sharing anything with a client.</p>
       </div>
     </main>
   );
