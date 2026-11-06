@@ -29,7 +29,6 @@
     { "file": "PMM _ Slide Library _ AR _ DO NOT EDIT.pptx", "contentId": "RKC-000102" },
     { "file": "Comm Doc - Extra check-ins.pptx", "contentId": "RKC-000103" },
     { "file": "Message House_ Extra Check-in _ Feature-Level Positioning.docx", "contentId": "RKC-000104" },
-    { "file": "[RKC-0000105] Extra Check-in (Resources) - Wiki.docx", "contentId": "RKC-000105" },
     { "file": "Commdoc Wellhub+.pptx", "contentId": "RKC-000106" },
     { "file": "Comm Doc - Annual user subscription.pptx", "contentId": "RKC-000107" },
     { "file": "Comm Doc - Wellhub Challenges [Internal].pptx", "contentId": "RKC-000108" },
@@ -64,6 +63,7 @@
   "notStaged": [
     { "file": "PMM _ Slide Library _ CL _ DO NOT EDIT (1).pptx", "reason": "second copy of the CL library; the registry lists one CL row (RKC-000099)" },
     { "file": "TC3_June_2026_Eligibility_Typo_Tolerant_Signup_Summary.md.pdf", "contentId": "RKC-000120", "reason": "superseded by the .md of the same document" },
+    { "contentId": "RKC-000105", "file": "[RKC-0000105] Extra Check-in (Resources) - Wiki.docx", "reason": "the document's own Content ID row reads RKC-0000105 (seven digits), which does not match the registry row RKC-000105; Hubi excludes a file whose two identifiers disagree. Fix the Content ID inside the Drive document, then download it again" },
     { "contentId": "RKC-000118", "file": "(none)", "reason": "external website (What's New at Wellhub); no file to load" },
     { "contentId": "RKC-000134", "file": "(none)", "reason": "could not be downloaded by the Product Owner" },
     { "file": "GDP Calculator (GTM & Sales Strategy).xlsx", "contentId": "RKC-000132", "reason": "spreadsheets are not supported (decision pending)" },
