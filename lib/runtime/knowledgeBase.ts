@@ -1,5 +1,4 @@
-import { ingestContentRepository } from "../ingestion/ingest.ts";
-import { resolveContentRepositoryPath } from "../ingestion/contentSource.ts";
+import { loadContent } from "../ingestion/loadContent.ts";
 import type { RetrievalIndex } from "../retrieval/index.ts";
 import { buildGovernedIndex } from "./governedIndex.ts";
 import type { ExcludedContent, GovernanceReport } from "../governance/governance.ts";
@@ -52,8 +51,7 @@ export async function getKnowledgeBase(): Promise<KnowledgeBase> {
   if (!cached) {
     state = { status: "loading", since: new Date().toISOString() };
     cached = (async () => {
-      const contentPath = await resolveContentRepositoryPath();
-      const { documents, chunks } = ingestContentRepository(contentPath);
+      const { documents, chunks } = await loadContent();
       const { index, excluded, report } = buildGovernedIndex(chunks);
       emitTelemetry("governance", {
         type: "governance",

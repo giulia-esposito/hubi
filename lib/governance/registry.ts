@@ -34,6 +34,37 @@ export interface RegistryEntry {
   accessLevel: string;
   /** Source Platform Modified Date, raw as the sheet writes it (day/month/year, 2- or 4-digit year); "" when blank. */
   sourceModified: string;
+  /**
+   * The registry's Original Source URL when it is a link a user can open (see usableSourceUrl): the citation for a
+   * document that carries no link of its own. Absent when the registry has none or it is an admin link.
+   */
+  sourceUrl?: string;
+}
+
+/** The caveat for an Eligible with Restrictions document that is flagged as outdated and has no note of its own. */
+export const OUTDATED_CAVEAT = "This source is marked as possibly outdated; confirm before sharing with a client.";
+
+/**
+ * A registry URL worth showing as a citation: http(s), not a WorkRamp admin page (a user cannot open it) and not a
+ * search-engine redirect wrapper. Anything else is dropped rather than shown as a broken link.
+ */
+export function usableSourceUrl(raw: string): string | undefined {
+  const url = raw.trim();
+  if (!/^https?:\/\//i.test(url)) return undefined;
+  if (/workramp\.com\/admin\//i.test(url)) return undefined;
+  if (/^https?:\/\/(www\.)?google\.com\/url\?/i.test(url)) return undefined;
+  return url;
+}
+
+/**
+ * What users must be told about a restricted document: the registry note when there is one, otherwise the standard
+ * outdated-content caveat when the registry flags the document as outdated. Undefined when nothing needs saying.
+ */
+export function restrictionCaveat(aiEligibility: AiEligibility, risks: string[], note: string): string | undefined {
+  if (aiEligibility !== "Eligible with Restrictions") return undefined;
+  if (note) return note;
+  if (risks.some((r) => r.toLowerCase() === "outdated content")) return OUTDATED_CAVEAT;
+  return undefined;
 }
 
 export interface RegistrySnapshot {
@@ -173,6 +204,8 @@ export function parseRegistryCsv(text: string): ParsedRegistry {
       .split(",")
       .map((r) => r.trim())
       .filter(Boolean);
+    const restriction = restrictionCaveat(aiEligibility, risks, note);
+    const sourceUrl = usableSourceUrl(col(row, "original source url"));
     entries.push({
       contentId,
       aiEligibility,
@@ -183,7 +216,8 @@ export function parseRegistryCsv(text: string): ParsedRegistry {
       collection: col(row, "collection"),
       accessLevel: col(row, "access level"),
       sourceModified: col(row, "source platform modified date"),
-      ...(aiEligibility === "Eligible with Restrictions" && note ? { restriction: note } : {}),
+      ...(restriction ? { restriction } : {}),
+      ...(sourceUrl ? { sourceUrl } : {}),
     });
   }
   if (entries.length === 0) throw new Error("Registry export contains no RKC entries.");

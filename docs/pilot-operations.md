@@ -39,6 +39,20 @@ Approved by the Product Owner on 2026-11-06 as a one-time, labelled bootstrap (i
 
 Scope agreed: all playbooks, plus selected PMM decks.
 
+How it is run (first batch, 2026-11-06):
+
+- The Product Owner downloads the files from Drive into `content-incoming/` (git-ignored) and registers each in the registry.
+- `config/content-bootstrap/<date>-manifest.json` maps each file to its registry Content ID, lists the older copies it replaces, and lists what was not staged and why. It is the record of what was loaded and from where.
+- `node --experimental-strip-types scripts/dry-run-bootstrap.ts` builds the corpus the bucket would hold (hard links in the git-ignored `content-staging/`), ingests it through the real pipeline and the registry gate, and reports per document: chunks, region, link source, caveat, failures, exclusions. It uploads and deletes nothing.
+- An older unregistered copy of a document that now has a registry row (for example `06.2025_Pricing_Rev Strategy Playbook.docx`) must be removed from the bucket in the same change, or it would be served without the registry's caveat.
+- Registry changes reach Hubi through `config/governance/registry-export.csv` and `npm run registry:sync`; review the snapshot diff before committing.
+
+What the registry now supplies when a document does not say it itself: the citation link (Original Source URL; WorkRamp admin links and search redirects are never shown) and the region (only when the document has no region of its own and the registry value is in the region map). An "Eligible with Restrictions" document flagged "Outdated Content" with no note gets the caveat "This source is marked as possibly outdated; confirm before sharing with a client." (decision 2026-11-06). Access Levels other than "Revenue – All" and "Revenue – Specific Function" are still not served.
+
+Formats: `.docx`, `.pptx` and `.md` are read. PDF and Excel are not (the four registry spreadsheets are 30 to 40 sheets of price grids each; a text dump would invite wrong prices, so they wait for a decision). A Word file without the house template is titled by its file name, because its first heading is a section heading.
+
+The deployed service now reads the bucket one file at a time (download, parse, delete) instead of keeping the whole repository in `/tmp`, which on Cloud Run is memory. The corpus after this batch is about 1.3 GB, mostly slide-library images, and would not fit in the 2 GiB container otherwise.
+
 ## Known behavior: names that are not in the knowledge (2026-11-06)
 
 A tester asked how to position "extra check-ins". No document mentions that offer, but retrieval matched "check-ins" and Hubi answered about International Check-ins, a different add-on, as if they were the same. Two changes address it (lib/runtime/namedTerms.ts and the "Named things must match" rule in the system prompt): the prompt gets a notice listing wording from the question that the retrieved sources never use, so the model says the knowledge does not cover that item instead of substituting a similarly named one.

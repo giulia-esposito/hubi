@@ -29,6 +29,11 @@ export const STRONG_REGIONAL_RATIO = 0.7;
 // deeper search, are added when they score at least this share of the best chunk. Found in production: after Hubi asked for the
 // region and the user said "Tier 1 in Mexico", the Spanish SS Latam onboarding training still never reached the top five, so the
 // question was answered with a dead end. The deeper search needs no model call.
+/** True when the registry says the chunk's document is for one of the countries the user named. */
+function isForCountry(chunk: { countries?: string[] }, countries: string[]): boolean {
+  return countries.length > 0 && (chunk.countries ?? []).some((c) => countries.includes(c));
+}
+
 export const REGION_PASS_DEPTH = 150;
 export const SCOPE_PROBE_DEPTH = 60;
 export const REGION_PASS_K = 2;
@@ -120,10 +125,17 @@ export function retrieveApplicable(
     // The same cross-language search as pass 1: the document written for the user's region is often in that region's language.
     const regional = searchWithExpansion(index, retrievalQuery, options.expansion, REGION_PASS_DEPTH)
       .filter((r) => r.score >= floor && !seen.has(r.chunk.id) && classifyChunk(r.chunk, context.regions) === "match")
+      // A source written for the user's own country (the DE library for a German rep) comes before one for the wider region.
+      .sort((a, b) => Number(isForCountry(b.chunk, context.countries)) - Number(isForCountry(a.chunk, context.countries)))
       .slice(0, REGION_PASS_K);
     if (regional.length > 0) {
       decision = { ...decision, eligible: [...regional, ...decision.eligible], eligibleStatuses: [...regional.map(() => "match" as const), ...decision.eligibleStatuses] };
     }
+  }
+
+  if (context.countries.length > 0) {
+    const order = decision.eligible.map((_, i) => i).sort((a, b) => Number(isForCountry(decision.eligible[b].chunk, context.countries)) - Number(isForCountry(decision.eligible[a].chunk, context.countries)) || a - b);
+    decision = { ...decision, eligible: order.map((i) => decision.eligible[i]), eligibleStatuses: order.map((i) => decision.eligibleStatuses[i]) };
   }
 
   const latest = userMessages[userMessages.length - 1] ?? "";

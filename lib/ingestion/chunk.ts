@@ -22,6 +22,11 @@ export interface Chunk {
   regionRaw?: string;
   /** Raw metadata tokens no vocabulary entry recognized. Reported, never guessed. */
   unrecognizedRegionTokens?: string[];
+  /**
+   * Countries the registry says the document is for (set by the governance gate, e.g. "Germany" for the DE slide
+   * library). The operating region above can only say "Europe"; this lets a German rep's own library rank first.
+   */
+  countries?: string[];
   /** Label-only in this slice; not used for gating. */
   audience?: string[];
   /** The document's own "Last Updated" (else "Creation Date") metadata value, raw: the primary freshness source. */

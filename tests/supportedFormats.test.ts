@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { SUPPORTED_EXTENSIONS, isSupportedFile } from "../lib/ingestion/supportedFormats.ts";
 
 describe("supportedFormats", () => {
-  test("allowlist is exactly .docx and .pptx", () => {
-    assert.deepEqual([...SUPPORTED_EXTENSIONS].sort(), [".docx", ".pptx"]);
+  test("allowlist is exactly .docx, .pptx and .md", () => {
+    assert.deepEqual([...SUPPORTED_EXTENSIONS].sort(), [".docx", ".md", ".pptx"]);
   });
 
   test("accepts docx/pptx, case-insensitively and in nested paths", () => {

@@ -7,7 +7,7 @@ import path from "node:path";
  * (lib/ingestion/ingest.ts). DOCX and PPTX are wired up; PDF/TXT/MD parsers
  * plug in by adding an extension here together with a parser in ingest.ts.
  */
-export const SUPPORTED_EXTENSIONS: ReadonlySet<string> = new Set([".docx", ".pptx"]);
+export const SUPPORTED_EXTENSIONS: ReadonlySet<string> = new Set([".docx", ".pptx", ".md"]);
 
 export function isSupportedFile(name: string): boolean {
   return SUPPORTED_EXTENSIONS.has(path.extname(name).toLowerCase());

@@ -245,6 +245,19 @@ export function parseRegionMetadata(vocabulary: RegionVocabulary, raw: string | 
   return { regions: [], scope: "unspecified", unrecognized };
 }
 
+/** The countries a metadata or registry region value names ("Germany", "Italy; Spain"), canonical names, never regions. */
+export function countriesInRegionValue(vocabulary: RegionVocabulary, raw: string | null | undefined): string[] {
+  if (!raw || !raw.trim()) return [];
+  const found: string[] = [];
+  for (const token of raw.split(METADATA_SPLIT)) {
+    const normalized = normalizeToken(token);
+    if (!normalized) continue;
+    const country = vocabulary.countries.find((c) => normalizeToken(c.name) === normalized || c.aliases.some((a) => normalizeToken(a) === normalized));
+    if (country && !found.includes(country.name)) found.push(country.name);
+  }
+  return found;
+}
+
 /** Audience is label-only in this slice: split into trimmed values, no vocabulary, no gating. */
 export function parseAudience(raw: string | null | undefined): string[] {
   if (!raw) return [];

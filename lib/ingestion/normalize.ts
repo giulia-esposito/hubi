@@ -27,13 +27,14 @@ export interface Section {
   order: number;
 }
 
-export type CitationUrlType = "learnerUrl" | "sourceUrl" | null;
+/** registryUrl: the document carried no link, so the Content Registry's Original Source URL is used. */
+export type CitationUrlType = "learnerUrl" | "sourceUrl" | "registryUrl" | null;
 
 export interface NormalizedDocument {
   id: string;
   title: string;
   sourceFilePath: string;
-  sourceFormat: "docx" | "pptx";
+  sourceFormat: "docx" | "pptx" | "md";
   metadata: DocumentMetadata;
   citationUrl: string | null;
   citationUrlType: CitationUrlType;
@@ -174,6 +175,59 @@ export function normalizeDocx(blocks: RawBlock[], sourceFilePath: string, fallba
     citationUrl,
     citationUrlType,
     usedTemplate,
+    sections,
+    extractionWarnings: warnings,
+  };
+}
+
+/**
+ * Turns a Markdown file into a NormalizedDocument: the first "# " heading is the title, every "#".."####" heading
+ * starts a section, tables and lists stay as written, horizontal rules are dropped. Like a PPTX it carries no house
+ * template, so it has no metadata of its own: its link and region come from the Content Registry.
+ */
+export function normalizeMarkdown(text: string, sourceFilePath: string, fallbackTitle: string): NormalizedDocument {
+  const warnings: string[] = [];
+  let title = fallbackTitle;
+  const sections: Section[] = [];
+  let current: Section | null = null;
+  let order = 0;
+  let sawTitle = false;
+  const pushCurrent = () => {
+    if (current && current.text.trim()) sections.push(current);
+  };
+
+  for (const rawLine of text.replace(/\r\n/g, "\n").split("\n")) {
+    const line = rawLine.replace(/^\s*>\s?/, "").trimEnd();
+    if (/^\s*([-*_])\1{2,}\s*$/.test(line)) continue; // horizontal rule
+    if (/^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/.test(line)) continue; // table separator row
+    const heading = /^(#{1,4})\s+(.*\S)\s*$/.exec(line);
+    if (heading) {
+      const level = heading[1].length;
+      if (level === 1 && !sawTitle) {
+        sawTitle = true;
+        title = heading[2].trim();
+        continue;
+      }
+      pushCurrent();
+      current = { heading: heading[2].trim(), headingLevel: level, text: "", order: order++ };
+      continue;
+    }
+    if (!line.trim()) continue;
+    if (!current) current = { heading: null, headingLevel: null, text: "", order: order++ };
+    current.text += (current.text ? "\n" : "") + line.trim();
+  }
+  pushCurrent();
+  if (sections.length === 0) warnings.push("No extractable text content found in this document.");
+
+  return {
+    id: fallbackTitle,
+    title,
+    sourceFilePath,
+    sourceFormat: "md",
+    metadata: {},
+    citationUrl: null,
+    citationUrlType: null,
+    usedTemplate: false,
     sections,
     extractionWarnings: warnings,
   };

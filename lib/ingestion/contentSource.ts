@@ -1,5 +1,5 @@
 import { createWriteStream, mkdtempSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { Readable } from "node:stream";
@@ -49,7 +49,7 @@ export async function resolveContentRepositoryPath(): Promise<string> {
   return cachedGcsPath;
 }
 
-async function downloadFromGcs(): Promise<string> {
+async function openGcsBucket(): Promise<{ bucket: GcsBucketLike; bucketName: string; prefix: string }> {
   const bucketName = process.env.HUBI_GCS_BUCKET?.trim();
   if (!bucketName) {
     throw new Error(
@@ -62,11 +62,30 @@ async function downloadFromGcs(): Promise<string> {
   // resolvable when running locally with the default "local" mode.
   const { Storage } = await import("@google-cloud/storage");
   const storage = new Storage();
-  const bucket = storage.bucket(bucketName) as unknown as GcsBucketLike;
+  return { bucket: storage.bucket(bucketName) as unknown as GcsBucketLike, bucketName, prefix };
+}
 
+async function downloadFromGcs(): Promise<string> {
+  const { bucket, bucketName, prefix } = await openGcsBucket();
   const destDir = mkdtempSync(path.join(os.tmpdir(), "hubi-content-repository-"));
   await downloadSupportedObjects(bucket, bucketName, prefix, destDir);
   return destDir;
+}
+
+/**
+ * Reads the bucket one file at a time: each object is downloaded, handed to `onFile`, and deleted before the next
+ * one. On Cloud Run /tmp is memory, so keeping the whole repository there (downloadFromGcs) costs as much memory as
+ * the repository is large; slide libraries are mostly images and make that hundreds of MiB to GiB. Streaming bounds
+ * it by the largest single file.
+ */
+export async function streamGcsContent(onFile: (filePath: string, relative: string) => void | Promise<void>): Promise<DownloadSummary> {
+  const { bucket, bucketName, prefix } = await openGcsBucket();
+  const destDir = mkdtempSync(path.join(os.tmpdir(), "hubi-content-repository-"));
+  try {
+    return await downloadSupportedObjects(bucket, bucketName, prefix, destDir, console.log, onFile);
+  } finally {
+    await rm(destDir, { recursive: true, force: true });
+  }
 }
 
 /** Supported Office files at or above this size are downloaded but flagged. */
@@ -135,7 +154,9 @@ export async function downloadSupportedObjects(
   bucketName: string,
   prefix: string,
   destDir: string,
-  log: (message: string) => void = console.log
+  log: (message: string) => void = console.log,
+  /** When given, each file is passed here right after it is downloaded and then deleted, so only one file is on disk at a time. */
+  onFile?: (filePath: string, relative: string) => void | Promise<void>
 ): Promise<DownloadSummary> {
   const [files] = await bucket.getFiles({ prefix });
 
@@ -195,6 +216,13 @@ export async function downloadSupportedObjects(
     await pipeline(file.createReadStream(), createWriteStream(destPath));
     summary.downloaded++;
     summary.downloadedBytes += size;
+    if (onFile) {
+      try {
+        await onFile(destPath, relative);
+      } finally {
+        await rm(destPath, { force: true });
+      }
+    }
   }
 
   log(`[contentSource] Downloaded ${summary.downloaded} files (${formatMiB(summary.downloadedBytes)}).`);

@@ -32,11 +32,13 @@ interface Scenario {
 }
 
 const SCENARIOS: Scenario[] = [
-  { id: "absent-extra-check-ins", kind: "absent", question: "How do I position extra check-ins for a discovery meeting?", term: /extra\s+check-?ins?/i, similar: /international\s+check-?ins?/i },
+  // "Extra check-ins" was the original absent example (2026-11-06); its Comm Doc and Message House joined the corpus the same day, so it is now a present name.
   { id: "absent-premium-check-ins", kind: "absent", question: "What is the pricing for the Premium Check-ins add-on?", term: /premium\s+check-?ins?/i, similar: /international\s+check-?ins?/i },
   { id: "absent-nutrition-plus", kind: "absent", question: "How do I sell the Nutrition Plus SKU to an SMB client?", term: /nutrition\s+plus/i, similar: /nutrition/i },
   // Hubi may first ask which segment applies; the answer to that must still not turn "Family Plus" into "Family Member".
   { id: "absent-family-plus", kind: "absent", question: "What are the eligibility rules for Family Plus?", followUp: "For an SMB client.", term: /family\s+plus/i, similar: /family\s+member/i },
+  { id: "present-extra-check-ins", kind: "present", question: "How do I position extra check-ins for a discovery meeting?" },
+  { id: "absent-bonus-check-ins", kind: "absent", question: "What is the pricing for the Bonus Check-ins add-on?", term: /bonus\s+check-?ins?/i, similar: /(extra|international)\s+check-?ins?/i },
   { id: "present-international-check-ins", kind: "present", question: "How do I position International Check-ins for a discovery meeting?" },
   { id: "present-global-digital-plan", kind: "present", question: "What is the Global Digital Plan?" },
   { id: "present-roe", kind: "present", question: "What are the Rules of Engagement?" },

@@ -294,9 +294,9 @@ describe("access-level policy (V1: Hubi cannot verify who is asking)", () => {
     assert.equal(g?.sourceModified, "27/02/2026");
   });
 
-  test("the compiled snapshot carries the four columns, and exactly RKC-000001 and RKC-000017 are Leaders Only", () => {
+  test("the compiled snapshot carries the four columns, and exactly RKC-000001, RKC-000017 and RKC-000077 are Leaders Only", () => {
     const leaders = REGISTRY_SNAPSHOT.entries.filter((e) => normalizeAccessLevel(e.accessLevel) === normalizeAccessLevel("Revenue – Leaders Only")).map((e) => e.contentId);
-    assert.deepEqual(leaders, ["RKC-000001", "RKC-000017"]);
+    assert.deepEqual(leaders, ["RKC-000001", "RKC-000017", "RKC-000077"]);
     const e41 = REGISTRY_SNAPSHOT.entries.find((e) => e.contentId === "RKC-000041");
     assert.equal(e41?.contentType, "Newsletter");
     assert.equal(e41?.collection, "Trending This Week");

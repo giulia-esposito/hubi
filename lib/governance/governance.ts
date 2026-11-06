@@ -1,5 +1,5 @@
 import type { Chunk } from "../ingestion/chunk.ts";
-import { getRegionVocabulary, parseRegionMetadata, type RegionVocabulary } from "../applicability/regions.ts";
+import { countriesInRegionValue, getRegionVocabulary, parseRegionMetadata, type RegionVocabulary } from "../applicability/regions.ts";
 import { decideEntry, isRegistryId, type RegistryEntry, type RegistrySnapshot } from "./registry.ts";
 import { REGISTRY_SNAPSHOT } from "./registrySnapshot.ts";
 
@@ -140,8 +140,25 @@ export function applyGovernance(
         exclude(chunk, "Access level not served", `Access Level: ${entry.accessLevel || "blank"} (not served in V1: Hubi cannot verify who is asking)`);
         continue;
       }
+      // The registry fills what the document does not say: its link, and its region when it names none of its own.
+      const fromRegistry: Partial<Chunk> = {};
+      if (!chunk.citationUrl && entry.sourceUrl) {
+        fromRegistry.citationUrl = entry.sourceUrl;
+        fromRegistry.citationUrlType = "registryUrl";
+      }
+      const countries = countriesInRegionValue(vocabulary, entry.region);
+      if (countries.length > 0) fromRegistry.countries = countries;
+      if (!chunk.regionRaw?.trim() && entry.region.trim()) {
+        const parsed = parseRegionMetadata(vocabulary, entry.region);
+        if (parsed.scope !== "unspecified" && parsed.unrecognized.length === 0) {
+          fromRegistry.regions = parsed.regions;
+          fromRegistry.regionScope = parsed.scope;
+          fromRegistry.regionRaw = entry.region;
+        }
+      }
       kept.push({
         ...chunk,
+        ...fromRegistry,
         governance: {
           status: "registered",
           aiEligibility: entry.aiEligibility,

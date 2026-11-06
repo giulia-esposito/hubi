@@ -65,7 +65,8 @@ describe("retrieval: real corpus integration", { skip: SKIP_WITHOUT_CORPUS }, ()
     assert.ok(results.length > 0, "expected at least one match");
     assert.equal(
       results[0].chunk.documentTitle,
-      "Start here! Accessing the sales tools you need to do your job",
+      // A Word file without the house template is titled by its file name, not by its first heading.
+      "Sales Tools Playbook - Revenue Team",
       "top result should come from the Sales Tools Playbook's Salesloft/cadences section"
     );
   });

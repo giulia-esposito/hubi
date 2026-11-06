@@ -60,7 +60,7 @@ export const APPROVED_REGION_MAP: RegionMap = {
     { name: "Romania", aliases: [], region: "Europe" },
     { name: "Italy", aliases: [], region: "Europe" },
     { name: "Portugal", aliases: [], region: "Europe" },
-    { name: "Netherlands", aliases: ["Holland"], region: "Europe" },
+    { name: "Netherlands", aliases: ["Holland", "Netherland"], region: "Europe" },
     { name: "France", aliases: [], region: "Europe" },
     // Benelux is a union of countries, listed by Product as a single entry.
     { name: "Benelux", aliases: [], region: "Europe" },
