@@ -38,3 +38,9 @@ Approved by the Product Owner on 2026-11-06 as a one-time, labelled bootstrap (i
 4. Each uploaded file's Drive ID and export date are recorded, so the governed sync can replace the manual copy.
 
 Scope agreed: all playbooks, plus selected PMM decks.
+
+## Known behavior: names that are not in the knowledge (2026-11-06)
+
+A tester asked how to position "extra check-ins". No document mentions that offer, but retrieval matched "check-ins" and Hubi answered about International Check-ins, a different add-on, as if they were the same. Two changes address it (lib/runtime/namedTerms.ts and the "Named things must match" rule in the system prompt): the prompt gets a notice listing wording from the question that the retrieved sources never use, so the model says the knowledge does not cover that item instead of substituting a similarly named one.
+
+Measured with `scripts/eval-named-terms.ts` on the deployed corpus (5 runs per scenario): absent names kept apart in 17 of 20 runs (before: about 1 in 3 for the reported question), present names answered 15 of 15. The existing context-asking eval showed no drop. About 1 run in 6 can still equate the two, so the weekly feedback report should be read for this pattern. A stricter wording kept names apart in 18 of 20 runs but made Hubi say "not covered" instead of asking which segment applies, so it was not adopted.

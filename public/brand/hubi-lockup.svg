@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 0 252 108" role="img" aria-label="Hubi wordmark: a dumbbell H followed by u, b and i">
+  <rect x="12" y="38" width="10" height="48" rx="3" fill="#590931"/>
+  <rect x="98" y="38" width="10" height="48" rx="3" fill="#590931"/>
+  <rect x="22" y="24" width="20" height="78" rx="6" fill="#F2496B"/>
+  <rect x="78" y="24" width="20" height="78" rx="6" fill="#F2496B"/>
+  <rect x="42" y="56" width="36" height="12" fill="#590931"/>
+  <path d="M92 4 Q93.6 16.4 106 18 Q93.6 19.6 92 32 Q90.4 19.6 78 18 Q90.4 16.4 92 4Z" fill="#A880FF" stroke="#FBF8EC" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M126 54 V76 A16 16 0 0 0 158 76 V54" fill="none" stroke="#590931" stroke-width="20"/>
+  <path d="M158 54 V102" fill="none" stroke="#590931" stroke-width="20"/>
+  <rect x="176" y="24" width="20" height="78" fill="#590931"/>
+  <circle cx="201" cy="77" r="15" fill="none" stroke="#590931" stroke-width="20"/>
+  <rect x="234" y="54" width="20" height="48" fill="#590931"/>
+  <circle cx="244" cy="34" r="11" fill="#F2496B"/>
+</svg>

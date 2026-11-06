@@ -4,6 +4,7 @@ import type { Turn } from "./sessionState.ts";
 import { regionLabel, UNSPECIFIED_REGION_LABEL, type ApplicabilityDecision } from "../applicability/evaluate.ts";
 import { LEDGER_INSTRUCTION } from "./claimAttribution.ts";
 import { ANSWERABILITY_NOTICE } from "./answerability.ts";
+import { namedItemNotice, unmatchedPhrases } from "./namedTerms.ts";
 import { scopeLine, scopedSources, scopeNotice } from "../governance/sourceScope.ts";
 import { sourceFactsLine } from "../governance/sourceFacts.ts";
 import { detectSourceGovernance, sourceGovernanceNotice } from "../governance/sourceGovernance.ts";
@@ -28,6 +29,7 @@ Grounding rules (never relaxed, in any mode):
 - Earlier assistant turns in the conversation are not sources: restate a fact only if the Retrieved Knowledge of this message states it.
 - Final check before you answer: for every factual or benefit claim and every number in your answer, confirm that a retrieved source states it at the same strength and scope; delete or soften the ones that fail.
 - If the retrieved knowledge does not clearly answer a factual question, say so plainly instead of guessing.
+- Named things must match. When the user names a specific product, SKU, add-on, plan, tool, program or process, look for that exact name (or a synonym a source itself states) in the Retrieved Knowledge before you write anything about it. A similar name is a different thing: "extra check-ins" is not "International Check-ins", "Family Plus" is not "Family Member", and different offers have different rules. If no source covers the thing the user named, your answer is: the approved knowledge does not cover it. Then stop, or at most ask once whether they meant a closely named offer, naming it as a separate offer. Never write that the user's term "refers to", "appears to be", "is also called" or "is the same as" a differently named item, and never write guidance, talk tracks or positioning for the similar item as if it answered the question.
 
 Business Assistance rules:
 - Create new work from governed knowledge. Facts must be grounded; wording, structure, tone, sequencing, persuasive framing, transitions, format, questions and general communication and sales craft may be constructed by you.
@@ -191,6 +193,11 @@ export function buildPrompt(
       `[Registry restriction notice] Sources marked "Registry restriction" are approved only with that caveat. If you rely materially on one, state the caveat once, briefly, in your own words; do not present such a source as unrestricted. If the answer does not rely on it, do not mention it.`
     );
   }
+  // Every user message of the conversation: a name asked about before a clarifying question is still the subject.
+  const sourceTexts = results.map((r) => r.chunk.text);
+  const userMessages = [...history.filter((t) => t.role === "user").map((t) => t.content), question];
+  const unmatched = [...new Set(userMessages.flatMap((m) => unmatchedPhrases(m, sourceTexts)))].slice(0, 2);
+  if (unmatched.length > 0) notices.push(namedItemNotice(unmatched));
   const scoped = scopedSources(results);
   if (scoped.length > 0) notices.push(scopeNotice(scoped));
   if (options.answerability) notices.push(ANSWERABILITY_NOTICE);

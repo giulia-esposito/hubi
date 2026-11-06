@@ -60,3 +60,9 @@ tsconfig.tsbuildinfo
 Content Repository (prod)/
 evals-out/
 test-output.txt
+
+# Documents staged for the one-time content bootstrap (confidential)
+content-incoming/
+
+# Licensed brand fonts used to outline logo artwork (not redistributed)
+design-assets/

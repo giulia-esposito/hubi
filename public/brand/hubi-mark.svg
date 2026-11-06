@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 0 108 108" width="108" height="108" role="img" aria-label="Hubi mark: an H built from a dumbbell with an AI spark">
+  <rect x="12" y="38" width="10" height="48" rx="3" fill="#590931"/>
+  <rect x="98" y="38" width="10" height="48" rx="3" fill="#590931"/>
+  <rect x="22" y="24" width="20" height="78" rx="6" fill="#F2496B"/>
+  <rect x="78" y="24" width="20" height="78" rx="6" fill="#F2496B"/>
+  <rect x="42" y="56" width="36" height="12" fill="#590931"/>
+  <path d="M92 4 Q93.6 16.4 106 18 Q93.6 19.6 92 32 Q90.4 19.6 78 18 Q90.4 16.4 92 4Z" fill="#A880FF" stroke="#FBF8EC" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>
