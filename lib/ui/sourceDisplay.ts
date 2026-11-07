@@ -4,6 +4,8 @@
  * Plain data and no browser dependencies, so each surface (the web app today, Google Chat later) can reuse it.
  */
 
+import { OUTDATED_CAVEAT } from "../governance/registry.ts";
+
 export interface SourceInput {
   documentTitle: string;
   heading: string | null;
@@ -17,7 +19,10 @@ export interface DisplaySource {
   url: string | null;
   /** Up to MAX_SECTIONS distinct sections of the document that the answer used. */
   sections: string[];
+  /** A registry caveat specific to this source (not the standard outdated one, which is `outdated`). */
   restriction?: string;
+  /** The registry flags the source as possibly outdated: shown once for the whole answer, and as a flag on the source. */
+  outdated?: boolean;
 }
 
 const MAX_SECTIONS = 3;
@@ -48,7 +53,8 @@ export function groupSources(sources: SourceInput[]): DisplaySource[] {
     if (!row.url && s.citationUrl) row.url = s.citationUrl;
     const heading = s.heading?.replace(/\s+/g, " ").trim();
     if (heading && heading !== s.documentTitle && !row.sections.includes(heading) && row.sections.length < MAX_SECTIONS) row.sections.push(heading);
-    if (s.restriction && !row.restriction) row.restriction = s.restriction;
+    if (s.restriction === OUTDATED_CAVEAT) row.outdated = true;
+    else if (s.restriction && !row.restriction) row.restriction = s.restriction;
   }
   return [...byDoc.values()];
 }

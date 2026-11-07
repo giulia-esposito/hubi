@@ -1,3 +1,4 @@
+import { OUTDATED_CAVEAT } from "../governance/registry.ts";
 import type { Chunk } from "../ingestion/chunk.ts";
 import type { ScoredChunk } from "../retrieval/index.ts";
 import type { Turn } from "./sessionState.ts";
@@ -29,6 +30,7 @@ Grounding rules (never relaxed, in any mode):
 - Earlier assistant turns in the conversation are not sources: restate a fact only if the Retrieved Knowledge of this message states it.
 - Final check before you answer: for every factual or benefit claim and every number in your answer, confirm that a retrieved source states it at the same strength and scope; delete or soften the ones that fail.
 - If the retrieved knowledge does not clearly answer a factual question, say so plainly instead of guessing.
+- Conditions are rules. When the user asks whether they can proceed, or what applies to their case, and a source states a condition (a limit or threshold, "only", "fewer than", "at least", "must", "not allowed"), compare the user's own figures with that condition and answer from the comparison, naming the condition. A number that appears in a worked example never replaces a condition the source states as a rule. If the user's figure is not the one the condition is about (for example the client's size in the country it already operates in, when the rule is about the size in the new country), say which figure decides and ask for it instead of answering yes or no.
 - Named things must match. When the user names a specific product, SKU, add-on, plan, tool, program or process, look for that exact name (or a synonym a source itself states) in the Retrieved Knowledge before you write anything about it. A similar name is a different thing: "extra check-ins" is not "International Check-ins", "Family Plus" is not "Family Member", and different offers have different rules. If no source covers the thing the user named, your answer is: the approved knowledge does not cover it. Then stop, or at most ask once whether they meant a closely named offer, naming it as a separate offer. Never write that the user's term "refers to", "appears to be", "is also called" or "is the same as" a differently named item, and never write guidance, talk tracks or positioning for the similar item as if it answered the question.
 
 Business Assistance rules:
@@ -81,6 +83,12 @@ Required response format (machine-read, never shown to the user -- both tags are
  * appear, in a notice), and the two gate modes send no retrieved content at
  * all.
  */
+/** The standard "possibly outdated" caveat is shown by the interface once per answer, so the model is not asked to repeat it. */
+function needsCaveat(chunk: { governance?: { restriction?: string } }): boolean {
+  const r = chunk.governance?.restriction;
+  return Boolean(r) && r !== OUTDATED_CAVEAT;
+}
+
 export function buildPrompt(
   question: string,
   results: ScoredChunk[],
@@ -142,7 +150,7 @@ export function buildPrompt(
   const renderSource = (r: ScoredChunk, i: number) => {
     const locator = r.chunk.heading ? `${r.chunk.documentTitle} -> ${r.chunk.heading}` : r.chunk.documentTitle;
     const applicability = decision ? `Applicability: ${applicabilityLine(r.chunk)}\n` : "";
-    const restriction = r.chunk.governance?.restriction ? `Registry restriction: ${r.chunk.governance.restriction}\n` : "";
+    const restriction = needsCaveat(r.chunk) ? `Registry restriction: ${r.chunk.governance!.restriction}\n` : "";
     const facts = sourceFactsLine(r.chunk);
     const scope = scopeLine(r.chunk);
     return `[Source ${i + 1}] ${locator}\n${facts ? `${facts}\n` : ""}${applicability}${scope ? `${scope}\n` : ""}${restriction}${fenceSourceText(r.chunk.text)}`;
@@ -188,7 +196,7 @@ export function buildPrompt(
   }
   const sourceSignal = detectSourceGovernance(results);
   if (sourceSignal) notices.push(sourceGovernanceNotice(sourceSignal));
-  if (results.some((r) => r.chunk.governance?.restriction)) {
+  if (results.some((r) => needsCaveat(r.chunk))) {
     notices.push(
       `[Registry restriction notice] Sources marked "Registry restriction" are approved only with that caveat. If you rely materially on one, state the caveat once, briefly, in your own words; do not present such a source as unrestricted. If the answer does not rely on it, do not mention it.`
     );

@@ -438,6 +438,16 @@ textarea {
   font-size: 0.78rem;
 }
 
+.source-flag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--light-green);
+  color: var(--dark-green);
+  font-size: 0.72rem;
+}
+
 .source-restriction {
   background: var(--light-green);
   color: var(--dark-green);

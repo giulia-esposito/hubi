@@ -168,8 +168,10 @@ function SourcesList({ sources }: { sources: SourceRef[] }) {
   const rows = groupSources(sources);
   if (rows.length === 0) return null;
   const restricted = rows.filter((r) => r.restriction);
+  const outdated = rows.some((r) => r.outdated);
   return (
     <div className="sources">
+      {outdated && <div className="source-restriction">Some sources may be outdated: confirm before sharing with a client. They are flagged in the list below.</div>}
       {restricted.map((r) => (
         <div key={r.title} className="source-restriction">
           Usage note for {r.title}: {r.restriction}
@@ -189,6 +191,7 @@ function SourcesList({ sources }: { sources: SourceRef[] }) {
               ) : (
                 <span>{r.title} (no link available)</span>
               )}
+              {r.outdated && <span className="source-flag">Possibly outdated</span>}
               {r.sections.length > 0 && <span className="source-sections">{r.sections.join(" · ")}</span>}
             </li>
           ))}

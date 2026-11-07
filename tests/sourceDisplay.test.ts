@@ -34,3 +34,19 @@ describe("groupSources", () => {
     assert.deepEqual(groupSources([]), []);
   });
 });
+
+describe("outdated sources", () => {
+  test("the standard outdated caveat becomes a flag on the source, not a per-source note", async () => {
+    const { OUTDATED_CAVEAT } = await import("../lib/governance/registry.ts");
+    const rows = groupSources([
+      { documentTitle: "A", heading: null, citationUrl: null, restriction: OUTDATED_CAVEAT },
+      { documentTitle: "B", heading: null, citationUrl: null, restriction: "Only released for the US" },
+      { documentTitle: "C", heading: null, citationUrl: null },
+    ]);
+    assert.equal(rows[0].outdated, true);
+    assert.equal(rows[0].restriction, undefined);
+    assert.equal(rows[1].restriction, "Only released for the US");
+    assert.equal(rows[1].outdated, undefined);
+    assert.equal(rows[2].outdated, undefined);
+  });
+});
