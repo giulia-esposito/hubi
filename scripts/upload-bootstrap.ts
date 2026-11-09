@@ -46,7 +46,7 @@ for (const f of manifest.files) {
     problems.push(`missing local file: ${f.file}`);
     continue;
   }
-  const dest = `${prefix}/[${f.contentId}] ${f.file}`;
+  const dest = `${prefix}/[${f.contentId}] ${f.file.replace(/^\[RKC-\d{6}\]\s*/, "")}`;
   uploads.push({ src, dest, size: statSync(src).size, replaces: byName.has(dest) });
 }
 const deletes: string[] = [];

@@ -1,0 +1,10 @@
+{
+  "note": "Follow-up to the 2026-11-06 bootstrap: RKC-000105 re-downloaded after the Content ID inside the Drive document was corrected (RKC-0000105 -> RKC-000105). Same one-time, labelled bootstrap rules (docs/pilot-operations.md).",
+  "exportedAt": "2026-11-09",
+  "files": [
+    {
+      "file": "[RKC-000105] Extra Check-in (Resources) - Wiki.docx",
+      "contentId": "RKC-000105"
+    }
+  ]
+}
