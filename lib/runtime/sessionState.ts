@@ -55,7 +55,9 @@ const TERM_STOP = new Set(
 );
 
 const wordsOf = (text: string) => text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
-const contentTerms = (text: string) => new Set(wordsOf(text).filter((w) => w.length > 2 && !TERM_STOP.has(w)));
+/** Words that name the whole domain, not a subject: nearly every question in the pilot has one. Sharing only these does not make two questions the same topic (found in the pilot: "duplicated rules in Salesforce" after "Activities and Chatter in Salesforce" was searched as one question and found nothing). */
+const DOMAIN_WORDS = new Set("salesforce wellhub gympass hubi revenue sales client clients customer customers team teams tool tools process work".split(" "));
+const contentTerms = (text: string) => new Set(wordsOf(text).filter((w) => w.length > 2 && !TERM_STOP.has(w) && !DOMAIN_WORDS.has(w)));
 
 /** A message that asks or requests something, as opposed to a reply that supplies context ("Mexico", "Tier 1", "A company from the financial industry"). Statements never start a new topic. */
 function opensARequest(message: string): boolean {

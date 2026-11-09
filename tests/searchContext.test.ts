@@ -22,6 +22,11 @@ describe("search context", () => {
     assert.equal(c.anchor, "How do I connect Salesforce to Gmail?");
     assert.equal(c.reset, true);
   });
+  it("does not treat a shared domain word as the same topic (a Salesforce question after another Salesforce question)", () => {
+    const c = searchContext(["How do I use Activities and Chatter in Salesforce?", "What are the current duplicated rules in Salesforce?"]);
+    assert.equal(c.reset, true);
+    assert.equal(c.query, "What are the current duplicated rules in Salesforce?");
+  });
   it("keeps a follow-up that shares a word with the topic", () => {
     const c = searchContext(["What are the steps of the client onboarding process?", "US", "And what about onboarding for Tier 3?"]);
     assert.equal(c.reset, false);
