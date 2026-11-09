@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hubi pilot monitoring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+  /* Hubi look: calm off-white page, Wellhub dark magenta for headings, main magenta only as the accent. */
+  :root {
+    --bg: #FBF8EC; --panel: #FFFFFF; --ink: #2A1822; --soft: #6B5860; --brand: #590931; --accent: #F2496B;
+    --line: #E8E0D2; --tint: #F7EFE3;
+    --green: #2F7D5B; --yellow: #B7791F; --red: #B83A3A; --early: #8B7C82;
+    --green-bg: #E4F1EA; --yellow-bg: #FBEFD5; --red-bg: #F8E1E1; --early-bg: #EEE8E2;
+    --display: "Barlow Condensed", "Arial Narrow", sans-serif; --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 20px 72px; display: flex; flex-direction: column; gap: 40px; }
+  h1, h2, h3 { font-family: var(--display); color: var(--brand); margin: 0; line-height: 1.05; text-wrap: balance; }
+  h1 { font-size: clamp(42px, 8vw, 64px); font-weight: 700; }
+  h2 { font-size: 30px; font-weight: 700; }
+  h3 { font-size: 22px; font-weight: 600; }
+  p { margin: 0; }
+  .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); }
+  .sub { color: var(--soft); font-size: 15px; }
+  header { display: flex; flex-direction: column; gap: 10px; }
+  section { display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; min-width: 0; }
+  .pulse { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; }
+  .rating { border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+  .rating .label { font-family: var(--display); font-size: 56px; font-weight: 700; line-height: 1; display: flex; align-items: center; gap: 12px; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex: none; }
+  .rating .window { font-size: 14px; color: var(--soft); }
+  .rating .why { font-size: 15px; }
+  .rating.green { background: var(--green-bg); color: var(--green); } .rating.yellow { background: var(--yellow-bg); color: var(--yellow); }
+  .rating.red { background: var(--red-bg); color: var(--red); } .rating.early { background: var(--early-bg); color: var(--early); }
+  .rating .why, .rating .window { color: var(--ink); }
+  .dot.green { background: var(--green); } .dot.yellow { background: var(--yellow); } .dot.red { background: var(--red); } .dot.early { background: var(--early); }
+  .parts { display: flex; flex-direction: column; }
+  .part { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .part:last-child { border-bottom: 0; }
+  .part .name { font-weight: 600; } .part .val { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+  .part .rule { grid-column: 2 / 4; color: var(--soft); font-size: 13px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+  .tile .n { font-family: var(--display); font-size: 38px; font-weight: 700; color: var(--brand); line-height: 1; font-variant-numeric: tabular-nums; }
+  .tile .t { font-size: 13px; color: var(--soft); }
+  .chart svg { width: 100%; height: auto; display: block; }
+  .chart text { font-family: var(--body); font-size: 11px; fill: var(--soft); }
+  .chart .val { fill: var(--ink); font-weight: 600; }
+  .list { display: flex; flex-direction: column; gap: 0; padding: 0; margin: 0; list-style: none; }
+  .list li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .list li:last-child { border-bottom: 0; }
+  .list .when { color: var(--soft); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .owner { color: var(--soft); font-size: 13px; }
+  .bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--early-bg); }
+  .bar > span { display: block; height: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; }
+  .quote { background: var(--tint); border-radius: 10px; padding: 10px 14px; font-size: 15px; }
+  details { border-bottom: 1px solid var(--line); padding: 12px 0; }
+  details:last-child { border-bottom: 0; }
+  summary { cursor: pointer; display: grid; grid-template-columns: 92px 108px minmax(0, 1fr); gap: 12px; align-items: baseline; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .pill { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 600; }
+  .pill.good { background: var(--green-bg); color: var(--green); } .pill.bad { background: var(--red-bg); color: var(--red); } .pill.other { background: var(--early-bg); color: var(--soft); }
+  .detail { display: flex; flex-direction: column; gap: 10px; padding: 12px 0 4px 0; font-size: 15px; }
+  .detail b { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); margin-bottom: 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .scroll { overflow-x: auto; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .empty { color: var(--soft); font-size: 15px; }
+  .status { padding: 80px 0; text-align: center; color: var(--soft); }
+  .foot { color: var(--soft); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+  @media (max-width: 720px) { .pulse { grid-template-columns: 1fr; } summary { grid-template-columns: 1fr; gap: 4px; } .list li { grid-template-columns: 1fr; gap: 2px; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="status" id="status">Loading the latest numbers…</div>
+</div>
+
+<script>
+(function () {
+  var app = document.getElementById('app');
+  var LABEL = { green: 'Green', yellow: 'Yellow', red: 'Red', early: 'Too early to rate' };
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = text; return e; }
+  function add(parent) { for (var i = 1; i < arguments.length; i++) if (arguments[i]) parent.appendChild(arguments[i]); return parent; }
+  function rows(table) {
+    if (!table || table.length < 2) return [];
+    var head = table[0];
+    return table.slice(1).map(function (r) { var o = {}; head.forEach(function (h, i) { o[h] = r[i]; }); return o; });
+  }
+  function num(v) { var n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : 0; }
+  function sectionOf(title, sub) { var s = el('section'); add(s, el('h2', '', title)); if (sub) add(s, el('p', 'sub', sub)); return s; }
+
+  function render(data) {
+    app.textContent = '';
+    var summary = rows(data['Summary']);
+    var byMetric = {}; summary.forEach(function (r) { byMetric[r['Metric']] = r; });
+    var daily = rows(data['Daily']);
+    var feedback = rows(data['Feedback']);
+    var notCovered = rows(data['Not covered']);
+    var sources = rows(data['Sources']);
+    var notes = rows(data['Notes']).filter(function (n) { return /^\d{4}-\d{2}-\d{2}$/.test(n['Date']); });
+
+    // Rating: the computed one, unless someone set it by hand in the last 7 days (newest wins).
+    var health = byMetric['Pilot health (last 7 days)'] || {};
+    var rating = health['Rating'] || 'early';
+    var byHand = '';
+    var weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    notes.filter(function (n) { return n['Type'] === 'Health override' && n['Date'] >= weekAgo; })
+      .sort(function (a, b) { return a['Date'] < b['Date'] ? 1 : -1; })
+      .slice(0, 1).forEach(function (n) {
+        var m = /^(green|yellow|red)\b[:\s-]*(.*)$/i.exec(String(n['Note']).trim());
+        if (m) { rating = m[1].toLowerCase(); byHand = m[2] || 'Set by hand.'; }
+      });
+
+    var header = el('header');
+    add(header, el('p', 'eyebrow', 'Wellhub Revenue · Pilot'), el('h1', '', 'Hubi pilot monitoring'),
+      el('p', 'sub', 'Last updated ' + ((byMetric['Updated (UTC)'] || {})['Value'] || 'not yet') + ' UTC · For the Product Owner and leadership. Contains real questions and answers: do not forward.'));
+    app.appendChild(header);
+
+    // Pilot Pulse
+    var pulse = sectionOf('Pilot Pulse');
+    var grid = el('div', 'pulse');
+    var r = el('div', 'rating ' + rating);
+    var lab = el('div', 'label'); add(lab, el('span', 'dot ' + rating), el('span', '', LABEL[rating] || rating));
+    add(r, lab, el('p', 'window', byHand ? 'Set by hand' : 'Last 7 days'),
+      el('p', 'why', byHand || ((byMetric['Why not green'] || {})['Value'] || 'Nothing to flag.')));
+    var parts = el('div', 'card parts');
+    ['Helpful votes', 'Questions the knowledge does not cover', 'Failed turns', 'Slowest answers (95th percentile)'].forEach(function (name) {
+      var m = summary.filter(function (s) { return s['Metric'] === name && s['Rating']; })[0];
+      if (!m) return;
+      var p = el('div', 'part');
+      add(p, el('span', 'dot ' + m['Rating']), el('span', 'name', name), el('span', 'val', m['Value']), el('span', 'rule', m['Rule']));
+      parts.appendChild(p);
+    });
+    add(grid, r, parts); pulse.appendChild(grid);
+
+    var tiles = el('div', 'tiles');
+    [['Questions asked', 'Questions asked', 'last 7 days'], ['Conversations', 'Conversations', 'people are not counted'], ['Helpful votes', null, 'last 7 days'],
+     ['Not helpful votes', 'Not helpful votes', 'last 7 days'], ['Reported as incorrect', 'Reported as incorrect', 'of the not helpful'], ['Median answer time (s)', 'Median answer time (s)', 'last 7 days']].forEach(function (t) {
+      var all = summary.filter(function (s) { return s['Metric'] === t[0] && !s['Rating']; })[0];
+      if (!all) return;
+      var tile = el('div', 'tile'); add(tile, el('span', 'n', all['Value']), el('span', 't', t[0] + ' · ' + t[2]));
+      tiles.appendChild(tile);
+    });
+    pulse.appendChild(tiles);
+
+    // Questions per day chart
+    var chart = el('div', 'card chart');
+    var W = 900, H = 190, left = 28, bottom = 28, top = 18, n = daily.length || 1, gap = 6;
+    var max = Math.max.apply(null, daily.map(function (d) { return num(d['Questions']); }).concat([5]));
+    var bw = (W - left) / n - gap, NS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Questions per day');
+    function s(tag, attrs, text) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (text !== undefined) e.textContent = text; svg.appendChild(e); return e; }
+    [0, Math.round(max / 2), max].forEach(function (v) { var y = top + (H - top - bottom) * (1 - v / max); s('line', { x1: left, x2: W, y1: y, y2: y, stroke: '#E8E0D2', 'stroke-width': 1 }); s('text', { x: left - 6, y: y + 4, 'text-anchor': 'end' }, String(v)); });
+    daily.forEach(function (d, i) {
+      var q = num(d['Questions']), h = (H - top - bottom) * (q / max), x = left + i * (bw + gap) + gap / 2, y = H - bottom - h;
+      if (q > 0) { s('rect', { x: x, y: y, width: bw, height: h, rx: 3, fill: '#F2496B' }); s('text', { x: x + bw / 2, y: y - 4, 'text-anchor': 'middle', 'class': 'val' }, String(q)); }
+      else s('rect', { x: x, y: H - bottom - 2, width: bw, height: 2, fill: '#E8E0D2' });
+      var date = String(d['Date (UTC)']); s('text', { x: x + bw / 2, y: H - 8, 'text-anchor': 'middle' }, date.slice(8, 10) + '/' + date.slice(5, 7));
+    });
+    add(chart, el('h3', '', 'Questions per day'), svg);
+    pulse.appendChild(chart);
+    app.appendChild(pulse);
+
+    // Developments
+    var dev = sectionOf('Developments', 'What changed in Hubi, newest first.');
+    var devList = el('ul', 'card list');
+    notes.filter(function (x) { return x['Type'] === 'Development'; }).sort(function (a, b) { return a['Date'] < b['Date'] ? 1 : -1; }).slice(0, 8).forEach(function (x) {
+      var li = el('li'); var c = el('div'); add(c, el('p', '', x['Note']), x['Owner'] ? el('p', 'owner', x['Owner']) : null); add(li, el('span', 'when', x['Date']), c); devList.appendChild(li);
+    });
+    if (!devList.children.length) devList.appendChild(el('li', 'empty', 'Nothing recorded yet.'));
+    dev.appendChild(devList); app.appendChild(dev);
+
+    // Risks
+    var risk = sectionOf('Risks', 'Open risks and the questions Hubi could not answer.');
+    var riskList = el('ul', 'card list');
+    notes.filter(function (x) { return x['Type'] === 'Risk'; }).sort(function (a, b) { return a['Date'] < b['Date'] ? 1 : -1; }).forEach(function (x) {
+      var li = el('li'); var c = el('div'); add(c, el('p', '', x['Note']), x['Owner'] ? el('p', 'owner', 'Owner: ' + x['Owner']) : null); add(li, el('span', 'when', x['Date']), c); riskList.appendChild(li);
+    });
+    if (!riskList.children.length) riskList.appendChild(el('li', 'empty', 'No open risks recorded.'));
+    risk.appendChild(riskList);
+    var counts = {}; var order = [];
+    notCovered.forEach(function (q) { var k = q['Question']; if (!counts[k]) { counts[k] = 0; order.push(k); } counts[k]++; });
+    var ncCard = el('div', 'card'); add(ncCard, el('h3', '', 'Questions the knowledge did not cover'));
+    if (!order.length) add(ncCard, el('p', 'empty', 'None so far.'));
+    else { var sc = el('div', 'scroll'); var t = el('table'); var th = el('tr'); add(th, el('th', '', 'Question'), el('th', '', 'Times asked')); t.appendChild(th);
+      order.forEach(function (k) { var tr = el('tr'); add(tr, el('td', '', k), el('td', 'num', String(counts[k]))); t.appendChild(tr); }); sc.appendChild(t); ncCard.appendChild(sc); }
+    risk.appendChild(ncCard); app.appendChild(risk);
+
+    // Participant Pulse
+    var part = sectionOf('Participant Pulse', 'What testers said about the answers.');
+    var good = daily.reduce(function (a, d) { return a + num(d['Helpful']); }, 0), bad = daily.reduce(function (a, d) { return a + num(d['Not helpful']); }, 0);
+    var incorrect = daily.reduce(function (a, d) { return a + num(d['Reported as incorrect']); }, 0), total = good + bad;
+    var pc = el('div', 'card'); add(pc, el('h3', '', 'Votes, last 14 days'));
+    if (!total) add(pc, el('p', 'empty', 'No votes yet.'));
+    else {
+      var bar = el('div', 'bar'); var g = el('span'); g.style.width = (good / total * 100) + '%'; g.style.background = '#2F7D5B'; var b = el('span'); b.style.width = (bad / total * 100) + '%'; b.style.background = '#B83A3A'; add(bar, g, b);
+      var lg = el('div', 'legend'); add(lg, el('span', '', good + ' helpful'), el('span', '', bad + ' not helpful'), el('span', '', incorrect + ' of those reported as incorrect'));
+      add(pc, bar, lg);
+    }
+    part.appendChild(pc);
+    var commented = feedback.filter(function (f) { return f['Vote'] === 'Not helpful' && f['Comment']; }).slice(0, 5);
+    if (commented.length) {
+      var cc = el('div', 'card'); add(cc, el('h3', '', 'In their words'));
+      commented.forEach(function (f) { var q = el('div', 'quote'); add(q, el('p', '', '“' + f['Comment'] + '”'), el('p', 'owner', f['Time (UTC)'])); cc.appendChild(q); });
+      cc.style.display = 'flex'; cc.style.flexDirection = 'column'; cc.style.gap = '10px';
+      part.appendChild(cc);
+    }
+    app.appendChild(part);
+
+    // Evidence
+    var ev = sectionOf('Evidence', 'The real questions and answers behind the votes, newest first. Open a row to read it.');
+    var evCard = el('div', 'card');
+    if (!feedback.length) add(evCard, el('p', 'empty', 'No votes yet.'));
+    feedback.slice(0, 20).forEach(function (f) {
+      var d = el('details'); var sm = el('summary');
+      var kind = f['Vote'] === 'Helpful' ? 'good' : (/^Incorrect/.test(f['Reported as']) ? 'bad' : 'other');
+      var pill = el('span', 'pill ' + kind, f['Vote'] === 'Helpful' ? 'Helpful' : (kind === 'bad' ? 'Incorrect' : 'Not helpful'));
+      add(sm, el('span', 'when sub', f['Time (UTC)'].slice(0, 10)), pill, el('span', '', f['Question']));
+      var body = el('div', 'detail');
+      [['Question', f['Question']], ['Answer', f['Answer']], ['Sources', f['Sources']], ['Reported as', f['Reported as']], ['Comment', f['Comment']], ['Revision', f['Revision']]].forEach(function (pair) {
+        if (!pair[1]) return; var blk = el('div'); add(blk, el('b', '', pair[0]), el('span', '', pair[1])); body.appendChild(blk);
+      });
+      add(d, sm, body); evCard.appendChild(d);
+    });
+    ev.appendChild(evCard);
+    var srcCard = el('div', 'card'); add(srcCard, el('h3', '', 'Documents used most'));
+    var st = el('table'); var sh = el('tr'); add(sh, el('th', '', 'Document'), el('th', '', 'Answers')); st.appendChild(sh);
+    sources.slice(0, 10).forEach(function (x) { var tr = el('tr'); add(tr, el('td', '', x['Document']), el('td', 'num', x['Answers that used it'])); st.appendChild(tr); });
+    var ssc = el('div', 'scroll'); ssc.appendChild(st); srcCard.appendChild(ssc); ev.appendChild(srcCard);
+    app.appendChild(ev);
+
+    app.appendChild(el('p', 'foot', 'Numbers come from the pilot logs and are refreshed by the daily check. Hubi does not record who asks, so people are not counted. The rating rules are in lib/monitoring/health.ts in the Hubi repository.'));
+  }
+
+  function fail(err) {
+    app.textContent = '';
+    var d = el('div', 'status'); d.textContent = 'Could not load the numbers. ' + (err && err.message ? err.message : ''); app.appendChild(d);
+  }
+  google.script.run.withSuccessHandler(render).withFailureHandler(fail).getData();
+})();
+</script>
+</body>
+</html>
