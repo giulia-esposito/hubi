@@ -63,13 +63,45 @@ export function buildIndex(chunks: Chunk[]): RetrievalIndex {
 const K1 = 1.5;
 const B = 0.75;
 
+/** Weight of another form of a question word ("duplicate" for "duplicated") next to the word itself. */
+const WORD_FORM_WEIGHT = 0.8;
+
+/** A question word found in at most this many chunks is specific enough for its other forms to be searched too. */
+const RARE_WORD_DOCS = 10;
+
+/**
+ * The base and sibling forms of an inflected English word (-ed, -ing, -es, -s), never longer forms of a bare word, so a question that says "duplicated rules" reaches passages that say "duplicate" (found in
+ * the pilot, 2026-11-09: the playbook explains duplicates, the question used another form, and Hubi answered that the knowledge
+ * had nothing). Applied to the question only and matched against the index as it is, so Spanish and Portuguese documents are
+ * untouched. Used only for rare words.
+ */
+export function wordForms(term: string): string[] {
+  const t = term;
+  const out: string[] = [];
+  if (t.length >= 7 && t.endsWith("ing")) {
+    const base = t.slice(0, -3);
+    out.push(base, base + "e", base + "ed", base + "es");
+  } else if (t.length >= 6 && t.endsWith("ed")) {
+    const base = t.slice(0, -2);
+    out.push(base, base + "e", base + "es", base + "ing");
+  } else if (t.length >= 5 && t.endsWith("es")) {
+    out.push(t.slice(0, -2), t.slice(0, -1));
+  } else if (t.length >= 5 && t.endsWith("s") && !t.endsWith("ss")) {
+    out.push(t.slice(0, -1));
+  }
+  return out;
+}
+
 export function search(index: RetrievalIndex, query: string, topK = 5): ScoredChunk[] {
   const queryTerms = Array.from(new Set(tokenize(query)));
   if (queryTerms.length === 0) return [];
+  const weights = new Map<string, number>(queryTerms.map((t) => [t, 1]));
+  // Only for a rare word (the specific one in a question, such as "duplicated"): common words already find their passages, and adding forms to them moved the ranking of questions that work.
+  for (const t of queryTerms) if ((index.docFreq.get(t) ?? 0) <= RARE_WORD_DOCS) for (const form of wordForms(t)) if (!weights.has(form) && index.docFreq.has(form)) weights.set(form, WORD_FORM_WEIGHT);
 
   const scored: ScoredChunk[] = index.indexed.map(({ chunk, termFreq, length }) => {
     let score = 0;
-    for (const term of queryTerms) {
+    for (const [term, weight] of weights) {
       const df = index.docFreq.get(term);
       if (!df) continue;
       const tf = termFreq.get(term) ?? 0;
@@ -77,7 +109,7 @@ export function search(index: RetrievalIndex, query: string, topK = 5): ScoredCh
       const idf = Math.log((index.n - df + 0.5) / (df + 0.5) + 1);
       const numerator = tf * (K1 + 1);
       const denominator = tf + K1 * (1 - B + (B * length) / index.avgLength);
-      score += idf * (numerator / denominator);
+      score += weight * idf * (numerator / denominator);
     }
     return { chunk, score };
   });
