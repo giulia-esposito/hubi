@@ -28,6 +28,8 @@ const days = Number(arg("days", "14"));
 const project = arg("project", "wh-revenue-sandbox");
 const service = arg("service", "hubi-pilot");
 const HEALTH_DAYS = 7;
+/** First day of real pilot use (a team member first got access on 2026-11-05). Earlier entries are tests and are left out. */
+const PILOT_START = arg("since", "2026-11-05");
 
 /** Tags that say the answer was wrong, as opposed to slow, forgetful or "other". */
 const INCORRECT_TAGS = new Set(["wrong-region", "unsupported-claim", "scope-or-causality", "wrong-or-missing-source"]);
@@ -35,7 +37,8 @@ const INCORRECT_TAGS = new Set(["wrong-region", "unsupported-claim", "scope-or-c
 async function readEntries(): Promise<LogEntry[]> {
   const { GoogleAuth } = await import("google-auth-library");
   const client = await new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/logging.read"] }).getClient();
-  const since = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
+  const windowStart = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
+  const since = windowStart > PILOT_START ? windowStart : `${PILOT_START}T00:00:00Z`;
   const filter =
     `resource.type="cloud_run_revision" AND resource.labels.service_name="${service}" AND jsonPayload.component="hubi" ` +
     `AND jsonPayload.type=("interaction" OR "feedback" OR "interaction_error") AND timestamp>="${since}"`;
@@ -94,7 +97,10 @@ async function main() {
 
   // Daily table: one row per day with any activity, newest last. Days without traffic are listed so a gap is visible.
   const dates: string[] = [];
-  for (let d = days - 1; d >= 0; d--) dates.push(new Date(now.getTime() - d * 24 * 3600 * 1000).toISOString().slice(0, 10));
+  for (let d = days - 1; d >= 0; d--) {
+    const date = new Date(now.getTime() - d * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    if (date >= PILOT_START) dates.push(date);
+  }
   const daily = [["Date (UTC)", "Questions", "Conversations", "Answered", "Not covered", "Asked a question back", "Failed", "Median answer time (s)", "Slowest 5% (s)", "Votes", "Helpful", "Not helpful", "Reported as incorrect"]];
   for (const date of dates) {
     const ints = interactions.filter((i) => day(i._ts) === date);
