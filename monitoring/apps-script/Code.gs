@@ -6,7 +6,7 @@
  * "no access" page and no data. The page shows real questions and answers from the pilot, so keep that list short.
  */
 
-var TABS = ['Summary', 'Daily', 'Feedback', 'Not covered', 'Sources', 'Notes'];
+var TABS = ['Summary', 'Daily', 'Feedback', 'Not covered', 'Sources', 'Notes', 'Issues'];
 
 function doGet() {
   if (!isAllowed_()) {

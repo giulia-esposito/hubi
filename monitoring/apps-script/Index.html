@@ -69,6 +69,10 @@
   .pill.good { background: var(--green-bg); color: var(--green); } .pill.bad { background: var(--red-bg); color: var(--red); } .pill.other { background: var(--early-bg); color: var(--soft); }
   .detail { display: flex; flex-direction: column; gap: 10px; padding: 12px 0 4px 0; font-size: 15px; }
   .detail b { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); margin-bottom: 2px; }
+  .pill.solved { background: var(--green-bg); color: var(--green); } .pill.open { background: var(--red-bg); color: var(--red); } .pill.maybe { background: var(--yellow-bg); color: var(--yellow); }
+  .pill.cause { background: var(--tint); color: var(--brand); border: 1px solid var(--line); }
+  .chips { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 8px; vertical-align: middle; }
+  .tally { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 15px; }
   table { width: 100%; border-collapse: collapse; font-size: 15px; }
   th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); font-weight: 600; }
@@ -99,6 +103,15 @@
     return table.slice(1).map(function (r) { var o = {}; head.forEach(function (h, i) { o[h] = r[i]; }); return o; });
   }
   function num(v) { var n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : 0; }
+  function norm(q) { return String(q || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+  function statusClass(s) { return s === 'Solved' ? 'solved' : (s === 'Probably solved' ? 'maybe' : (s === "Won't fix" ? 'other' : 'open')); }
+  function chipsFor(issue) {
+    var w = el('span', 'chips');
+    if (issue['Cause']) w.appendChild(el('span', 'pill cause', issue['Cause'] + (issue['Cause set by'] === 'Confirmed' ? '' : ' (proposed)')));
+    var st = issue['Status'] || 'Open';
+    w.appendChild(el('span', 'pill ' + statusClass(st), st === 'Solved' && issue['Solved on'] ? 'Solved ' + issue['Solved on'] : st));
+    return w;
+  }
   function sectionOf(title, sub) { var s = el('section'); add(s, el('h2', '', title)); if (sub) add(s, el('p', 'sub', sub)); return s; }
 
   function render(data) {
@@ -109,6 +122,8 @@
     var feedback = rows(data['Feedback']);
     var notCovered = rows(data['Not covered']);
     var sources = rows(data['Sources']);
+    var issues = rows(data['Issues']).filter(function (i) { return i['Question']; });
+    var issueByKey = {}; issues.forEach(function (i) { issueByKey[i['Key'] || norm(i['Question'])] = i; });
     var notes = rows(data['Notes']).filter(function (n) { return /^\d{4}-\d{2}-\d{2}$/.test(n['Date']); });
 
     // Rating: the computed one, unless someone set it by hand in the last 7 days (newest wins).
@@ -183,19 +198,39 @@
     dev.appendChild(devList); app.appendChild(dev);
 
     // Risks
-    var risk = sectionOf('Risks', 'Open risks and the questions Hubi could not answer.');
+    var risk = sectionOf('Risks', 'Open risks, and the questions Hubi could not answer well, with their cause.');
     var riskList = el('ul', 'card list');
     notes.filter(function (x) { return x['Type'] === 'Risk'; }).sort(function (a, b) { return a['Date'] < b['Date'] ? 1 : -1; }).forEach(function (x) {
       var li = el('li'); var c = el('div'); add(c, el('p', '', x['Note']), x['Owner'] ? el('p', 'owner', 'Owner: ' + x['Owner']) : null); add(li, el('span', 'when', x['Date']), c); riskList.appendChild(li);
     });
     if (!riskList.children.length) riskList.appendChild(el('li', 'empty', 'No open risks recorded.'));
     risk.appendChild(riskList);
-    var counts = {}; var order = [];
-    notCovered.forEach(function (q) { var k = q['Question']; if (!counts[k]) { counts[k] = 0; order.push(k); } counts[k]++; });
-    var ncCard = el('div', 'card'); add(ncCard, el('h3', '', 'Questions the knowledge did not cover'));
-    if (!order.length) add(ncCard, el('p', 'empty', 'None so far.'));
-    else { var sc = el('div', 'scroll'); var t = el('table'); var th = el('tr'); add(th, el('th', '', 'Question'), el('th', '', 'Times asked')); t.appendChild(th);
-      order.forEach(function (k) { var tr = el('tr'); add(tr, el('td', '', k), el('td', 'num', String(counts[k]))); t.appendChild(tr); }); sc.appendChild(t); ncCard.appendChild(sc); }
+    // Issues: every question that failed, with its cause and whether it was solved. Not-covered questions nobody has triaged yet still show.
+    var ncCard = el('div', 'card'); add(ncCard, el('h3', '', 'Issues found'));
+    var untriaged = {}; notCovered.forEach(function (q) { var k = norm(q['Question']); if (k && !issueByKey[k]) untriaged[k] = q['Question']; });
+    var openIssues = issues.filter(function (i) { return (i['Status'] || 'Open') === 'Open'; });
+    var byCause = {}; openIssues.forEach(function (i) { var c = i['Cause'] || 'Unclear'; byCause[c] = (byCause[c] || 0) + 1; });
+    var solvedCount = issues.filter(function (i) { return i['Status'] === 'Solved'; }).length;
+    var maybeCount = issues.filter(function (i) { return i['Status'] === 'Probably solved'; }).length;
+    var untriagedKeys = Object.keys(untriaged);
+    if (!issues.length && !untriagedKeys.length) add(ncCard, el('p', 'empty', 'None so far.'));
+    else {
+      var tally = el('div', 'tally');
+      add(tally, el('b', '', (openIssues.length + untriagedKeys.length) + ' open'));
+      Object.keys(byCause).forEach(function (c) { add(tally, el('span', 'pill cause', c + ' ' + byCause[c])); });
+      if (untriagedKeys.length) add(tally, el('span', 'pill cause', 'Not triaged ' + untriagedKeys.length));
+      add(tally, el('span', 'sub', maybeCount + ' probably solved \u00b7 ' + solvedCount + ' solved'));
+      ncCard.appendChild(tally);
+      var sc = el('div', 'scroll'); var t = el('table'); var th = el('tr'); add(th, el('th', '', 'Question'), el('th', '', 'Cause and status'), el('th', '', 'Seen')); t.appendChild(th);
+      var rank = { 'Open': 0, 'Probably solved': 1, 'Solved': 2, "Won't fix": 3 };
+      untriagedKeys.forEach(function (k) { var tr = el('tr'); var td = el('td'); td.appendChild(el('span', 'pill open', 'Not triaged yet')); add(tr, el('td', '', untriaged[k]), td, el('td', 'num', '')); t.appendChild(tr); });
+      issues.slice().sort(function (x, y) { return (rank[x['Status'] || 'Open'] || 0) - (rank[y['Status'] || 'Open'] || 0); }).forEach(function (i) {
+        var tr = el('tr'); var q = el('td'); add(q, el('div', '', i['Question']), i['Fix'] ? el('div', 'owner', i['Fix']) : null);
+        var td = el('td'); var ch = chipsFor(i); ch.style.marginLeft = '0'; td.appendChild(ch);
+        add(tr, q, td, el('td', 'num', (i['Times seen'] || '') + (i['Last seen'] ? ' \u00b7 ' + i['Last seen'] : ''))); t.appendChild(tr);
+      });
+      sc.appendChild(t); ncCard.appendChild(sc);
+    }
     risk.appendChild(ncCard); app.appendChild(risk);
 
     // Participant Pulse
@@ -227,7 +262,8 @@
       var d = el('details'); var sm = el('summary');
       var kind = f['Vote'] === 'Helpful' ? 'good' : (/^Incorrect/.test(f['Reported as']) ? 'bad' : 'other');
       var pill = el('span', 'pill ' + kind, f['Vote'] === 'Helpful' ? 'Helpful' : (kind === 'bad' ? 'Incorrect' : 'Not helpful'));
-      add(sm, el('span', 'when sub', f['Time (UTC)'].slice(0, 10)), pill, el('span', '', f['Question']));
+      var qs = el('span', '', f['Question']); var iss = issueByKey[norm(f['Question'])]; if (iss) qs.appendChild(chipsFor(iss));
+      add(sm, el('span', 'when sub', f['Time (UTC)'].slice(0, 10)), pill, qs);
       var body = el('div', 'detail');
       [['Question', f['Question']], ['Answer', f['Answer']], ['Sources', f['Sources']], ['Reported as', f['Reported as']], ['Comment', f['Comment']], ['Revision', f['Revision']]].forEach(function (pair) {
         if (!pair[1]) return; var blk = el('div'); add(blk, el('b', '', pair[0]), el('span', '', pair[1])); body.appendChild(blk);

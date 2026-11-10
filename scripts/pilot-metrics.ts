@@ -12,6 +12,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { groupIssues, type IssueEvent } from "../lib/monitoring/issues.ts";
 import { RATING_LABELS, rateHealth, type WindowStats } from "../lib/monitoring/health.ts";
 
 interface LogEntry {
@@ -170,9 +171,24 @@ async function main() {
   for (const i of interactions) for (const t of titlesOf(i)) counts.set(t, (counts.get(t) ?? 0) + 1);
   const sources: (string | number)[][] = [["Document", "Answers that used it"], ...[...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 25)];
 
+  // Issue candidates: the same question seen failing more than once is one issue. The Issues tab holds the triage.
+  const events: IssueEvent[] = [
+    ...interactions.filter((i) => isNotCovered(i.turnKind)).map((i) => ({ question: String(i.question ?? ""), kind: "Not covered" as const, at: i._ts })),
+    ...feedback.filter((f) => f.helpful === false && byId.get(f.interactionId)).map((f) => ({
+      question: String(byId.get(f.interactionId)?.question ?? ""),
+      kind: ((f.tags ?? []) as string[]).some((t) => INCORRECT_TAGS.has(t)) ? ("Reported incorrect" as const) : ("Not helpful" as const),
+      at: f._ts,
+    })),
+  ];
+  const helpfulVotes = feedback.filter((f) => f.helpful === true && byId.get(f.interactionId)).map((f) => ({ question: String(byId.get(f.interactionId)?.question ?? ""), at: f._ts }));
+  const issueCandidates: (string | number)[][] = [
+    ["Key", "Question", "Seen as", "First seen", "Last seen", "Times seen", "Helpful vote since"],
+    ...groupIssues(events, helpfulVotes).map((c) => [c.key, clip(c.question, 300), c.seenAs.join(", "), c.firstSeen, c.lastSeen, c.timesSeen, c.helpfulSince]),
+  ];
+
   const dir = path.join("evals-out", "monitoring");
   fs.mkdirSync(dir, { recursive: true });
-  const out = { generatedAt: now.toISOString(), days, healthDays: HEALTH_DAYS, health: { overall: health.overall, reasons: health.reasons }, tables: { Summary: summary, Daily: daily, Feedback: feedbackRows, "Not covered": notCovered, Sources: sources } };
+  const out = { generatedAt: now.toISOString(), days, healthDays: HEALTH_DAYS, health: { overall: health.overall, reasons: health.reasons }, tables: { Summary: summary, Daily: daily, Feedback: feedbackRows, "Not covered": notCovered, Sources: sources, "Issue candidates": issueCandidates } };
   fs.writeFileSync(path.join(dir, "metrics-latest.json"), JSON.stringify(out, null, 2));
   console.log(`Pilot health (last ${HEALTH_DAYS} days): ${RATING_LABELS[health.overall]}`);
   for (const r of health.reasons) console.log(`  - ${r}`);

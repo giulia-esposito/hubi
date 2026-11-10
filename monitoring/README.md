@@ -6,7 +6,7 @@ A private view of how the Hubi pilot is going, for the Product Owner and leaders
 Cloud Logging --(scripts/pilot-metrics.ts)--> JSON --(daily check)--> "Hubi pilot monitoring" Sheet --> Apps Script page
 ```
 
-- **Sheet:** "Hubi pilot monitoring" in the Product Owner's Drive (id `1ozgwETueFtaJsm6AYF2EmsOnXnqUKEgk88GT_qHZNwM`). Tabs: Summary, Daily, Feedback, Not covered, Sources (written by the daily check, never edit by hand), Notes and Access (edited by people).
+- **Sheet:** "Hubi pilot monitoring" in the Product Owner's Drive (id `1ozgwETueFtaJsm6AYF2EmsOnXnqUKEgk88GT_qHZNwM`). Tabs: Summary, Daily, Feedback, Not covered, Sources (written by the daily check, never edit by hand), Notes, Issues and Access (edited by people).
 - **Page:** `monitoring/apps-script/` (Code.gs, Index.html, appsscript.json). It only reads the Sheet. Look: Hubi's (off-white, dark magenta, Barlow Condensed and Figtree).
 - **Numbers:** `scripts/pilot-metrics.ts` reads the pilot logs with Application Default Credentials (no keys) and writes `evals-out/monitoring/metrics-latest.json` (git-ignored, because it holds question and answer text).
 - **Rating:** `lib/monitoring/health.ts`, tested in `tests/health.test.ts`. The rating is the worst of four parts, over the last 7 days:
@@ -33,6 +33,15 @@ People. Hubi does not record who asks (`HUBI_LOG_ACTOR` is off on purpose), so t
 5. Share the web app link only with those people. The page shows real questions and answers.
 
 After changing Code.gs or Index.html, use Deploy, Manage deployments, edit, New version.
+
+## Issues (triage)
+
+Every question that failed is one row in the **Issues** tab, however many times it was retried: not covered, reported incorrect, or not helpful. The page shows them under Risks ("Issues found") and tags the matching votes in Evidence.
+
+- **Cause**: Content (not in the knowledge, or the document was outdated), Retrieval (the content exists but was not found), Answer (right sources, answer overstated or misread), Scope or guardrail (a gate blocked or narrowed it), Out of scope (not meant for Hubi), Unclear.
+- **Cause set by**: Proposed (by the daily check) or Confirmed (by a person). The page shows "(proposed)" until it is confirmed.
+- **Status**: Open, Probably solved (the daily check sets it when the same question later gets a helpful vote), Solved or Won't fix. Only a person sets the last two. Fill in Solved on and Fix.
+- The daily check adds new issues and updates the counts of existing ones. It never overwrites a row a person edited. Matching uses the Key column (the normalized question, `lib/monitoring/issues.ts`).
 
 ## Keeping it current
 
