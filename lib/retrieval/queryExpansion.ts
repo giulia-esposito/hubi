@@ -85,6 +85,7 @@ export function detectLanguage(text: string): QueryLanguage {
 /** Top BM25 score below which an English question is treated as weakly matched (relevant results scored 5-28, noise 1-3; the cut is tuned on the benchmark). */
 export const WEAK_SCORE = 12;
 const MIN_WORDS_FOR_WEAK_TRIGGER = 3;
+const MIN_WORDS_FOR_NO_ENGLISH_TRIGGER = 4;
 
 export interface ExpansionPlan {
   expand: boolean;
@@ -96,6 +97,14 @@ export interface ExpansionPlan {
 export function planExpansion(question: string, topScore: number): ExpansionPlan {
   const language = detectLanguage(question);
   if (language !== "en" && language !== "unknown") return { expand: true, reason: "non-english-query", language, targets: ["English"] };
+  // Colloquial Portuguese or Spanish ("me fala sobre wellhub+ como escolher o tipo") has no word the cue lists know, so the language stays
+  // "unknown" (and never becomes a region). Four or more words with no English function word among them is still not an English question:
+  // translate it, because most of the approved content is in English. Found in the pilot: such a question found nothing and Hubi said it had no knowledge of it.
+  // One cue word is required ("como", "de", "para"...): a keyword-style English question ("pricing model per subscriber explained") has none.
+  const tokens = words(question);
+  if (language === "unknown" && tokens.length >= MIN_WORDS_FOR_NO_ENGLISH_TRIGGER && !tokens.some((w) => EN_SET.has(w)) && tokens.some((w) => SHARED.has(w) || ES_ONLY.has(w) || PT_ONLY.has(w))) {
+    return { expand: true, reason: "non-english-query", language, targets: ["English"] };
+  }
   if (words(question).length < MIN_WORDS_FOR_WEAK_TRIGGER) return { expand: false, reason: "too-short", language, targets: [] };
   if (topScore < WEAK_SCORE) return { expand: true, reason: "weak-lexical-match", language, targets: ["Spanish", "Portuguese"] };
   return { expand: false, reason: "sufficient", language, targets: [] };
