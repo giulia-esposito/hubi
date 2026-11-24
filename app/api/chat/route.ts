@@ -351,6 +351,8 @@ async function handleChat(req: Request): Promise<Response> {
         interactionId,
         turnKind,
         planningMode,
+        // The complete visible answer. The client replaces what it assembled from the stream with this, so a dropped or garbled delta can never leave an incomplete answer on screen.
+        text: finalText,
         buffered: verification.buffered,
         verification: verification.buffered
           ? { checked: verification.checked, revised: verification.revised, accepted: verification.revisionAccepted }

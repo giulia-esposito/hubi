@@ -342,6 +342,7 @@ export default function ChatPage() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let sawDone = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -354,9 +355,12 @@ export default function ChatPage() {
         for (const line of lines) {
           if (!line.trim()) continue;
           const event = JSON.parse(line);
+          if (event.type === "done") sawDone = true;
           applyEvent(event);
         }
       }
+      // The connection closed before the server said the answer was complete: never leave a half answer looking finished.
+      if (!sawDone) throw new Error("interrupted");
     } catch (err) {
       setMessages((prev) => {
         const lastIndex = prev.length - 1;
@@ -364,7 +368,7 @@ export default function ChatPage() {
         if (last?.role !== "assistant") return prev;
         const next = [...prev];
         const tooFast = err instanceof Error && err.message === "rate-limited";
-        next[lastIndex] = { ...last, isStreaming: false, error: tooFast ? "You are sending messages faster than Hubi can handle -- wait a few seconds and try again." : "Hubi is currently unavailable -- please retry." };
+        next[lastIndex] = { ...last, isStreaming: false, error: tooFast ? "You are sending messages faster than Hubi can handle -- wait a few seconds and try again." : err instanceof Error && err.message === "interrupted" ? "The answer was interrupted before it finished -- please ask again." : "Hubi is currently unavailable -- please retry." };
         return next;
       });
     } finally {
@@ -392,7 +396,7 @@ export default function ChatPage() {
         updated = { ...last, text: last.text + event.text, waitMs: firstText ? Math.round(performance.now() - (last.sentAt as number)) : last.waitMs };
       } else if (event.type === "done") {
         updated = event.ok
-          ? { ...last, isStreaming: false, turnKind: event.turnKind, planningMode: event.planningMode, pinned: event.pinned, interactionId: event.interactionId, finishedAt: new Date().toISOString() }
+          ? { ...last, isStreaming: false, text: typeof event.text === "string" && event.text ? event.text : last.text, turnKind: event.turnKind, planningMode: event.planningMode, pinned: event.pinned, interactionId: event.interactionId, finishedAt: new Date().toISOString() }
           : { ...last, isStreaming: false, error: "Hubi is currently unavailable -- please retry." };
       } else {
         return prev;
