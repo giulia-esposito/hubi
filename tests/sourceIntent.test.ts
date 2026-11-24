@@ -83,3 +83,32 @@ describe("answerability notice", () => {
     assert.equal(asksForInstructions("What is Per Subscriber pricing?"), false);
   });
 });
+
+describe("product questions: the Comm Doc goes first", () => {
+  it("reads cancellation and fee wording in English, Portuguese and Spanish, and leaves renewal-process questions alone", () => {
+    assert.deepEqual(detectSourceIntents("What is the early cancellation fee?"), ["product"]);
+    assert.deepEqual(detectSourceIntents("Qual a multa de cancelamento do plano anual?"), ["product"]);
+    assert.deepEqual(detectSourceIntents("¿Cómo funciona la cancelación de la suscripción anual?"), ["product"]);
+    assert.deepEqual(detectSourceIntents("What are the steps of the renewal process?"), ["process"]);
+  });
+  it("puts the Comm Doc chunks ahead of a playbook that matches the same words, keeping the rest behind them", () => {
+    const idx = buildIndex([
+      chunk("play", "Playbook", "Revenue Tools", "Mar 1, 2026", "cancellation of the client contract cancellation cancellation terms"),
+      chunk("comm", "Comm Doc", "Product Launches", "Mar 1, 2026", "early cancellation fee calculation 20% remaining months"),
+      chunk("other", "Training", "Pricing", "Mar 1, 2026", "pricing rules cancellation notes"),
+    ]);
+    const q = "early cancellation fee";
+    const top = search(idx, q, 3).filter((r) => r.chunk.documentId !== "comm");
+    const r = applyIntentSlots(idx, q, q, top, top.map(() => "global" as const), [], search(idx, q, 1)[0].score);
+    assert.equal(r.eligible[0].chunk.documentId, "comm");
+    assert.deepEqual(r.eligible.slice(1).map((x) => x.chunk.documentId), top.map((x) => x.chunk.documentId));
+    assert.deepEqual(r.info.added.map((a) => [a.intent, a.documentId]), [["product", "comm"]]);
+  });
+  it("changes nothing when no Comm Doc matches", () => {
+    const idx = buildIndex([chunk("play", "Playbook", "Revenue Tools", "Mar 1, 2026", "cancellation of the client contract cancellation terms")]);
+    const q = "early cancellation fee";
+    const top = search(idx, q, 3);
+    const r = applyIntentSlots(idx, q, q, top, top.map(() => "global" as const), [], top[0].score);
+    assert.deepEqual(r.eligible.map((x) => x.chunk.id), top.map((x) => x.chunk.id));
+  });
+});

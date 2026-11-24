@@ -168,8 +168,23 @@ export function fuseRankings(lists: RankedList[], limit: number): ScoredChunk[] 
 }
 
 /** Weights when fusing: the expansion is trusted more when the original query is in the wrong language, less when it is just weak. */
-export function fusionWeights(reason: ExpansionPlan["reason"]): { original: number; expansion: number } {
-  return reason === "non-english-query" ? { original: 1, expansion: 1 } : { original: 1, expansion: 0.6 };
+/**
+ * Portuguese questions weigh the English translation more (decided 2026-11-24, for the Brazil launch). Most approved content is in English, so
+ * for a Portuguese question the Portuguese playbook matches on the question's own words ("cancelamento", "plano") and fills the top of the
+ * list with the wrong passages. The extra weight applies only when the translated search finds something nearly as strong as the original
+ * one (its best score is at least this share of the original's best): when the answer is in a Portuguese document the original wording
+ * wins by a wide margin, and the translation must not push it out.
+ *
+ * Measured on 28 gold questions translated into colloquial Brazilian Portuguese (gold.json, ids ptx-*) plus the 9 existing Portuguese and
+ * cross-language gold questions: at equal weight MRR 0.613 and 0.628; weight 1.5 always 0.774 and 0.627 (and the right passage missed for two
+ * existing Portuguese questions); weight 1.5 above this share 0.740 and 0.712 with no loss of recall.
+ */
+export const PORTUGUESE_EXPANSION_WEIGHT = 1.5;
+export const PORTUGUESE_EXPANSION_MIN_SHARE = 0.7;
+
+export function fusionWeights(reason: ExpansionPlan["reason"], language?: QueryLanguage, strongShare = false): { original: number; expansion: number } {
+  if (reason !== "non-english-query") return { original: 1, expansion: 0.6 };
+  return { original: 1, expansion: language === "pt" && strongShare ? PORTUGUESE_EXPANSION_WEIGHT : 1 };
 }
 
 export interface ExpansionInfo {
@@ -249,12 +264,12 @@ export function stripFunctionWords(terms: string): string {
 }
 
 /** Pass-1 search with the expansion's terms fused in (the plain search when there are none). The runtime and the benchmark both go through this. */
-export function searchWithExpansion(index: RetrievalIndex, query: string, expansion: Pick<ExpansionInfo, "terms" | "reason"> | undefined, depth: number): ScoredChunk[] {
+export function searchWithExpansion(index: RetrievalIndex, query: string, expansion: Pick<ExpansionInfo, "terms" | "reason"> & { language?: ExpansionInfo["language"] } | undefined, depth: number): ScoredChunk[] {
   const base = search(index, query, depth);
   if (!expansion?.terms) return base;
   const expanded = search(index, stripFunctionWords(expansion.terms), depth);
   const dominant = expanded.length > 0 && expanded[0].score >= DOMINANT_EXPANSION_RATIO * (base[0]?.score ?? 0);
-  const weights = dominant ? { original: 1, expansion: 1 } : fusionWeights(expansion.reason);
+  const weights = dominant ? { original: 1, expansion: 1 } : fusionWeights(expansion.reason, expansion.language, expanded.length > 0 && base.length > 0 && expanded[0].score >= PORTUGUESE_EXPANSION_MIN_SHARE * base[0].score);
   return fuseRankings(
     [
       { results: base, weight: weights.original },

@@ -320,5 +320,201 @@
     "language": "en",
     "terms": "pasos proceso incorporación cliente processo onboarding cliente",
     "ms": 1179
+  },
+  "ptx-salesloft-cadences": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Salesloft cadences create effective Brazil",
+    "ms": 0
+  },
+  "ptx-hoffman-work-the-deal": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Hoffmann Work the Deal methodology",
+    "ms": 0
+  },
+  "ptx-launch-readiness": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Launch Readiness Salesforce importance",
+    "ms": 0
+  },
+  "ptx-wellhubverse": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Wellhubverse what is",
+    "ms": 0
+  },
+  "ptx-roe-global-deals": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Rules of Engagement global deals clients",
+    "ms": 0
+  },
+  "ptx-pricing-flat-fee": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil pricing model Flat Fee",
+    "ms": 0
+  },
+  "ptx-pricing-pps": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil PPS pricing how it works",
+    "ms": 0
+  },
+  "ptx-family-member-sku": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Family Member SKU how it works",
+    "ms": 0
+  },
+  "ptx-access-matrix": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Sales Tools Access Matrix my role tools access",
+    "ms": 0
+  },
+  "ptx-jira-access": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Jira create ticket manually request access Brazil",
+    "ms": 0
+  },
+  "ptx-salesforce-gmail": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Salesforce Gmail Google Drive integration Brazil",
+    "ms": 0
+  },
+  "ptx-contract-adherence-t3-t4": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil contracts T3 T4 differences",
+    "ms": 0
+  },
+  "ptx-magic-link-order-form": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Magic Link Order Form SMB contract Salesforce",
+    "ms": 0
+  },
+  "ptx-hierarchy-ai": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "create new account AI data enrichment Salesforce Brazil",
+    "ms": 0
+  },
+  "ptx-slide-roi": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Wellhub ROI slides",
+    "ms": 0
+  },
+  "ptx-golden-pitch-deck": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil Golden Pitch deck content",
+    "ms": 0
+  },
+  "ptx-tools-access": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil access work tools",
+    "ms": 0
+  },
+  "ptx-multi-country-owner": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil deal owner multi-country client offices",
+    "ms": 0
+  },
+  "ptx-payment-options": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil payment methods per employee fixed fee usage based",
+    "ms": 0
+  },
+  "ptx-referral-credit": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil referral sales revenue credit handling",
+    "ms": 0
+  },
+  "ptx-mandatory-training": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil mandatory training Revenue team",
+    "ms": 0
+  },
+  "ptx-cfo-business-case": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil employee wellness business case CFO",
+    "ms": 0
+  },
+  "ptx-pitch-structure": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil pitch structure new prospect",
+    "ms": 0
+  },
+  "ptx-request-enablement": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil enablement report bug internal tool",
+    "ms": 0
+  },
+  "ptx-cs-handover": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil CS sales deal handover when",
+    "ms": 0
+  },
+  "ptx-service-level-tier": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil customer service level tier",
+    "ms": 0
+  },
+  "ptx-competition-us": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "SDR Brazil US client competition",
+    "ms": 0
+  },
+  "ptx-competition-info-sharing": {
+    "triggered": true,
+    "reason": "non-english-query",
+    "language": "pt",
+    "terms": "Brazil competition law information sharing competitors",
+    "ms": 0
   }
 }

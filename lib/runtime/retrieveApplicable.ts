@@ -78,7 +78,7 @@ export interface RetrieveOptions {
    * Cross-language search terms already produced for this turn (lib/retrieval/queryExpansion.ts). When present,
    * pass 1 searches the index with them as well and fuses the two rankings; everything after pass 1 is unchanged.
    */
-  expansion?: Pick<ExpansionInfo, "terms" | "reason">;
+  expansion?: Pick<ExpansionInfo, "terms" | "reason"> & { language?: ExpansionInfo["language"] };
 }
 
 /**

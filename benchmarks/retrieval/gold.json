@@ -1,63 +1,935 @@
 [
-  {"id":"salesloft-cadences","category":"exact-term","question":"How do I create effective cadences in Salesloft?","relevant":[{"doc":"RKC-000002"},
-  {"doc":"Sales Tools Playbook - Revenue Team","heading":"Cadence|Salesloft"}],"note":"The Sales Tools Playbook's Salesloft sections answer this as directly as the recorded session."},
-  {"id":"hoffman-work-the-deal","category":"exact-term","question":"What is the Work the Deal methodology by Hoffmann?","relevant":[{"doc":"RKC-000008"},
-  {"doc":"RKC-000015"},
-  {"doc":"RKC-000016"}]},
-  {"id":"launch-readiness","category":"exact-term","question":"Why does Launch Readiness matter in Salesforce?","relevant":[{"doc":"RKC-000014"},
-  {"doc":"RKC-000018"}],"regionContext":"I'm in the US."},
-  {"id":"wellhubverse","category":"exact-term","question":"What is the Wellhubverse?","relevant":[{"doc":"RKC-000004"},
-  {"doc":"RKC-000005"}]},
-  {"id":"roe-global-deals","category":"exact-term","question":"What do the Rules of Engagement say about global deals and global clients?","relevant":[{"doc":"Rules of Engagement","heading":"Global Deals"}]},
-  {"id":"pricing-flat-fee","category":"exact-term","question":"What is the Flat Fee pricing model?","relevant":[{"doc":"06.2025_Pricing_Rev Strategy Playbook","heading":"Flat Fee|Pricing Models"}]},
-  {"id":"pricing-pps","category":"exact-term","question":"How does Per Subscriber (PPS) pricing work?","relevant":[{"doc":"06.2025_Pricing_Rev Strategy Playbook"},
-  {"doc":"PMM _ Slide Library _ US _ DO NOT EDIT","heading":"PPS|Pay per Subscriber"}],"note":"Playbook (any section: the glossary and models define PPS) and the PPS slides."},
-  {"id":"family-member-sku","category":"exact-term","question":"What is the Family Member SKU and how does it work?","relevant":[{"doc":"06.2025_Pricing_Rev Strategy Playbook","heading":"Family Member"}]},
-  {"id":"access-matrix","category":"exact-term","question":"Sales Tools Access Matrix: which tools does my role get?","relevant":[{"doc":"Sales Tools Playbook - Revenue Team","heading":"Access Matrix"}]},
-  {"id":"jira-access","category":"exact-term","question":"How do I manually create a Jira ticket for an access request?","relevant":[{"doc":"Sales Tools Playbook - Revenue Team","heading":"Jira"}]},
-  {"id":"salesforce-gmail","category":"exact-term","question":"How do I connect Salesforce to Gmail and Google Drive?","relevant":[{"doc":"Sales Tools Playbook - Revenue Team","heading":"Salesforce|Gmail|Drive"}]},
-  {"id":"contract-adherence-t3-t4","category":"exact-term","question":"How do contracts differ for tiers T3 and T4?","relevant":[{"doc":"RKC-000020"}]},
-  {"id":"magic-link-order-form","category":"exact-term","question":"What is the Magic Link and Order Form for an SMB contract in Salesforce?","relevant":[{"doc":"RKC-000020","heading":"SMB Contract"}]},
-  {"id":"hierarchy-ai","category":"exact-term","question":"How do I create a new account from the AI data enrichment tool in Salesforce?","relevant":[{"doc":"RKC-000026"}]},
-  {"id":"slide-roi","category":"exact-term","question":"Which slides cover the Wellhub ROI?","relevant":[{"doc":"PMM _ Slide Library _ US _ DO NOT EDIT","heading":"ROI|Wellness Impact"}]},
-  {"id":"golden-pitch-deck","category":"exact-term","question":"What is in the Golden Pitch deck?","relevant":[{"doc":"PMM _ US Wellhub Golden Pitch"}]},
-  {"id":"tools-access","category":"paraphrase","question":"How do I get access to the tools I need to do my job?","relevant":[{"doc":"Sales Tools Playbook - Revenue Team"}]},
-  {"id":"multi-country-owner","category":"paraphrase","question":"Who owns the deal when a client has offices in several countries?","relevant":[{"doc":"Rules of Engagement","heading":"Global|Multiple Local|Ownership"}]},
-  {"id":"payment-options","category":"paraphrase","question":"What are the ways a client can pay: per employee, a flat amount, or per usage?","relevant":[{"doc":"06.2025_Pricing_Rev Strategy Playbook"}]},
-  {"id":"referral-credit","category":"paraphrase","question":"How are referral deals handled for revenue credit?","relevant":[{"doc":"Rules of Engagement","heading":"Referral|Revenue Allocation"}]},
-  {"id":"mandatory-training","category":"paraphrase","question":"What trainings are mandatory for the revenue team?","relevant":[{"doc":"Sales Tools Playbook - Revenue Team","heading":"Mandatory"}]},
-  {"id":"cfo-business-case","category":"paraphrase","question":"How do I make the business case for employee wellness to a CFO?","relevant":[{"doc":"PMM _ Slide Library _ US _ DO NOT EDIT"},
-  {"doc":"PMM _ US Wellhub Golden Pitch"}]},
-  {"id":"pitch-structure","category":"paraphrase","question":"How should I structure a pitch to a new prospect?","relevant":[{"doc":"PMM _ US Wellhub Golden Pitch"},
-  {"doc":"PMM _ Slide Library _ US _ DO NOT EDIT"}]},
-  {"id":"request-enablement","category":"paraphrase","question":"How do I request enablement or report a bug in an internal tool?","relevant":[{"doc":"RKC-000004","heading":"3.3|3.4"}]},
-  {"id":"cs-handover","category":"paraphrase","question":"When does Client Success take over a deal from sales?","relevant":[{"doc":"Rules of Engagement","heading":"Client Success and Handover|Global Deals in CS|Ownership"}]},
-  {"id":"service-level-tier","category":"paraphrase","question":"What service level does each client tier get?","relevant":[{"doc":"Rules of Engagement","heading":"Service Level"}]},
-  {"id":"es-onboarding-steps","category":"spanish","question":"¿Cuáles son los pasos del proceso de onboarding para clientes Tier 1?","relevant":[{"doc":"RKC-000006"}],"regionContext":"Estoy en México."},
-  {"id":"es-onboarding-meetings","category":"spanish","question":"¿Qué reuniones de onboarding tengo que hacer?","relevant":[{"doc":"RKC-000006"}],"regionContext":"Estoy en México."},
-  {"id":"es-health-checkpoint","category":"spanish","question":"¿Cuándo se hace la reunión de Health Checkpoint?","relevant":[{"doc":"RKC-000006"}],"regionContext":"Estoy en México."},
-  {"id":"es-pricing-pps","category":"cross-language","question":"¿Qué es el modelo de precio por suscriptor?","relevant":[{"doc":"06.2025_Pricing_Rev Strategy Playbook"}],"note":"Spanish question, English document.","regionContext":"Estoy en México."},
-  {"id":"es-pitch","category":"cross-language","question":"Escríbeme un pitch de ascensor para un prospecto.","relevant":[{"doc":"PMM _ US Wellhub Golden Pitch"},
-  {"doc":"PMM _ Slide Library _ US _ DO NOT EDIT"}],"note":"Spanish question, English documents.","regionContext":"Estoy en México."},
-  {"id":"pt-launch-readiness","category":"portuguese","question":"Porque o Launch Readiness é importante?","relevant":[{"doc":"RKC-000018"},
-  {"doc":"RKC-000014"}],"regionContext":"Estou no Brasil."},
-  {"id":"pt-rejection-reasons","category":"portuguese","question":"Quais são os motivos comuns de rejeição de uma oportunidade?","relevant":[{"doc":"RKC-000027","heading":"Rejei"}],"regionContext":"Estou no Brasil."},
-  {"id":"pt-contract-incomplete","category":"portuguese","question":"O que fazer quando o contrato está incompleto?","relevant":[{"doc":"RKC-000027","heading":"Contract incomplete|Contract Incomplete"}],"regionContext":"Estou no Brasil."},
-  {"id":"pt-opportunity-brazil","category":"portuguese","question":"Como criar e gerenciar uma oportunidade no Salesforce para um cliente no Brasil?","relevant":[{"doc":"RKC-000027"}],"regionContext":"Estou no Brasil."},
-  {"id":"en-pt-rejection","category":"cross-language","question":"Why do opportunities get rejected and how do I avoid it?","relevant":[{"doc":"RKC-000027"}],"note":"English question, Portuguese document.","regionContext":"I'm in Brazil."},
-  {"id":"en-pt-split-billing","category":"cross-language","question":"What is split billing?","relevant":[{"doc":"RKC-000027","heading":"Split Billing"}],"note":"English question; the passage sits in the Portuguese document under an English heading.","regionContext":"I'm in Brazil."},
-  {"id":"artifact-pitch","category":"artifact","question":"Write me an elevator pitch.","relevant":[{"doc":"PMM _ US Wellhub Golden Pitch"},
-  {"doc":"PMM _ Slide Library _ US _ DO NOT EDIT"}]},
-  {"id":"artifact-pitch-prospect","category":"artifact","question":"How can I present Wellhub to a prospect? Write a 1-min elevator pitch.","relevant":[{"doc":"PMM _ US Wellhub Golden Pitch"},
-  {"doc":"PMM _ Slide Library _ US _ DO NOT EDIT"}]},
-  {"id":"artifact-email","category":"artifact","question":"Draft a short email introducing Wellhub to a prospect.","relevant":[{"doc":"PMM _ US Wellhub Golden Pitch"},
-  {"doc":"PMM _ Slide Library _ US _ DO NOT EDIT"}]},
-  {"id":"competition-us","category":"paraphrase","question":"As a rep covering a client in the US, how should I handle the competition?","relevant":[{"doc":"RKC-000023"},
-  {"doc":"PMM _ Slide Library _ US _ DO NOT EDIT","heading":"Competition"}],"regionContext":"I'm in the US.","note":"Ambiguous question: the compliance training and the competitive-positioning slides are both plausible."},
-  {"id":"competition-info-sharing","category":"paraphrase","question":"What information can I share with competitors under competition law?","relevant":[{"doc":"RKC-000023"}],"regionContext":"I'm in the US."},
-  {"id":"es-no-accents-meetings","category":"spanish","question":"Que reuniones de onboarding tengo que hacer?","regionContext":"Estoy en Mexico.","relevant":[{"doc":"RKC-000006"}],"note":"Same question typed without accents."},
-  {"id":"es-no-accents-steps","category":"spanish","question":"Cuales son los pasos del proceso de onboarding?","regionContext":"Estoy en Mexico.","relevant":[{"doc":"RKC-000006"}],"note":"Same question typed without accents."},
-  {"id":"pt-no-accents-launch","category":"portuguese","question":"Por que o Launch Readiness e importante?","regionContext":"Estou no Brasil.","relevant":[{"doc":"RKC-000018"},
-  {"doc":"RKC-000014"}],"note":"Same question typed without accents."},
-  {"id":"onboarding-steps","category":"cross-language","question":"What are the steps of the client onboarding process?","relevant":[{"doc":"RKC-000006"}],"note":"Found in production 2026-10-29: the answer sits in the Spanish SS Latam onboarding training; the English question ranks newsletters first. Expansion terms are the ones the pilot logged for this question."}
+  {
+    "id": "salesloft-cadences",
+    "category": "exact-term",
+    "question": "How do I create effective cadences in Salesloft?",
+    "relevant": [
+      {
+        "doc": "RKC-000002"
+      },
+      {
+        "doc": "Sales Tools Playbook - Revenue Team",
+        "heading": "Cadence|Salesloft"
+      }
+    ],
+    "note": "The Sales Tools Playbook's Salesloft sections answer this as directly as the recorded session."
+  },
+  {
+    "id": "hoffman-work-the-deal",
+    "category": "exact-term",
+    "question": "What is the Work the Deal methodology by Hoffmann?",
+    "relevant": [
+      {
+        "doc": "RKC-000008"
+      },
+      {
+        "doc": "RKC-000015"
+      },
+      {
+        "doc": "RKC-000016"
+      }
+    ]
+  },
+  {
+    "id": "launch-readiness",
+    "category": "exact-term",
+    "question": "Why does Launch Readiness matter in Salesforce?",
+    "relevant": [
+      {
+        "doc": "RKC-000014"
+      },
+      {
+        "doc": "RKC-000018"
+      }
+    ],
+    "regionContext": "I'm in the US."
+  },
+  {
+    "id": "wellhubverse",
+    "category": "exact-term",
+    "question": "What is the Wellhubverse?",
+    "relevant": [
+      {
+        "doc": "RKC-000004"
+      },
+      {
+        "doc": "RKC-000005"
+      }
+    ]
+  },
+  {
+    "id": "roe-global-deals",
+    "category": "exact-term",
+    "question": "What do the Rules of Engagement say about global deals and global clients?",
+    "relevant": [
+      {
+        "doc": "Rules of Engagement",
+        "heading": "Global Deals"
+      }
+    ]
+  },
+  {
+    "id": "pricing-flat-fee",
+    "category": "exact-term",
+    "question": "What is the Flat Fee pricing model?",
+    "relevant": [
+      {
+        "doc": "06.2025_Pricing_Rev Strategy Playbook",
+        "heading": "Flat Fee|Pricing Models"
+      }
+    ]
+  },
+  {
+    "id": "pricing-pps",
+    "category": "exact-term",
+    "question": "How does Per Subscriber (PPS) pricing work?",
+    "relevant": [
+      {
+        "doc": "06.2025_Pricing_Rev Strategy Playbook"
+      },
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT",
+        "heading": "PPS|Pay per Subscriber"
+      }
+    ],
+    "note": "Playbook (any section: the glossary and models define PPS) and the PPS slides."
+  },
+  {
+    "id": "family-member-sku",
+    "category": "exact-term",
+    "question": "What is the Family Member SKU and how does it work?",
+    "relevant": [
+      {
+        "doc": "06.2025_Pricing_Rev Strategy Playbook",
+        "heading": "Family Member"
+      }
+    ]
+  },
+  {
+    "id": "access-matrix",
+    "category": "exact-term",
+    "question": "Sales Tools Access Matrix: which tools does my role get?",
+    "relevant": [
+      {
+        "doc": "Sales Tools Playbook - Revenue Team",
+        "heading": "Access Matrix"
+      }
+    ]
+  },
+  {
+    "id": "jira-access",
+    "category": "exact-term",
+    "question": "How do I manually create a Jira ticket for an access request?",
+    "relevant": [
+      {
+        "doc": "Sales Tools Playbook - Revenue Team",
+        "heading": "Jira"
+      }
+    ]
+  },
+  {
+    "id": "salesforce-gmail",
+    "category": "exact-term",
+    "question": "How do I connect Salesforce to Gmail and Google Drive?",
+    "relevant": [
+      {
+        "doc": "Sales Tools Playbook - Revenue Team",
+        "heading": "Salesforce|Gmail|Drive"
+      }
+    ]
+  },
+  {
+    "id": "contract-adherence-t3-t4",
+    "category": "exact-term",
+    "question": "How do contracts differ for tiers T3 and T4?",
+    "relevant": [
+      {
+        "doc": "RKC-000020"
+      }
+    ]
+  },
+  {
+    "id": "magic-link-order-form",
+    "category": "exact-term",
+    "question": "What is the Magic Link and Order Form for an SMB contract in Salesforce?",
+    "relevant": [
+      {
+        "doc": "RKC-000020",
+        "heading": "SMB Contract"
+      }
+    ]
+  },
+  {
+    "id": "hierarchy-ai",
+    "category": "exact-term",
+    "question": "How do I create a new account from the AI data enrichment tool in Salesforce?",
+    "relevant": [
+      {
+        "doc": "RKC-000026"
+      }
+    ]
+  },
+  {
+    "id": "slide-roi",
+    "category": "exact-term",
+    "question": "Which slides cover the Wellhub ROI?",
+    "relevant": [
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT",
+        "heading": "ROI|Wellness Impact"
+      }
+    ]
+  },
+  {
+    "id": "golden-pitch-deck",
+    "category": "exact-term",
+    "question": "What is in the Golden Pitch deck?",
+    "relevant": [
+      {
+        "doc": "PMM _ US Wellhub Golden Pitch"
+      }
+    ]
+  },
+  {
+    "id": "tools-access",
+    "category": "paraphrase",
+    "question": "How do I get access to the tools I need to do my job?",
+    "relevant": [
+      {
+        "doc": "Sales Tools Playbook - Revenue Team"
+      }
+    ]
+  },
+  {
+    "id": "multi-country-owner",
+    "category": "paraphrase",
+    "question": "Who owns the deal when a client has offices in several countries?",
+    "relevant": [
+      {
+        "doc": "Rules of Engagement",
+        "heading": "Global|Multiple Local|Ownership"
+      }
+    ]
+  },
+  {
+    "id": "payment-options",
+    "category": "paraphrase",
+    "question": "What are the ways a client can pay: per employee, a flat amount, or per usage?",
+    "relevant": [
+      {
+        "doc": "06.2025_Pricing_Rev Strategy Playbook"
+      }
+    ]
+  },
+  {
+    "id": "referral-credit",
+    "category": "paraphrase",
+    "question": "How are referral deals handled for revenue credit?",
+    "relevant": [
+      {
+        "doc": "Rules of Engagement",
+        "heading": "Referral|Revenue Allocation"
+      }
+    ]
+  },
+  {
+    "id": "mandatory-training",
+    "category": "paraphrase",
+    "question": "What trainings are mandatory for the revenue team?",
+    "relevant": [
+      {
+        "doc": "Sales Tools Playbook - Revenue Team",
+        "heading": "Mandatory"
+      }
+    ]
+  },
+  {
+    "id": "cfo-business-case",
+    "category": "paraphrase",
+    "question": "How do I make the business case for employee wellness to a CFO?",
+    "relevant": [
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT"
+      },
+      {
+        "doc": "PMM _ US Wellhub Golden Pitch"
+      }
+    ]
+  },
+  {
+    "id": "pitch-structure",
+    "category": "paraphrase",
+    "question": "How should I structure a pitch to a new prospect?",
+    "relevant": [
+      {
+        "doc": "PMM _ US Wellhub Golden Pitch"
+      },
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT"
+      }
+    ]
+  },
+  {
+    "id": "request-enablement",
+    "category": "paraphrase",
+    "question": "How do I request enablement or report a bug in an internal tool?",
+    "relevant": [
+      {
+        "doc": "RKC-000004",
+        "heading": "3.3|3.4"
+      }
+    ]
+  },
+  {
+    "id": "cs-handover",
+    "category": "paraphrase",
+    "question": "When does Client Success take over a deal from sales?",
+    "relevant": [
+      {
+        "doc": "Rules of Engagement",
+        "heading": "Client Success and Handover|Global Deals in CS|Ownership"
+      }
+    ]
+  },
+  {
+    "id": "service-level-tier",
+    "category": "paraphrase",
+    "question": "What service level does each client tier get?",
+    "relevant": [
+      {
+        "doc": "Rules of Engagement",
+        "heading": "Service Level"
+      }
+    ]
+  },
+  {
+    "id": "es-onboarding-steps",
+    "category": "spanish",
+    "question": "¿Cuáles son los pasos del proceso de onboarding para clientes Tier 1?",
+    "relevant": [
+      {
+        "doc": "RKC-000006"
+      }
+    ],
+    "regionContext": "Estoy en México."
+  },
+  {
+    "id": "es-onboarding-meetings",
+    "category": "spanish",
+    "question": "¿Qué reuniones de onboarding tengo que hacer?",
+    "relevant": [
+      {
+        "doc": "RKC-000006"
+      }
+    ],
+    "regionContext": "Estoy en México."
+  },
+  {
+    "id": "es-health-checkpoint",
+    "category": "spanish",
+    "question": "¿Cuándo se hace la reunión de Health Checkpoint?",
+    "relevant": [
+      {
+        "doc": "RKC-000006"
+      }
+    ],
+    "regionContext": "Estoy en México."
+  },
+  {
+    "id": "es-pricing-pps",
+    "category": "cross-language",
+    "question": "¿Qué es el modelo de precio por suscriptor?",
+    "relevant": [
+      {
+        "doc": "06.2025_Pricing_Rev Strategy Playbook"
+      }
+    ],
+    "note": "Spanish question, English document.",
+    "regionContext": "Estoy en México."
+  },
+  {
+    "id": "es-pitch",
+    "category": "cross-language",
+    "question": "Escríbeme un pitch de ascensor para un prospecto.",
+    "relevant": [
+      {
+        "doc": "PMM _ US Wellhub Golden Pitch"
+      },
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT"
+      }
+    ],
+    "note": "Spanish question, English documents.",
+    "regionContext": "Estoy en México."
+  },
+  {
+    "id": "pt-launch-readiness",
+    "category": "portuguese",
+    "question": "Porque o Launch Readiness é importante?",
+    "relevant": [
+      {
+        "doc": "RKC-000018"
+      },
+      {
+        "doc": "RKC-000014"
+      }
+    ],
+    "regionContext": "Estou no Brasil."
+  },
+  {
+    "id": "pt-rejection-reasons",
+    "category": "portuguese",
+    "question": "Quais são os motivos comuns de rejeição de uma oportunidade?",
+    "relevant": [
+      {
+        "doc": "RKC-000027",
+        "heading": "Rejei"
+      }
+    ],
+    "regionContext": "Estou no Brasil."
+  },
+  {
+    "id": "pt-contract-incomplete",
+    "category": "portuguese",
+    "question": "O que fazer quando o contrato está incompleto?",
+    "relevant": [
+      {
+        "doc": "RKC-000027",
+        "heading": "Contract incomplete|Contract Incomplete"
+      }
+    ],
+    "regionContext": "Estou no Brasil."
+  },
+  {
+    "id": "pt-opportunity-brazil",
+    "category": "portuguese",
+    "question": "Como criar e gerenciar uma oportunidade no Salesforce para um cliente no Brasil?",
+    "relevant": [
+      {
+        "doc": "RKC-000027"
+      }
+    ],
+    "regionContext": "Estou no Brasil."
+  },
+  {
+    "id": "en-pt-rejection",
+    "category": "cross-language",
+    "question": "Why do opportunities get rejected and how do I avoid it?",
+    "relevant": [
+      {
+        "doc": "RKC-000027"
+      }
+    ],
+    "note": "English question, Portuguese document.",
+    "regionContext": "I'm in Brazil."
+  },
+  {
+    "id": "en-pt-split-billing",
+    "category": "cross-language",
+    "question": "What is split billing?",
+    "relevant": [
+      {
+        "doc": "RKC-000027",
+        "heading": "Split Billing"
+      }
+    ],
+    "note": "English question; the passage sits in the Portuguese document under an English heading.",
+    "regionContext": "I'm in Brazil."
+  },
+  {
+    "id": "artifact-pitch",
+    "category": "artifact",
+    "question": "Write me an elevator pitch.",
+    "relevant": [
+      {
+        "doc": "PMM _ US Wellhub Golden Pitch"
+      },
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT"
+      }
+    ]
+  },
+  {
+    "id": "artifact-pitch-prospect",
+    "category": "artifact",
+    "question": "How can I present Wellhub to a prospect? Write a 1-min elevator pitch.",
+    "relevant": [
+      {
+        "doc": "PMM _ US Wellhub Golden Pitch"
+      },
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT"
+      }
+    ]
+  },
+  {
+    "id": "artifact-email",
+    "category": "artifact",
+    "question": "Draft a short email introducing Wellhub to a prospect.",
+    "relevant": [
+      {
+        "doc": "PMM _ US Wellhub Golden Pitch"
+      },
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT"
+      }
+    ]
+  },
+  {
+    "id": "competition-us",
+    "category": "paraphrase",
+    "question": "As a rep covering a client in the US, how should I handle the competition?",
+    "relevant": [
+      {
+        "doc": "RKC-000023"
+      },
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT",
+        "heading": "Competition"
+      }
+    ],
+    "regionContext": "I'm in the US.",
+    "note": "Ambiguous question: the compliance training and the competitive-positioning slides are both plausible."
+  },
+  {
+    "id": "competition-info-sharing",
+    "category": "paraphrase",
+    "question": "What information can I share with competitors under competition law?",
+    "relevant": [
+      {
+        "doc": "RKC-000023"
+      }
+    ],
+    "regionContext": "I'm in the US."
+  },
+  {
+    "id": "es-no-accents-meetings",
+    "category": "spanish",
+    "question": "Que reuniones de onboarding tengo que hacer?",
+    "regionContext": "Estoy en Mexico.",
+    "relevant": [
+      {
+        "doc": "RKC-000006"
+      }
+    ],
+    "note": "Same question typed without accents."
+  },
+  {
+    "id": "es-no-accents-steps",
+    "category": "spanish",
+    "question": "Cuales son los pasos del proceso de onboarding?",
+    "regionContext": "Estoy en Mexico.",
+    "relevant": [
+      {
+        "doc": "RKC-000006"
+      }
+    ],
+    "note": "Same question typed without accents."
+  },
+  {
+    "id": "pt-no-accents-launch",
+    "category": "portuguese",
+    "question": "Por que o Launch Readiness e importante?",
+    "regionContext": "Estou no Brasil.",
+    "relevant": [
+      {
+        "doc": "RKC-000018"
+      },
+      {
+        "doc": "RKC-000014"
+      }
+    ],
+    "note": "Same question typed without accents."
+  },
+  {
+    "id": "onboarding-steps",
+    "category": "cross-language",
+    "question": "What are the steps of the client onboarding process?",
+    "relevant": [
+      {
+        "doc": "RKC-000006"
+      }
+    ],
+    "note": "Found in production 2026-10-29: the answer sits in the Spanish SS Latam onboarding training; the English question ranks newsletters first. Expansion terms are the ones the pilot logged for this question."
+  },
+  {
+    "id": "ptx-salesloft-cadences",
+    "category": "pt-translated",
+    "question": "Como eu crio cadências eficazes no Salesloft?",
+    "relevant": [
+      {
+        "doc": "RKC-000002"
+      },
+      {
+        "doc": "Sales Tools Playbook - Revenue Team",
+        "heading": "Cadence|Salesloft"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question salesloft-cadences."
+  },
+  {
+    "id": "ptx-hoffman-work-the-deal",
+    "category": "pt-translated",
+    "question": "Qual é a metodologia Work the Deal do Hoffmann?",
+    "relevant": [
+      {
+        "doc": "RKC-000008"
+      },
+      {
+        "doc": "RKC-000015"
+      },
+      {
+        "doc": "RKC-000016"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question hoffman-work-the-deal."
+  },
+  {
+    "id": "ptx-launch-readiness",
+    "category": "pt-translated",
+    "question": "Por que Launch Readiness importa no Salesforce?",
+    "relevant": [
+      {
+        "doc": "RKC-000014"
+      },
+      {
+        "doc": "RKC-000018"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question launch-readiness."
+  },
+  {
+    "id": "ptx-wellhubverse",
+    "category": "pt-translated",
+    "question": "O que é o Wellhubverse?",
+    "relevant": [
+      {
+        "doc": "RKC-000004"
+      },
+      {
+        "doc": "RKC-000005"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question wellhubverse."
+  },
+  {
+    "id": "ptx-roe-global-deals",
+    "category": "pt-translated",
+    "question": "O que as Regras de Engajamento dizem sobre deals e clientes globais?",
+    "relevant": [
+      {
+        "doc": "Rules of Engagement",
+        "heading": "Global Deals"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question roe-global-deals."
+  },
+  {
+    "id": "ptx-pricing-flat-fee",
+    "category": "pt-translated",
+    "question": "Qual é o modelo de precificação Flat Fee?",
+    "relevant": [
+      {
+        "doc": "06.2025_Pricing_Rev Strategy Playbook",
+        "heading": "Flat Fee|Pricing Models"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question pricing-flat-fee."
+  },
+  {
+    "id": "ptx-pricing-pps",
+    "category": "pt-translated",
+    "question": "Como funciona o preço por assinante (PPS)?",
+    "relevant": [
+      {
+        "doc": "06.2025_Pricing_Rev Strategy Playbook"
+      },
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT",
+        "heading": "PPS|Pay per Subscriber"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question pricing-pps."
+  },
+  {
+    "id": "ptx-family-member-sku",
+    "category": "pt-translated",
+    "question": "Qual é a SKU de Family Member e como ela funciona?",
+    "relevant": [
+      {
+        "doc": "06.2025_Pricing_Rev Strategy Playbook",
+        "heading": "Family Member"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question family-member-sku."
+  },
+  {
+    "id": "ptx-access-matrix",
+    "category": "pt-translated",
+    "question": "Matriz de Acesso a Ferramentas de Vendas: quais ferramentas meu cargo tem acesso?",
+    "relevant": [
+      {
+        "doc": "Sales Tools Playbook - Revenue Team",
+        "heading": "Access Matrix"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question access-matrix."
+  },
+  {
+    "id": "ptx-jira-access",
+    "category": "pt-translated",
+    "question": "Como eu crio um ticket no Jira manualmente pra pedir acesso?",
+    "relevant": [
+      {
+        "doc": "Sales Tools Playbook - Revenue Team",
+        "heading": "Jira"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question jira-access."
+  },
+  {
+    "id": "ptx-salesforce-gmail",
+    "category": "pt-translated",
+    "question": "Como que eu conecto o Salesforce no Gmail e no Google Drive?",
+    "relevant": [
+      {
+        "doc": "Sales Tools Playbook - Revenue Team",
+        "heading": "Salesforce|Gmail|Drive"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question salesforce-gmail."
+  },
+  {
+    "id": "ptx-contract-adherence-t3-t4",
+    "category": "pt-translated",
+    "question": "Como os contratos se diferenciam pra tiers T3 e T4?",
+    "relevant": [
+      {
+        "doc": "RKC-000020"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question contract-adherence-t3-t4."
+  },
+  {
+    "id": "ptx-magic-link-order-form",
+    "category": "pt-translated",
+    "question": "Qual é o Magic Link e o Order Form pra contrato SMB no Salesforce?",
+    "relevant": [
+      {
+        "doc": "RKC-000020",
+        "heading": "SMB Contract"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question magic-link-order-form."
+  },
+  {
+    "id": "ptx-hierarchy-ai",
+    "category": "pt-translated",
+    "question": "Como crio uma conta nova a partir da ferramenta de data enrichment de AI no Salesforce?",
+    "relevant": [
+      {
+        "doc": "RKC-000026"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question hierarchy-ai."
+  },
+  {
+    "id": "ptx-slide-roi",
+    "category": "pt-translated",
+    "question": "Quais slides cobrem o ROI do Wellhub?",
+    "relevant": [
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT",
+        "heading": "ROI|Wellness Impact"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question slide-roi."
+  },
+  {
+    "id": "ptx-golden-pitch-deck",
+    "category": "pt-translated",
+    "question": "O que tem no deck do Golden Pitch?",
+    "relevant": [
+      {
+        "doc": "PMM _ US Wellhub Golden Pitch"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question golden-pitch-deck."
+  },
+  {
+    "id": "ptx-tools-access",
+    "category": "pt-translated",
+    "question": "Como faço pra ter acesso às ferramentas que preciso pra trabalhar?",
+    "relevant": [
+      {
+        "doc": "Sales Tools Playbook - Revenue Team"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question tools-access."
+  },
+  {
+    "id": "ptx-multi-country-owner",
+    "category": "pt-translated",
+    "question": "Quem é o dono do deal quando o cliente tem escritórios em vários países?",
+    "relevant": [
+      {
+        "doc": "Rules of Engagement",
+        "heading": "Global|Multiple Local|Ownership"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question multi-country-owner."
+  },
+  {
+    "id": "ptx-payment-options",
+    "category": "pt-translated",
+    "question": "Quais as formas de pagamento que um cliente pode ter: por funcionário, valor fixo ou por uso?",
+    "relevant": [
+      {
+        "doc": "06.2025_Pricing_Rev Strategy Playbook"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question payment-options."
+  },
+  {
+    "id": "ptx-referral-credit",
+    "category": "pt-translated",
+    "question": "Como que lida com as vendas de indicação pra crédito de receita?",
+    "relevant": [
+      {
+        "doc": "Rules of Engagement",
+        "heading": "Referral|Revenue Allocation"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question referral-credit."
+  },
+  {
+    "id": "ptx-mandatory-training",
+    "category": "pt-translated",
+    "question": "Quais treinamentos são obrigatórios pro time de Revenue?",
+    "relevant": [
+      {
+        "doc": "Sales Tools Playbook - Revenue Team",
+        "heading": "Mandatory"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question mandatory-training."
+  },
+  {
+    "id": "ptx-cfo-business-case",
+    "category": "pt-translated",
+    "question": "Como eu faço o business case de employee wellness pra um CFO?",
+    "relevant": [
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT"
+      },
+      {
+        "doc": "PMM _ US Wellhub Golden Pitch"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question cfo-business-case."
+  },
+  {
+    "id": "ptx-pitch-structure",
+    "category": "pt-translated",
+    "question": "Como devo estruturar um pitch pra um prospect novo?",
+    "relevant": [
+      {
+        "doc": "PMM _ US Wellhub Golden Pitch"
+      },
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question pitch-structure."
+  },
+  {
+    "id": "ptx-request-enablement",
+    "category": "pt-translated",
+    "question": "Como eu peço um enablement ou reporto um bug numa ferramenta interna?",
+    "relevant": [
+      {
+        "doc": "RKC-000004",
+        "heading": "3.3|3.4"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question request-enablement."
+  },
+  {
+    "id": "ptx-cs-handover",
+    "category": "pt-translated",
+    "question": "Quando CS assume um deal de vendas?",
+    "relevant": [
+      {
+        "doc": "Rules of Engagement",
+        "heading": "Client Success and Handover|Global Deals in CS|Ownership"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question cs-handover."
+  },
+  {
+    "id": "ptx-service-level-tier",
+    "category": "pt-translated",
+    "question": "Qual o nível de serviço que cada tier de cliente recebe?",
+    "relevant": [
+      {
+        "doc": "Rules of Engagement",
+        "heading": "Service Level"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question service-level-tier."
+  },
+  {
+    "id": "ptx-competition-us",
+    "category": "pt-translated",
+    "question": "Como devo lidar com a concorrência sendo um SDR que cobre um cliente nos EUA?",
+    "relevant": [
+      {
+        "doc": "RKC-000023"
+      },
+      {
+        "doc": "PMM _ Slide Library _ US _ DO NOT EDIT",
+        "heading": "Competition"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question competition-us."
+  },
+  {
+    "id": "ptx-competition-info-sharing",
+    "category": "pt-translated",
+    "question": "Que info posso compartilhar com concorrentes, de acordo com a lei de concorrência?",
+    "relevant": [
+      {
+        "doc": "RKC-000023"
+      }
+    ],
+    "regionContext": "Estou no Brasil.",
+    "note": "Colloquial Brazilian Portuguese translation (model-made, 2026-11-24) of English gold question competition-info-sharing."
+  }
 ]
