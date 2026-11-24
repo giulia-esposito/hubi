@@ -81,6 +81,10 @@ if (process.env.HUBI_USAGE_REPORT === "1") {
 export const DEFAULT_TEMPERATURE = 0.2;
 export const DEFAULT_TOP_P = 0.9;
 export const DEFAULT_MAX_OUTPUT_TOKENS = 8192;
+// Dynamic thinking let a long answer spend 4,000 to 7,000 thinking tokens, half of its 43 to 76 seconds (pilot, 2026-11-24), and the claim
+// check can ask for a second pass that thinks again. With 1,024 the same questions took 20 to 34 seconds, the answers were shorter, the
+// check found no remaining violations, and the live conversation suite scored 22 of 30 against 18 of 30 without a cap.
+export const DEFAULT_THINKING_BUDGET = 1024;
 
 function numberFrom(raw: string | undefined, fallback: number | undefined, min: number, max: number): number | undefined {
   const n = Number(raw?.trim());
@@ -106,13 +110,14 @@ export const SAFETY_SETTINGS = [
 
 export function generationConfig(fast: boolean | undefined, env: Env = process.env): Record<string, unknown> {
   const seed = numberFrom(env.HUBI_GEMINI_SEED, undefined, 0, 2_147_483_647);
+  const thinkingBudget = numberFrom(env.HUBI_GEMINI_THINKING_BUDGET, DEFAULT_THINKING_BUDGET, 0, 24_576);
   return {
     temperature: fast ? 0 : numberFrom(env.HUBI_GEMINI_TEMPERATURE, DEFAULT_TEMPERATURE, 0, 2),
     topP: numberFrom(env.HUBI_GEMINI_TOP_P, DEFAULT_TOP_P, 0, 1),
     safetySettings: SAFETY_SETTINGS,
     maxOutputTokens: Math.floor(numberFrom(env.HUBI_GEMINI_MAX_OUTPUT_TOKENS, DEFAULT_MAX_OUTPUT_TOKENS, 256, 65_536) ?? DEFAULT_MAX_OUTPUT_TOKENS),
     ...(seed !== undefined ? { seed: Math.floor(seed) } : {}),
-    ...(fast ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+    ...(fast ? { thinkingConfig: { thinkingBudget: 0 } } : thinkingBudget !== undefined ? { thinkingConfig: { thinkingBudget } } : {}),
   };
 }
 

@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_MAX_OUTPUT_TOKENS, DEFAULT_TEMPERATURE, DEFAULT_TOP_P, generationConfig } from "../lib/runtime/reasoningEngine.gemini.ts";
+import { DEFAULT_MAX_OUTPUT_TOKENS, DEFAULT_THINKING_BUDGET, DEFAULT_TEMPERATURE, DEFAULT_TOP_P, generationConfig } from "../lib/runtime/reasoningEngine.gemini.ts";
 
 describe("generationConfig", () => {
   test("answers are low-temperature and bounded by default, with no seed", () => {
@@ -9,7 +9,11 @@ describe("generationConfig", () => {
     assert.equal(c.topP, DEFAULT_TOP_P);
     assert.equal(c.maxOutputTokens, DEFAULT_MAX_OUTPUT_TOKENS);
     assert.equal("seed" in c, false);
-    assert.equal("thinkingConfig" in c, false);
+    assert.deepEqual(c.thinkingConfig, { thinkingBudget: DEFAULT_THINKING_BUDGET });
+  });
+  test("the thinking budget can be set from the environment, and 0 turns thinking off", () => {
+    assert.deepEqual(generationConfig(false, { HUBI_GEMINI_THINKING_BUDGET: "2048" }).thinkingConfig, { thinkingBudget: 2048 });
+    assert.deepEqual(generationConfig(false, { HUBI_GEMINI_THINKING_BUDGET: "0" }).thinkingConfig, { thinkingBudget: 0 });
   });
   test("helper calls are deterministic and skip thinking", () => {
     const c = generationConfig(true, { HUBI_GEMINI_TEMPERATURE: "1.5" });
